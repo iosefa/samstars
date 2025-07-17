@@ -71,8 +71,8 @@ def main() -> None:
     pa.add_argument("--chm",   default="chm.tif")
     pa.add_argument("--cost",  default="cost.tif")
     pa.add_argument("--seeds", default="seeds.gpkg")
-    pa.add_argument("--sam-meta", default="/Users/iosefa/repos/sam/sam_vit_l_0b3195.pth")
-    pa.add_argument("--sam-dec",  default="/Users/iosefa/repos/sam/sam_crowns_decoder.pth")
+    pa.add_argument("--sam-meta", default="sam_vit_l_0b3195.pth")
+    pa.add_argument("--sam-dec",  default="sam_crowns_decoder.pth")
     pa.add_argument("--out",   default="canopy_index.tif")
     args = pa.parse_args()
 

@@ -44,8 +44,11 @@ for tile_dir in "${TILE_DIRS[@]}"; do
   echo -e "\n=== Processing $(basename "${tile_dir}") ==="
 
   img="${tile_dir}/img.tif"
-  seeds="${tile_dir}/seeds.tif"
+  seeds="${tile_dir}/seeds.gpkg"
   chm="${tile_dir}/chm.tif"
+  cost="${tile_dir}/cost.tif"
+  sam_dec="${ROOT_DIR}/sam_crowns_decoder.pth"
+  sam_meta="${ROOT_DIR}/sam_vit_l_0b3195.pth"
   canopy_out="${tile_dir}/crown_probability.tif"
   crowns_out="${tile_dir}/crowns.tif"
   preview_png="${tile_dir}/preview.png"
@@ -59,10 +62,13 @@ for tile_dir in "${TILE_DIRS[@]}"; do
 
   # ── Step 1: SAM → crown_probability.tif ────────────────────────────
   python "${ROOT_DIR}/predict_sam.py" \
-    --img   "${img}"   \
-    --seeds "${seeds}" \
-    --chm   "${chm}"   \
-    --output "${canopy_out}"
+    --img       "${img}"   \
+    --seeds     "${seeds}" \
+    --chm       "${chm}"   \
+    --cost      "${cost}"   \
+    --sam-dec   "${sam_dec}"   \
+    --sam-meta  "${sam_meta}"  \
+    --out       "${canopy_out}"
 
   # ── Step 2: StarDist crowns from crown_probability ────────────────
   if [[ -f "${canopy_out}" ]]; then
