@@ -112,8 +112,19 @@ def build_tiles(*,
             win  = Window(c0, r0, w, h)
             tfm  = rasterio.windows.transform(win, img_tfm)
             full = img_ds.read(window=win)
-            if np.all(full == img_ds.nodata):
-                pbar.update(1); continue
+
+            nodata = img_ds.nodata
+            if nodata is None:
+                is_empty = False
+            elif np.isnan(nodata):
+                is_empty = np.isnan(full).all()
+            else:
+                is_empty = (full == nodata).all()
+
+            if is_empty:
+                pbar.update(1)
+                continue
+
             rgb  = full[[b-1 for b in rgb_bands]]
 
             chm_tile = chm_ds.read(1, window=win).astype(np.float32)
@@ -134,7 +145,12 @@ def build_tiles(*,
                     chm_raster=tmpd/"chm.tif",
                     den_raster=tmpd/"den.tif",
                     cost_raster=tmpd/"cost.tif")
-                seeds = canonical_seeds(sp)
+                try:
+                    seeds = canonical_seeds(sp)
+                except SystemExit:
+                    # canonical_seeds() bailed out because no peaks – skip this tile
+                    pbar.update(1)
+                    continue
 
             # crop seeds to tile & optionally thin ---------------------------
             west, north = tfm.c, tfm.f

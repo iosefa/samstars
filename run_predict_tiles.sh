@@ -53,6 +53,12 @@ for tile_dir in "${TILE_DIRS[@]}"; do
   crowns_out="${tile_dir}/crowns.tif"
   preview_png="${tile_dir}/preview.png"
 
+  # ── Skip tile if final SAM output already exists ───────────────────────────
+  if [[ -f "${canopy_out}" ]]; then
+    echo "  ✔ ${canopy_out} already exists — skipping this tile."
+    continue
+  fi
+
   # Check required inputs for predict.py
   missing=false
   for f in "${img}" "${seeds}" "${chm}"; do
@@ -70,12 +76,15 @@ for tile_dir in "${TILE_DIRS[@]}"; do
     --sam-meta  "${sam_meta}"  \
     --out       "${canopy_out}"
 
-  # ── Step 2: StarDist crowns from crown_probability ────────────────
+  # ── Step 2: StarDist crowns from crown_probability ──────────────────────────
   if [[ -f "${canopy_out}" ]]; then
-    python "${ROOT_DIR}/predict_stars.py" \
-      --input    "${canopy_out}" \
-      --out-tif  "${crowns_out}" \
-      --out-png  "${preview_png}"
+    if ! python "${ROOT_DIR}/predict_stars.py" \
+          --input    "${canopy_out}" \
+          --out-tif  "${crowns_out}" \
+          --out-png  "${preview_png}"; then
+      echo "  ⚠️  predict_stars failed for $(basename "${tile_dir}") – skipping this tile."
+      continue
+    fi
   else
     echo "  crown_probability.tif missing – skipping StarDist step" >&2
   fi

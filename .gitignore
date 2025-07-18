@@ -208,7 +208,7 @@ __marimo__/
 
 
 # Data
-tiles/
+tiles_test/
 models/
 *.tif
 *.tif.aux.xml
