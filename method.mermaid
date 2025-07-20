@@ -1,0 +1,37 @@
+flowchart TD
+  %% ─────────────────────── make_tiles.py ───────────────────────
+  subgraph make_tiles.py
+    A1[Load IMG / CHM / DEN rasters] --> A2[Align CHM & DEN to IMG grid]
+    A2 --> A3[Slide 500 m window <br/> over full image]
+    A3 --> A4[Write temporary tile rasters <br/> img, chm, den]
+    A4 --> A5[Build per-tile cost surface]
+    A5 --> A6[Generate canonical seeds]
+    A6 --> A7[Crop seeds to tile<br/>+ optional spatial thinning]
+    A7 --> A8[Write tile outputs:<br/>img.tif  chm.tif  cost.tif  seeds.gpkg]
+  end
+
+  %% ─────────────────── make_canopy_index.py ───────────────────
+  subgraph make_canopy_index.py
+    B1[Load tile rasters<br/>img, chm, cost & seeds] --> B2[Blur CHM<br/>terrain flattening]
+    B2 --> B3[Initialise SAM model<br/>+ predictor on GPU/CPU]
+    B3 --> B4[Bucket seeds into crops<br/>1024-px context]
+    B4 --> B5[Loop crops --> build prompts<br/>boxes, fg/bg points]
+    B5 --> B6[Run SAM decoder<br/> --> per-seed logits]
+    B6 --> B7[Convert logits --> probabilities<br/>+ core weighting]
+    B7 --> B8[Mosaic & smooth probabilities]
+    B8 --> B9[Combine with CHM & COST<br/>+ ground weighting]
+    B9 --> B10[Write canopy_index.tif]
+  end
+
+  %% ──────────────────── predict_stardist.py ────────────────────
+  subgraph predict_stardist.py
+    C1[Load pretrained<br/>StarDist-2D model] --> C2[Read canopy_index.tif]
+    C2 --> C3[Normalize index 1 - 99.8 % stretch]
+    C3 --> C4[Predict instance labels]
+    C4 --> C5[Write labels_pred.tif]
+    C4 --> C6[Create preview.png<br/>index + labels]
+  end
+
+  %% ────────────── data flow between scripts ──────────────
+  A8 -- tile rasters & seeds --> B1
+  B10 -- canopy_index.tif --> C2

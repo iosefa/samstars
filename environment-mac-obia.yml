@@ -1,0 +1,17 @@
+name: sam_star
+channels:
+  - apple
+  - conda-forge
+  - defaults
+dependencies:
+  - pdal
+  - gdal
+  - pip:
+      - pyforestscan
+      - numpy
+      - geopandas
+      - scikit-image
+      - tqdm
+      - scipy
+      - shap
+      - scikit-learn
