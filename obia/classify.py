@@ -92,8 +92,10 @@ def classify(segments, training_classes, acceptable_classes_gdf=None,
     :param kwargs: Additional keyword arguments passed to the classifier.
     :return: An object of ClassifiedImage containing the classified segments, confusion matrix, classification report, SHAP values, and classifier parameters.
     """
-    training_classes = _report_and_drop_nans(training_classes, "TRAINING")
-    segments          = _report_and_drop_nans(segments,          "SEGMENTS")
+    training_classes = _report_and_drop_nans(training_classes, "TRAINING") \
+        .reset_index(drop=True)
+    segments = _report_and_drop_nans(segments, "SEGMENTS") \
+        .reset_index(drop=True)
 
     shap_values = None
     x = training_classes.drop(['feature_class', 'geometry', 'segment_id'], axis=1)
