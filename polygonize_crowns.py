@@ -9,6 +9,8 @@ Polygonise every crowns.tif, merge, and keep only ‘real’ crowns.
 • final crowns must have median CHM ≥ 3m inside /mnt/d/chm_puuwaawaa_clip_nodata.tif
 """
 
+# todo: check and drop low NDVI values
+
 import argparse, pathlib, sys, concurrent.futures as cf
 from typing import Optional, List
 

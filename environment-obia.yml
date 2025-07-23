@@ -1,11 +1,11 @@
-name: sam_star
+name: mobia
 channels:
-  - apple
   - conda-forge
   - defaults
 dependencies:
   - pdal
   - gdal
+  - python=3.10
   - pip:
       - pyforestscan
       - numpy
@@ -15,3 +15,4 @@ dependencies:
       - scipy
       - shap
       - scikit-learn
+      - opencv-python
