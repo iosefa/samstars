@@ -65,6 +65,19 @@ class ClassifiedImage:
         _write_geotiff(self.classified, output_path, self.crs, self.transform)
 
 
+def _report_and_drop_nans(df, df_name):
+    non_geom = df.drop(columns=[df.geometry.name], errors='ignore')
+
+    nan_rows = non_geom.isna().any(axis=1)
+
+    if nan_rows.any():
+        cols_with_nan = non_geom.columns[non_geom.isna().any()].tolist()
+        print(f"[{df_name}] Dropping {nan_rows.sum()} rows with NaNs.")
+        print(f"[{df_name}] Columns containing NaNs: {cols_with_nan}")
+        return df.loc[~nan_rows].copy()
+    return df.copy()
+
+
 def classify(segments, training_classes, acceptable_classes_gdf=None,
              method='rf', test_size=0.2, compute_reports=False,
              compute_shap=False, sample_shap=False, **kwargs):
@@ -79,6 +92,9 @@ def classify(segments, training_classes, acceptable_classes_gdf=None,
     :param kwargs: Additional keyword arguments passed to the classifier.
     :return: An object of ClassifiedImage containing the classified segments, confusion matrix, classification report, SHAP values, and classifier parameters.
     """
+    training_classes = _report_and_drop_nans(training_classes, "TRAINING")
+    segments          = _report_and_drop_nans(segments,          "SEGMENTS")
+
     shap_values = None
     x = training_classes.drop(['feature_class', 'geometry', 'segment_id'], axis=1)
     y = training_classes['feature_class']
@@ -128,7 +144,6 @@ def classify(segments, training_classes, acceptable_classes_gdf=None,
     scaler.fit(x_pred)
     x_pred = scaler.transform(x_pred)
 
-    # Initialize predicted classes and prediction margins
     y_pred_all = np.full(x_pred.shape[0], None)
     prediction_margin = np.full(x_pred.shape[0], None)
 
@@ -136,26 +151,28 @@ def classify(segments, training_classes, acceptable_classes_gdf=None,
         acceptable_classes = None
 
         if acceptable_classes_gdf is not None:
-            # Check intersection with acceptable_classes_gdf
             intersections = acceptable_classes_gdf[acceptable_classes_gdf.intersects(segment.geometry)]
             if not intersections.empty:
-                # If there are intersections, get the list of acceptable classes
                 acceptable_classes = intersections.iloc[0]['acceptable_classes']
 
+        proba = classifier.predict_proba([x_pred[idx]])
+
         if acceptable_classes is not None:
-            # Predict the class and filter by acceptable classes
-            proba = classifier.predict_proba([x_pred[idx]])
             proba_df = pd.DataFrame(proba, columns=classifier.classes_)
             proba_df_filtered = proba_df[proba_df.columns.intersection(acceptable_classes)]
+
             y_pred_all[idx] = proba_df_filtered.idxmax(axis=1).values[0]
-            top2_probs = np.partition(proba_df_filtered.values[0], -2)[-2:]
-            prediction_margin[idx] = top2_probs[1] - top2_probs[0]
+            probs = proba_df_filtered.values[0]  # 1-D numpy array
         else:
-            # Predict the class without filtering
-            proba = classifier.predict_proba([x_pred[idx]])
             y_pred_all[idx] = classifier.predict([x_pred[idx]])[0]
-            top2_probs = np.partition(proba[0], -2)[-2:]
-            prediction_margin[idx] = top2_probs[1] - top2_probs[0]
+            probs = proba[0]
+
+        if probs.size >= 2:
+            k = probs.size - 2
+            top2 = np.partition(probs, k)[-2:]
+            prediction_margin[idx] = top2[1] - top2[0]
+        else:
+            prediction_margin[idx] = float(probs[0])
 
     params = classifier.get_params()
 
