@@ -10,64 +10,31 @@ from utils.utils import _write_geotiff
 
 
 class ClassifiedImage:
-    """
-    class ClassifiedImage:
-        Represents an image along with its classification results and associated properties.
+    """Container for the classifier outputs and metadata."""
 
-        classified: The classified image data.
-        confusion_matrix: The confusion matrix of the classification results.
-        report: A detailed report of the classification results.
-        params: The parameters used during classification.
-        shap_values: SHAP values for the classification results.
-        crs: Coordinate Reference System for the image.
-        transform: Affine transform parameters for the image.
-
-        def __init__(self, classified, confusion_matrix, report, shap_values, transform, crs, params):
-            Initializes a new instance of the ClassifiedImage class.
-
-            :param classified: The classified image data.
-            :param confusion_matrix: The confusion matrix of the classification results.
-            :param report: A detailed report of the classification results.
-            :param shap_values: SHAP values for the classification results.
-            :param transform: Affine transform parameters for the image.
-            :param crs: Coordinate Reference System for the image.
-            :param params: The parameters used during classification.
-            :return: None
-
-        def write_geotiff(self, output_path):
-            Writes the classified image to a GeoTIFF file.
-
-            :param output_path: Path where the GeoTIFF file will be saved.
-            :return: None
-    """
-    classified = None
-    confusion_matrix = None
-    report = None
-    params = None
-    shap_values = None
-    crs = None
-    transform = None
-
-    def __init__(self, classified, confusion_matrix, report, shap_values, transform, crs, params):
+    def __init__(self, classified, confusion_matrix, report, shap_values,
+                 transform, crs, params):
         self.classified = classified
-        self.report = report
         self.confusion_matrix = confusion_matrix
+        self.report = report
         self.shap_values = shap_values
-        self.params = params
         self.transform = transform
         self.crs = crs
+        self.params = params
 
-    def write_geotiff(self, output_path):
-        """
-        :param output_path: Path where the GeoTIFF file will be saved.
-        :return: None
-        """
+    # ------------------------------------------------------------------
+    def write_geotiff(self, output_path: str):
+        """Save *classified* to *output_path* as a GeoTIFF."""
         _write_geotiff(self.classified, output_path, self.crs, self.transform)
 
 
-def _report_and_drop_nans(df, df_name):
-    non_geom = df.drop(columns=[df.geometry.name], errors='ignore')
+# ----------------------------------------------------------------------
+# Helper utilities
+# ----------------------------------------------------------------------
 
+def _report_and_drop_nans(df: pd.DataFrame, df_name: str) -> pd.DataFrame:
+    """Prints how many rows/cols contain NaNs and returns a cleaned copy."""
+    non_geom = df.drop(columns=[df.geometry.name], errors="ignore")
     nan_rows = non_geom.isna().any(axis=1)
 
     if nan_rows.any():
@@ -78,97 +45,155 @@ def _report_and_drop_nans(df, df_name):
     return df.copy()
 
 
-def classify(segments, training_classes, acceptable_classes_gdf=None,
-             method='rf', test_size=0.2, compute_reports=False,
-             compute_shap=False, sample_shap=False, **kwargs):
+def _coerce_acceptable(value):
+    """Ensure *value* is returned as a *list[int]* (may be empty)."""
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return []
+    if isinstance(value, list):
+        return [int(v) for v in value if str(v).isdigit()]
+    # assume str / iterable of chars  -> split on comma
+    return [int(tok) for tok in str(value).split(',') if tok.strip().isdigit()]
+
+
+# ----------------------------------------------------------------------
+# Main entry point
+# ----------------------------------------------------------------------
+
+def classify(
+    segments: "gpd.GeoDataFrame",
+    training_classes: pd.DataFrame,
+    acceptable_classes_gdf: "gpd.GeoDataFrame | None" = None,
+    *,
+    method: str = "rf",
+    test_size: float = 0.2,
+    compute_reports: bool = False,
+    compute_shap: bool = False,
+    sample_shap: bool = False,
+    **kwargs,
+):
+    """Train an RF / MLP on *training_classes* and label *segments*.
+
+    Parameters
+    ----------
+    segments : GeoDataFrame
+        Segments to predict.  May or may not already include a *feature_class*.
+    training_classes : DataFrame
+        Training samples with columns `feature_class`, `geometry`, `segment_id` +
+        feature columns.
+    acceptable_classes_gdf : GeoDataFrame, optional
+        Polygons with an `acceptable_classes` column containing comma‑separated
+        or list‐like class codes.  Predictions falling inside a polygon are
+        filtered to these classes; if none overlap, we fall back to the raw
+        prediction.
+    method : {"rf", "mlp"}
+    test_size : float
+    compute_reports : bool
+    compute_shap : bool
+    sample_shap : bool
+    kwargs : dict
+        Extra keyword args forwarded to the sklearn classifier.
+
+    Returns
+    -------
+    ClassifiedImage
     """
-    :param segments: A GeoDataFrame containing the segments to be classified.
-    :param training_classes: A DataFrame containing the training data with 'feature_class' as the target variable.
-    :param acceptable_classes_gdf: A GeoDataFrame of acceptable classes with geometries to mask predictions. Default is None.
-    :param method: The machine learning method to use for classification ('rf' for RandomForest, 'mlp' for MLPClassifier). Default is 'rf'.
-    :param test_size: The proportion of the dataset to include in the test split. Default is 0.5.
-    :param compute_reports: Whether to compute and return classification reports and confusion matrix. Default is False.
-    :param compute_shap: Whether to compute and return SHAP values for feature importance. Default is False.
-    :param kwargs: Additional keyword arguments passed to the classifier.
-    :return: An object of ClassifiedImage containing the classified segments, confusion matrix, classification report, SHAP values, and classifier parameters.
-    """
-    training_classes = _report_and_drop_nans(training_classes, "TRAINING") \
-        .reset_index(drop=True)
-    segments = _report_and_drop_nans(segments, "SEGMENTS") \
-        .reset_index(drop=True)
 
-    shap_values = None
-    x = training_classes.drop(['feature_class', 'geometry', 'segment_id'], axis=1)
-    y = training_classes['feature_class']
+    # 1.  Clean NaNs and align indices -----------------------------------
+    training_classes = _report_and_drop_nans(training_classes, "TRAINING").reset_index(drop=True)
+    segments = _report_and_drop_nans(segments, "SEGMENTS").reset_index(drop=True)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=42)
+    # ------------------------------------------------------------------
+    # 2.  Train / test split and scaling
+    # ------------------------------------------------------------------
+    X = training_classes.drop(["feature_class", "geometry", "segment_id"], axis=1)
+    y = training_classes["feature_class"]
 
-    scaler = StandardScaler()
-    scaler.fit(x_train)
-    x_train = scaler.transform(x_train)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=42
+    )
 
-    scaler = StandardScaler()
-    scaler.fit(x_test)
-    x_test = scaler.transform(x_test)
+    scaler = StandardScaler().fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
 
-    if method == 'rf':
+    # ------------------------------------------------------------------
+    # 3.  Initialise and train classifier
+    # ------------------------------------------------------------------
+    if method == "rf":
         classifier = RandomForestClassifier(**kwargs)
-    elif method == 'mlp':
+    elif method == "mlp":
         classifier = MLPClassifier(**kwargs)
     else:
-        raise ValueError('An unsupported classification algorithm was requested')
+        raise ValueError("Unsupported classifier: choose 'rf' or 'mlp'.")
 
-    classifier.fit(x_train, y_train)
+    classifier.fit(X_train, y_train)
+
+    # ------------------------------------------------------------------
+    # 4.  Optional SHAP explanation
+    # ------------------------------------------------------------------
+    shap_values = None
     if compute_shap:
-        explainer = None
         if isinstance(classifier, RandomForestClassifier):
             explainer = shap.TreeExplainer(classifier)
-        elif isinstance(classifier, MLPClassifier):
-            if sample_shap:
-                x_train = shap.sample(x_train, 500, random_state=42)
-                explainer = shap.KernelExplainer(classifier.predict_proba, x_train)
-            else:
-                explainer = shap.KernelExplainer(classifier.predict_proba, x_train)
+            shap_values = explainer.shap_values(X_train)
+        else:  # MLP
+            bg = shap.sample(X_train, 500, random_state=42) if sample_shap else X_train
+            explainer = shap.KernelExplainer(classifier.predict_proba, bg)
+            shap_values = explainer.shap_values(bg)
 
-        shap_values = explainer.shap_values(x_train)
-
-    y_pred = classifier.predict(x_test)
-
-    report = None
-    cm = None
+    # ------------------------------------------------------------------
+    # 5.  Optional performance report
+    # ------------------------------------------------------------------
+    report = cm = None
     if compute_reports:
-        cm = confusion_matrix(y_test, y_pred)
-        report = classification_report(y_test, y_pred)
+        y_pred_test = classifier.predict(X_test)
+        cm = confusion_matrix(y_test, y_pred_test)
+        report = classification_report(y_test, y_pred_test)
 
-    x_pred = segments.drop(['feature_class', 'geometry', 'segment_id'], axis=1, errors='ignore')
-    scaler = StandardScaler()
+    # ------------------------------------------------------------------
+    # 6.  Predict for *segments*
+    # ------------------------------------------------------------------
+    X_pred = scaler.transform(
+        segments.drop(["feature_class", "geometry", "segment_id"], axis=1, errors="ignore")
+    )
 
-    scaler.fit(x_pred)
-    x_pred = scaler.transform(x_pred)
+    y_pred_all = np.empty(X_pred.shape[0], dtype=object)
+    prediction_margin = np.empty(X_pred.shape[0], dtype=float)
 
-    y_pred_all = np.full(x_pred.shape[0], None)
-    prediction_margin = np.full(x_pred.shape[0], None)
+    class_labels_int = classifier.classes_.astype(int)
 
     for idx, segment in segments.iterrows():
+        # --------------------------------------------------------------
+        # Retrieve acceptable classes for this segment (if any)
+        # --------------------------------------------------------------
         acceptable_classes = None
-
         if acceptable_classes_gdf is not None:
-            intersections = acceptable_classes_gdf[acceptable_classes_gdf.intersects(segment.geometry)]
-            if not intersections.empty:
-                acceptable_classes = intersections.iloc[0]['acceptable_classes']
+            intersects = acceptable_classes_gdf[acceptable_classes_gdf.intersects(segment.geometry)]
+            if not intersects.empty:
+                acceptable_classes = intersects.iloc[0]["acceptable_classes"]
 
-        proba = classifier.predict_proba([x_pred[idx]])
+        acceptable_list = _coerce_acceptable(acceptable_classes)
+        acceptable_set = set(acceptable_list)
 
-        if acceptable_classes is not None:
-            proba_df = pd.DataFrame(proba, columns=classifier.classes_)
-            proba_df_filtered = proba_df[proba_df.columns.intersection(acceptable_classes)]
+        # --------------------------------------------------------------
+        # Probability vector
+        # --------------------------------------------------------------
+        proba_vec = classifier.predict_proba([X_pred[idx]])[0]
+        proba_df = pd.DataFrame([proba_vec], columns=class_labels_int)
 
+        keep_cols = [c for c in proba_df.columns if c in acceptable_set] if acceptable_set else []
+
+        if keep_cols:
+            proba_df_filtered = proba_df[keep_cols]
             y_pred_all[idx] = proba_df_filtered.idxmax(axis=1).values[0]
-            probs = proba_df_filtered.values[0]  # 1-D numpy array
+            probs = proba_df_filtered.values[0]
         else:
-            y_pred_all[idx] = classifier.predict([x_pred[idx]])[0]
-            probs = proba[0]
+            y_pred_all[idx] = proba_df.idxmax(axis=1).values[0]
+            probs = proba_df.values[0]
 
+        # --------------------------------------------------------------
+        # Prediction margin (robust to length-1)
+        # --------------------------------------------------------------
         if probs.size >= 2:
             k = probs.size - 2
             top2 = np.partition(probs, k)[-2:]
@@ -176,19 +201,20 @@ def classify(segments, training_classes, acceptable_classes_gdf=None,
         else:
             prediction_margin[idx] = float(probs[0])
 
-    params = classifier.get_params()
+    # ------------------------------------------------------------------
+    # 7.  Assemble output GeoDataFrame
+    # ------------------------------------------------------------------
+    segments["predicted_class"] = y_pred_all
+    segments["prediction_margin"] = prediction_margin.astype(float)
 
-    segments['predicted_class'] = y_pred_all
-    segments['prediction_margin'] = prediction_margin
-
+    # Ensure numeric columns have proper dtypes
     for col in segments.columns:
         if col != segments.geometry.name:
             if np.issubdtype(segments[col].dtype, np.integer):
-                segments[col] = segments[col].astype(pd.Int64Dtype())
+                segments[col] = segments[col]
             elif np.issubdtype(segments[col].dtype, np.floating):
                 segments[col] = segments[col].astype(float)
 
-    segments['predicted_class'] = segments['predicted_class'].astype(pd.Int64Dtype())
-    segments['prediction_margin'] = segments['prediction_margin'].astype(float)
-
-    return ClassifiedImage(segments, cm, report, shap_values, None, None, params)
+    return ClassifiedImage(
+        segments, cm, report, shap_values, None, None, classifier.get_params()
+    )
