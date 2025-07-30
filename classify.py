@@ -7,7 +7,10 @@ from utils.utils import label_segments
 
 regions_path = "regions.gpkg"
 training_path = "trainings_filtered.gpkg"
-objects_path = "objects.gpkg"
+# training_path = "training_lhs.gpkg"
+# objects_path = "objects.gpkg"
+# objects_path = "objects_pre_match.gpkg"
+objects_path = "objects_post_match_spec.gpkg"
 
 training_points = gpd.read_file(training_path)
 training_points["class"] = (
@@ -57,24 +60,44 @@ print(f"Found {len(mixed)} mixed segments")
 
 columns_tr = [
     'segment_id',
+    'b0_mean',
+    'b1_mean',
     'b2_mean',
+    'b3_mean',
+    'b4_mean',
     'b5_mean',
     'b6_mean',
     'b7_mean',
-    'b1_skewness',
-    'b0_variance',
-    'b3_max',
-    'b5_max',
     'b0_min',
-    'b0_kurtosis',
+    'b1_min',
+    'b2_min',
+    'b3_min',
+    'b4_min',
+    'b5_min',
+    'b6_min',
+    'b7_min',
+    'b0_max',
+    'b1_max',
+    'b2_max',
+    'b3_max',
+    'b4_max',
+    'b5_max',
+    'b6_max',
+    'b7_max',
+    # 'b0_kurtosis',
     'b0_energy',
     'b0_contrast',
     'b0_dissimilarity',
-    'pai',
-    'fhd',
-    'ch',
-    'mean_intensity',
-    'variance_intensity',
+    'b0_ASM',
+    'b0_correlation',
+    'b0_homogeneity',
+    # 'b0_skewness',
+    # 'b0_variance',
+    # 'pai',
+    # 'fhd',
+    # 'ch',
+    # 'mean_intensity',
+    # 'variance_intensity',
     'feature_class',
     'geometry'
 ]
@@ -82,24 +105,44 @@ tr = training[columns_tr].copy()
 
 columns_ob = [
     'segment_id',
+    'b0_mean',
+    'b1_mean',
     'b2_mean',
+    'b3_mean',
+    'b4_mean',
     'b5_mean',
     'b6_mean',
     'b7_mean',
-    'b1_skewness',
-    'b0_variance',
-    'b3_max',
-    'b5_max',
     'b0_min',
-    'b0_kurtosis',
+    'b1_min',
+    'b2_min',
+    'b3_min',
+    'b4_min',
+    'b5_min',
+    'b6_min',
+    'b7_min',
+    'b0_max',
+    'b1_max',
+    'b2_max',
+    'b3_max',
+    'b4_max',
+    'b5_max',
+    'b6_max',
+    'b7_max',
+    # 'b0_kurtosis',
     'b0_energy',
     'b0_contrast',
     'b0_dissimilarity',
-    'pai',
-    'fhd',
-    'ch',
-    'mean_intensity',
-    'variance_intensity',
+    'b0_ASM',
+    'b0_correlation',
+    'b0_homogeneity',
+    # 'b0_skewness',
+    # 'b0_variance',
+    # 'pai',
+    # 'fhd',
+    # 'ch',
+    # 'mean_intensity',
+    # 'variance_intensity',
     'geometry'
 ]
 
@@ -108,10 +151,10 @@ objects = objects[columns_ob]
 print("training", tr.shape)
 
 classified_mlp = classify(
-    objects, tr, acceptable_classes_gdf=regions, test_size=0.2, compute_reports=True,
+    objects, tr, acceptable_classes_gdf=regions, test_size=0.3, compute_reports=True,
     method='mlp', compute_shap=False, sample_shap=False,
     # hidden_layer_sizes=(200, 150, 100,),
-    hidden_layer_sizes=(256, 128, 64, 32),
+    hidden_layer_sizes=(128, 64, 32),
     # learning_rate_init=0.001,
     # learning_rate='adaptive',
     # solver='lbfgs',
@@ -119,9 +162,9 @@ classified_mlp = classify(
     max_iter=10000
 )
 
-classified_mlp.classified.to_file(
-    "classified_new.gpkg"
-)
+# classified_mlp.classified.to_file(
+#     "classified_new.gpkg"
+# )
 
 print(classified_mlp.confusion_matrix)
 print(classified_mlp.report)

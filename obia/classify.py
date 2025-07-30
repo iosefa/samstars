@@ -6,7 +6,8 @@ from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
-from utils.utils import _write_geotiff
+from utils.utils import _write_geotiff, label_segments
+import geopandas as gpd
 
 
 class ClassifiedImage:
@@ -97,6 +98,71 @@ def classify(
     -------
     ClassifiedImage
     """
+    ######### temp delete ###########
+    # # objects_path = "objects_pre_match.gpkg"
+    # objects_path = "objects_post_match_spec.gpkg"
+    # objects = gpd.read_file(objects_path)
+    #
+    # validation = gpd.read_file("trainings_filtered.gpkg")
+    # rem = gpd.read_file("training_lhs.gpkg")
+    # training_points = (
+    #     gpd.sjoin(
+    #         validation,  # left
+    #         rem[["geometry"]],  # right
+    #         how="left",
+    #         predicate="intersects"  # for points: same coordinates counts as hit
+    #     )
+    #     .query("index_right.isna()")  # keep only rows with no match
+    #     .drop(columns="index_right")  # tidy-up
+    # )
+    # training_points["class"] = (
+    #     pd.to_numeric(training_points["class"], errors="coerce")
+    #     .astype("Int64")
+    # )
+    # training_points = training_points.dropna(subset=["class"])
+    #
+    # training_points = training_points[["class", "geometry"]]
+    # training_points["feature_class"] = training_points["class"]
+    # training, mixed = label_segments(objects, training_points)
+    #
+    # columns_tr = [
+    #     'segment_id',
+    #     'b0_mean',
+    #     'b1_mean',
+    #     'b2_mean',
+    #     'b3_mean',
+    #     'b4_mean',
+    #     'b5_mean',
+    #     'b6_mean',
+    #     'b7_mean',
+    #     'b0_min',
+    #     'b1_min',
+    #     'b2_min',
+    #     'b3_min',
+    #     'b4_min',
+    #     'b5_min',
+    #     'b6_min',
+    #     'b7_min',
+    #     'b0_max',
+    #     'b1_max',
+    #     'b2_max',
+    #     'b3_max',
+    #     'b4_max',
+    #     'b5_max',
+    #     'b6_max',
+    #     'b7_max',
+    #     'b0_energy',
+    #     'b0_contrast',
+    #     'b0_dissimilarity',
+    #     'b0_ASM',
+    #     'b0_correlation',
+    #     'b0_homogeneity',
+    #     'feature_class',
+    #     'geometry'
+    # ]
+    # tr = training[columns_tr].copy()
+    # val = _report_and_drop_nans(tr, "VAL").reset_index(drop=True)
+    ########### temp ###########
 
     # 1.  Clean NaNs and align indices -----------------------------------
     training_classes = _report_and_drop_nans(training_classes, "TRAINING").reset_index(drop=True)
@@ -115,6 +181,28 @@ def classify(
     scaler = StandardScaler().fit(X_train)
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
+    # ────────── 3) append *val* to the test set (if any rows exist) ────
+    # if not val.empty:
+    #     X_val = val.drop(["feature_class", "geometry", "segment_id"], axis=1)
+    #     y_val = val["feature_class"]
+    #
+    #     # scale with the *already-fitted* scaler (defined later)
+    #     scaler = StandardScaler().fit(X_train)
+    #     X_train = scaler.transform(X_train)  # as before
+    #     X_test = scaler.transform(X_test)  # as before
+    #     X_val = scaler.transform(X_val)  # ← new
+    #
+    #     # stack arrays / series
+    #     X_test = np.vstack([X_test, X_val])  # ndarray
+    #     y_test = pd.concat([y_test.reset_index(drop=True),
+    #                         y_val.reset_index(drop=True)],
+    #                        ignore_index=True)
+    # else:
+    #     print("No validation set found.")
+    #     scaler = StandardScaler().fit(X_train)
+    #     X_train = scaler.transform(X_train)
+    #     X_test = scaler.transform(X_test)
+    #     print("No validation set found.")
 
     # ------------------------------------------------------------------
     # 3.  Initialise and train classifier
@@ -215,6 +303,9 @@ def classify(
             elif np.issubdtype(segments[col].dtype, np.floating):
                 segments[col] = segments[col].astype(float)
 
-    return ClassifiedImage(
+    result = ClassifiedImage(
         segments, cm, report, shap_values, None, None, classifier.get_params()
     )
+    result.model_ = classifier
+    result.scaler_ = scaler
+    return result
