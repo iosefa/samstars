@@ -1,0 +1,55 @@
+{
+  "wv3_raster": "/Users/iosefa/Dropbox/MergedImage2.tif",
+  "chm_raster": "/Users/iosefa/Dropbox/chm_full.tif",
+  "objects": "objects.gpkg",
+  "wv3_bands": [
+    5,
+    3,
+    2
+  ],
+  "pad_m": 5.0,
+  "outputs": [
+    {
+      "class": 1,
+      "segment_id": 154789,
+      "outline_gpkg": "six_class_chips/class_1_outline.gpkg",
+      "chip_tif_wv3": "six_class_chips/class_1.tif",
+      "chip_tif_chm": "six_class_chips/class_1_chm.tif"
+    },
+    {
+      "class": 2,
+      "segment_id": 133906,
+      "outline_gpkg": "six_class_chips/class_2_outline.gpkg",
+      "chip_tif_wv3": "six_class_chips/class_2.tif",
+      "chip_tif_chm": "six_class_chips/class_2_chm.tif"
+    },
+    {
+      "class": 3,
+      "segment_id": 111325,
+      "outline_gpkg": "six_class_chips/class_3_outline.gpkg",
+      "chip_tif_wv3": "six_class_chips/class_3.tif",
+      "chip_tif_chm": "six_class_chips/class_3_chm.tif"
+    },
+    {
+      "class": 4,
+      "segment_id": 84270,
+      "outline_gpkg": "six_class_chips/class_4_outline.gpkg",
+      "chip_tif_wv3": "six_class_chips/class_4.tif",
+      "chip_tif_chm": "six_class_chips/class_4_chm.tif"
+    },
+    {
+      "class": 5,
+      "segment_id": 33578,
+      "outline_gpkg": "six_class_chips/class_5_outline.gpkg",
+      "chip_tif_wv3": "six_class_chips/class_5.tif",
+      "chip_tif_chm": "six_class_chips/class_5_chm.tif"
+    },
+    {
+      "class": 6,
+      "segment_id": 112807,
+      "outline_gpkg": "six_class_chips/class_6_outline.gpkg",
+      "chip_tif_wv3": "six_class_chips/class_6.tif",
+      "chip_tif_chm": "six_class_chips/class_6_chm.tif"
+    }
+  ]
+}

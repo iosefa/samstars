@@ -16,3 +16,4 @@ dependencies:
       - shap
       - scikit-learn
       - opencv-python
+      - xgboost
