@@ -4,11 +4,12 @@ Note: Manuscript-related code, figures, notebooks, and results have moved to `ma
 
 ## Setup
 
-### Create Conda Env and Install Dependencies
+### Create Environment (Algorithm)
 
 ```bash
-conda env create -f environment-wsl.yml -n sam_star
-conda activate sam_star
+# Example with pip
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ## Step 1: Create tiles

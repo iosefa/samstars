@@ -1,0 +1,17 @@
+# Core algorithm dependencies (minimal set)
+# Pin as needed in your environment manager
+numpy
+scipy
+scikit-image
+torch
+torchvision
+segment-anything
+stardist
+opencv-python-headless
+rasterio
+geopandas
+shapely
+fiona
+tqdm
+rich
+matplotlib
