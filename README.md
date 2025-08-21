@@ -1,5 +1,7 @@
 # sam
 
+Note: Manuscript-related code, figures, notebooks, and results have moved to `manuscript/`. See `manuscript/README.md` for details and usage.
+
 ## Setup
 
 ### Create Conda Env and Install Dependencies
