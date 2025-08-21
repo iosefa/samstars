@@ -1,0 +1,23 @@
+name: sam-algorithm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - scipy
+  - scikit-image
+  - pytorch
+  - torchvision
+  - rasterio
+  - geopandas
+  - shapely
+  - fiona
+  - opencv
+  - tifffile
+  - pyogrio
+  - tqdm
+  - rich
+  - pip
+  - pip:
+      - segment-anything

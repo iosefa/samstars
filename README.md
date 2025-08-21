@@ -7,9 +7,8 @@ Note: Manuscript-related code, figures, notebooks, and results have moved to `ma
 ### Create Environment (Algorithm)
 
 ```bash
-# Example with pip
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+conda env create -f environment-algorithm.yml
+conda activate sam-algorithm
 ```
 
 ## Step 1: Create tiles

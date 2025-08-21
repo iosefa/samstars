@@ -18,6 +18,13 @@ This folder contains all manuscript-related code, assets, and results separated 
 
 ## Usage
 
+- Create env (recommended):
+
+```bash
+conda env create -f environment.yml
+conda activate sam-manuscript
+```
+
 - Generate figures: run `make figures` from this folder. The Makefile sets `PYTHONPATH` to the repository root so imports like `import sam`, `import obia`, and `import utils` work.
 - Run a single figure: `cd figures/scripts && PYTHONPATH=..\.. python figure2.py`.
 - Notebooks: open from `notebooks/` with your Python environment.
