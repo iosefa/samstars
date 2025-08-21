@@ -274,6 +274,10 @@ def local_cover_fraction(geom):
     return float(buf.intersection(val_union_geom).area) / buffer_area
 
 validation["lcc_15m"] = validation.geometry.apply(local_cover_fraction)
+
+thr_med = float(validation["lcc_15m"].dropna().median())
+print(f"\n[Density split] Median local canopy density within {DENSITY_BUFFER_M:.0f} m = {thr_med:.3f}")
+
 validation["density_class_2"] = pd.qcut(validation["lcc_15m"], q=2, labels=["low","high"])
 
 dens_stats = (validation.groupby("density_class_2", observed=False)["iou_best_from_pred"]
@@ -286,7 +290,7 @@ dens_stats.to_csv("iou_by_densityclass_2bins.csv")
 
 # Density plot (2 bins)
 fig, ax = plt.subplots(figsize=(4.5, 5))
-dens_labels = ["low","high"]
+dens_labels = ["low", "high"]
 groups = [validation.loc[validation["density_class_2"] == lbl, "iou_best_from_pred"].values for lbl in dens_labels]
 v = ax.violinplot(groups, positions=range(1,3), widths=0.8, showmeans=False, showmedians=False, showextrema=False)
 for pc in v["bodies"]:

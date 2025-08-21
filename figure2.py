@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Figure 2 — perfectly uniform square tiles (centered) + tighter columns.
+Figure 2 — uniform square tiles (centered), tight columns, shared CHM colorbar,
+and a single height scale on the first point-cloud panel.
 
 Rows:
   0: Titles (Species on top, class below)
-  1: Point cloud (HAG vs X)
+  1: Point Cloud (HAG vs X)  ← left-most panel shows y-axis (0,10,20 m)
   2: RGB (WV3 5/3/2 or 1/2/3)
-  3: CHM
-  4: Ground photo
+  3: CHM (shared vmin/vmax across all; single colorbar)
+  4: Ground Photo
 
-All RGB and CHM chips are center-square-cropped, then center-cropped AGAIN so
+All RGB and CHM chips are center-square-cropped, then center-cropped so
 every tile in the row has the exact same pixel side length (min across classes).
-Tiles are rendered WITHOUT geo extents so their on-page size is identical.
+Tiles render WITHOUT geo extents so their on-page size is identical.
 """
 
 from pathlib import Path
@@ -20,6 +21,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as mgrid
 import matplotlib.patheffects as pe
+import matplotlib as mpl
 import rasterio
 from rasterio.mask import mask as rio_mask
 from rasterio.enums import Resampling
@@ -58,7 +60,7 @@ EPT_JSON = "/Users/iosefa/Downloads/ept6635/ept.json"
 EPT_SRS  = "EPSG:6635"
 PAD_M    = 5.0
 
-# Typography
+# Typography — publication-friendly
 plt.rcParams.update({
     "font.size": 14,
     "axes.titlesize": 18,
@@ -102,7 +104,7 @@ def square_pad(geom, pad_m):
     return box(minx - pad_m, miny - pad_m, maxx + pad_m, maxy + pad_m)
 
 def center_square_crop(arr):
-    """Center-crop to square (returns array only)."""
+    """Center-crop to square (returns array only), preserving center."""
     if arr.ndim == 2:
         H, W = arr.shape
     else:
@@ -120,7 +122,7 @@ def center_crop_to_side(arr, target_side):
         H, W = arr.shape
     else:
         H, W, _ = arr.shape
-    # both H==W by construction; just crop equally around center
+    # H == W by construction; crop equally around center
     cut = max(0, H - target_side)
     r0 = cut // 2
     r1 = r0 + target_side
@@ -147,18 +149,25 @@ def load_rgb_chip_or_full(current_cls, geom, objects_crs):
         return pct_stretch(img)
 
 def load_chm_chip_or_full(current_cls, geom, objects_crs):
-    """Return stretched float CHM HxW (no extent)."""
+    """
+    Return CHM in raw meters as float32 (HxW), no stretching.
+    """
     chip = CHIPS_DIR / f"class_{current_cls}_chm.tif"
     if chip.exists():
         with rasterio.open(chip) as src:
             a = src.read(1, out_dtype="float32", masked=True)
-            return pct_stretch(np.ma.filled(a, np.nan))
+            return np.ma.filled(a, np.nan).astype("float32", copy=False)
+    # fallback: clip from full raster
     with rasterio.open(FULL_CHM) as src:
         geom_r = reproject_geom(geom, objects_crs, src.crs)
         pad = square_pad(geom_r, PAD_M)
         out, _ = rio_mask(src, [pad.__geo_interface__], crop=True, indexes=1, filled=False)
         a = np.ma.filled(out[0], np.nan).astype("float32", copy=False)
-        return pct_stretch(a)
+        return a
+
+def nice_ceil(x, step=5.0):
+    if not np.isfinite(x): return step
+    return float(np.ceil(x / step) * step)
 
 def load_jpeg(path: Path):
     try:
@@ -188,10 +197,8 @@ for cls in [1, 2, 3, 4, 5, 6]:
 n_cols = len(classes)
 
 # ── preload → square-crop → unify side per row ───────────────────────────────
-rgb_list = []
-chm_list = []
-rgb_sides = []
-chm_sides = []
+rgb_list, chm_list = [], []
+rgb_sides, chm_sides = [], []
 
 for current_cls, geom in zip(classes, geoms):
     rgb = load_rgb_chip_or_full(current_cls, geom, objects_crs)
@@ -207,25 +214,34 @@ if rgb_target is not None:
 if chm_target is not None:
     chm_list = [center_crop_to_side(a, chm_target) for a in chm_list]
 
-# ── layout (tighter columns) ─────────────────────────────────────────────────
+# CHM shared normalization (single colorbar)
+# chm_vmin = 0.0
+# chm_vmax = nice_ceil(np.nanmax(chm_max_vals), step=5.0) if chm_max_vals else 20.0
+# norm_chm = mpl.colors.Normalize(vmin=chm_vmin, vmax=chm_vmax)
+# cmap_chm = mpl.cm.get_cmap("viridis")
+
+# ── layout (tight columns) ───────────────────────────────────────────────────
 fig = plt.figure(figsize=(3.8 * n_cols, 12.0))
 gs = mgrid.GridSpec(
     nrows=5, ncols=n_cols + 1,            # +1 gutter
     figure=fig,
     width_ratios=[0.02] + [1] * n_cols,
     height_ratios=[0.15, 1, 1, 1, 1],
-    wspace=0.0015, hspace=0.03            # ← tighter columns
+    wspace=0.0015, hspace=0.03
 )
 
-# gutter labels (aligned to subplot edge)
+# gutter labels
 for r, label in enumerate(ROW_LABELS, start=1):
+    if label in ["Point Cloud", "CHM"]:
+        continue
     ax_lbl = fig.add_subplot(gs[r, 0]); ax_lbl.set_axis_off()
-    ax_lbl.text(
-        0.98, 0.5, label, rotation=90, va="center", ha="right",
-        fontsize=ROW_LABEL_FONT, color="#333",
-        transform=ax_lbl.transAxes,
-        path_effects=[pe.withStroke(linewidth=2, foreground="white")]
-    )
+    ax_lbl.text(0.98, 0.5, label, rotation=90, va="center", ha="right",
+                fontsize=ROW_LABEL_FONT, color="#333",
+                transform=ax_lbl.transAxes,
+                path_effects=[pe.withStroke(linewidth=2, foreground="white")])
+
+# Keep handles to CHM axes for colorbar placement
+chm_axes = []
 
 # ── render columns ───────────────────────────────────────────────────────────
 for c, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list, chm_list), start=1):
@@ -234,8 +250,8 @@ for c, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list, 
     ax_title.text(0.5, 0.5, f"{SPECIES[cls-1]}\n{CLASSES[cls-1]}",
                   ha="center", va="center", fontsize=18, linespacing=1.0)
 
-    # Point cloud (square tile)
-    ax_pc = fig.add_subplot(gs[1, c]); ax_pc.set_axis_off(); ax_pc.set_box_aspect(1)
+    # Row 1: Point Cloud
+    ax_pc = fig.add_subplot(gs[1, c]); ax_pc.set_box_aspect(1)
     try:
         b = ([geom.bounds[0], geom.bounds[2]],[geom.bounds[1], geom.bounds[3]])
         pcs = read_lidar(EPT_JSON, EPT_SRS, b, crop_poly=True, poly=geom.wkt, hag=True)
@@ -252,15 +268,48 @@ for c, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list, 
         ax_pc.text(0.5, 0.5, f"PC error\n{e}", ha="center", va="center",
                    fontsize=12, color="#A33", transform=ax_pc.transAxes)
 
-    # RGB (now guaranteed same pixel size; render without extent)
+    # Show a single height scale on the FIRST column only
+    if c == 1:
+        # y-axis as scale bar
+        ax_pc.set_ylabel("Point Cloud Height (m)")
+        ax_pc.set_yticks([0, 10, 20])
+        ax_pc.tick_params(axis='y', length=4, width=1.2)
+        # hide x ticks; keep frame subtle
+        ax_pc.set_xticks([])
+        for spine in ["top", "right", "bottom"]:
+            ax_pc.spines[spine].set_visible(False)
+        ax_pc.spines["left"].set_linewidth(1.2)
+    else:
+        ax_pc.set_axis_off()
+
+    # Row 2: RGB
     ax_rgb = fig.add_subplot(gs[2, c]); ax_rgb.set_axis_off(); ax_rgb.set_box_aspect(1)
     ax_rgb.imshow(rgb_img, interpolation="nearest")
 
-    # CHM (same)
-    ax_chm = fig.add_subplot(gs[3, c]); ax_chm.set_axis_off(); ax_chm.set_box_aspect(1)
-    ax_chm.imshow(chm_img, cmap="viridis", interpolation="nearest")
+    # Row 3: CHM (shared norm, remember axes)
+    chm_vmin, chm_vmax = 0, 20
+    # CHM row
+    ax_chm = fig.add_subplot(gs[3, c])
+    ax_chm.set_axis_off()
+    ax_chm.set_box_aspect(1)
+    im = ax_chm.imshow(chm_img, cmap="viridis", interpolation="nearest",
+                       vmin=chm_vmin, vmax=chm_vmax)
 
-    # Ground photo (keep square)
+    # add colorbar only once, on the first column
+    if c == 1:
+        cbar = fig.colorbar(im, ax=ax_chm, orientation="vertical",
+                            fraction=0.05, pad=0.02)
+        cbar.set_label("CHM (m)", fontsize=16)
+        cbar.ax.tick_params(labelsize=12)
+        # move it to the left side
+        cbar.ax.yaxis.set_ticks_position('left')
+        cbar.ax.yaxis.set_label_position('left')
+
+        # shift the colorbar leftwards so it hugs the subplot
+        pos = cbar.ax.get_position()
+        cbar.ax.set_position([pos.x0 - 0.105, pos.y0, pos.width, pos.height])
+
+    # Row 4: Photo
     ax_ph = fig.add_subplot(gs[4, c]); ax_ph.set_axis_off(); ax_ph.set_box_aspect(1)
     photo = IMG_BY_CLASS.get(cls, "")
     arr = None
