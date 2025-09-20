@@ -95,7 +95,20 @@ def classify(
 
     # 3. initialise classifier ----------------------------------------
     if method == "rf":
-        clf = RandomForestClassifier(**kwargs)
+        defaults = dict(
+            n_estimators=500,  # strong baseline
+            max_depth=None,  # let trees grow; control with min_samples_leaf
+            min_samples_split=2,
+            min_samples_leaf=2,  # mild regularization vs leaf=1
+            max_features="sqrt",
+            bootstrap=True,
+            oob_score=False,  # set True if you want OOB metrics
+            class_weight="balanced_subsample",  # handles class imbalance
+            n_jobs=-1,
+            random_state=42,
+        )
+        defaults.update(kwargs)
+        clf = RandomForestClassifier(**defaults)
 
     elif method == "xgb":
         defaults = dict(
@@ -113,7 +126,24 @@ def classify(
         clf = XGBClassifier(**defaults)
 
     elif method == "mlp":
-        clf = MLPClassifier(**kwargs)
+        print("METHOD = MLP")
+        defaults = dict(
+            hidden_layer_sizes=(64, 32),  # compact, effective
+            activation="relu",
+            solver="adam",
+            alpha=1e-4,  # L2 regularization
+            learning_rate_init=1e-3,
+            batch_size=256,
+            max_iter=300,
+            early_stopping=True,
+            validation_fraction=0.1,
+            n_iter_no_change=20,
+            shuffle=True,
+            random_state=42,
+            verbose=False,
+        )
+        defaults.update(kwargs)
+        clf = MLPClassifier(**defaults)
 
     else:
         raise ValueError("method must be 'rf', 'xgb', or 'mlp'.")
