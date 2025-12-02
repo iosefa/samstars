@@ -48,7 +48,7 @@ HEIGHT_FIELD_NAME  = "ch"
 
 # Metrics params
 IOU_THR = 0.50
-DENSITY_BUFFER_M = 10.0                            # match Methods text (10 m)
+DENSITY_BUFFER_M = 15.0                            # match Methods text (15 m)
 HEIGHT_SPLIT_M   = 10.0                            # two height classes split here
 
 # Set C semantic PQ params

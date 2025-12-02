@@ -18,19 +18,21 @@ from matplotlib.lines import Line2D
 # ─────────────────────────────────────────────────────────────────────────────
 # Inputs
 # ─────────────────────────────────────────────────────────────────────────────
-RGB_TIF          = "rgb.tif"
-EXTENT_GPKG      = "extent.gpkg"
-IOU_DIR          = Path("IoU")
-BIG_ISLAND_GPKG  = "hawaii.gpkg"
+RGB_TIF          = "manuscript/data/ahupuaa/rgb.tif"
+EXTENT_GPKG      = "manuscript/data/ahupuaa/extent.gpkg"
+IOU_DIR          = Path("manuscript/data/set_a")
+BIG_ISLAND_GPKG  = "manuscript/data/hawaii.gpkg"
 
-SETC_EXTENT_GPKG = "area51__ss1_extent.gpkg"
-SETC_BLOWUP_TIF  = Path("Set_C_blowup.tif")
+SETC_EXTENT_GPKG = "manuscript/data/set_c/set_c_extent.gpkg"
+SETC_BLOWUP_TIF  = Path("manuscript/data/set_c/set_c_detail.tif")
 
 # NEW: Set B (ground photos) points
-TRAININGS_GPKG   = "trainings_filtered.gpkg"
+TRAININGS_GPKG   = "manuscript/data/set_b/trainings_filtered.gpkg"
 
 TARGET_MAX_DIM    = 4000
-OUT_FIG           = "figure1.png"
+OUT_DIR = Path(__file__).resolve().parents[1] / "output"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+OUT_FIG = OUT_DIR / "figure1.png"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Typography
@@ -265,7 +267,6 @@ fig = plt.figure(figsize=(15,10))
 ax_map = fig.add_axes([0.04,0.04,0.58,0.92])
 l,r,b,t = array_extent(out_transform,rgba_hwc.shape[1],rgba_hwc.shape[0])
 ax_map.imshow(rgba_hwc,extent=(l,r,b,t),origin="upper")
-extent.boundary.plot(ax=ax_map,color="black",linewidth=MAP_OUTLINE_LW,zorder=3)
 
 
 # --- Set B points (ground photos) ---
@@ -295,7 +296,7 @@ if not boxes_gdf.empty:
 
 # --- Set C extent + label (always TOP) ---
 if setc_extent_gdf is not None and not setc_extent_gdf.empty:
-    setc_extent_gdf.boundary.plot(ax=ax_map, color="red",
+    setc_extent_gdf.boundary.plot(ax=ax_map, color="#2C7FB8",
                                   linewidth=SETC_BOX_LW, linestyle="--",
                                   zorder=7)
     minx, miny, maxx, maxy = setc_extent_gdf.total_bounds
@@ -308,16 +309,15 @@ if setc_extent_gdf is not None and not setc_extent_gdf.empty:
 
 # --- Legend (order: A → B → C) ---
 handles=[
-    Line2D([0],[0],color="black",lw=LEGEND_HANDLE_LW,label="Pu‘u Wa‘awa‘a"),
-    Line2D([0],[0],color="red",lw=LEGEND_HANDLE_LW,label="Set A Segmentation Plots"),
+    Line2D([0],[0],color="red",lw=LEGEND_HANDLE_LW,label="Segmentation Plots (Set A)"),
 ]
 if (setb_points is not None) and (not setb_points.empty):
     handles.append(Line2D([0],[0], marker='o', linestyle='None',
                           markersize=8, markerfacecolor="#FFD24D",
                           markeredgecolor="black", markeredgewidth=0.8,
-                          label="Set B Species Inventory"))
-handles.append(Line2D([0],[0],color="red",lw=LEGEND_HANDLE_LW,
-                      linestyle="--",label="Set C Integrated Plot"))
+                          label="Species Inventory (Set B)"))
+handles.append(Line2D([0],[0],color="#2C7FB8",lw=LEGEND_HANDLE_LW,
+                      linestyle="--",label="Integrated Plot (Set C)"))
 
 ax_map.legend(
     handles=handles,loc="upper right",
@@ -334,13 +334,33 @@ if Path(BIG_ISLAND_GPKG).exists():
         iax.set_facecolor("#E9F4FF")
 
         big_island.boundary.plot(ax=iax, color="black", linewidth=1.1)
-        extent.boundary.plot(ax=iax, color="#222", linewidth=1.3)
+        # Shade Pu‘u Wa‘awa‘a extent polygon with a subtle fill in the inset
+        extent.plot(ax=iax, facecolor="#FDE2E4", edgecolor="#222", linewidth=1.0, alpha=0.85, zorder=2)
 
-        ex_ct = union_all_safe(extent).centroid
-        iax.plot(ex_ct.x, ex_ct.y, marker="*", markersize=10, color="#D81B60")
+        # Label Pu‘u Wa‘awa‘a above the polygon with a leader line to the extent
+        ex_union = union_all_safe(extent)
+        ex_ct = ex_union.centroid
+        # Compute a y position slightly above the extent, and center horizontally within the inset
+        minx, miny, maxx, maxy = extent.total_bounds
+        x0, x1 = iax.get_xlim(); y0, y1 = iax.get_ylim()
+        x_span = max(1e-6, (x1 - x0)); y_span = max(1e-6, (y1 - y0))
+        lbl_x = x0 + 0.5 * x_span  # centered horizontally in inset
+        lbl_y = maxy + 0.05 * y_span
+        # keep inside top of inset
+        if lbl_y > y1 - 0.02 * y_span:
+            lbl_y = y1 - 0.02 * y_span
+        iax.annotate(
+            "Pu‘u Wa‘awa‘a",
+            xy=(ex_ct.x, ex_ct.y), xycoords='data',
+            xytext=(lbl_x, lbl_y), textcoords='data',
+            ha='center', va='bottom', fontsize=INSET_ISLAND_TITLE_FONT,
+            bbox=dict(boxstyle='round,pad=0.25', facecolor='white', edgecolor='black', alpha=0.95),
+            arrowprops=dict(arrowstyle='-', color='black', linewidth=1.1, shrinkA=0, shrinkB=0)
+        )
 
-        iax.text(0.5, 0.5, "Hawai‘i", transform=iax.transAxes,
-                 ha="center", va="center", fontsize=INSET_ISLAND_TITLE_FONT,
+        # Place Hawai‘i label at bottom-right inside the inset bbox
+        iax.text(0.98, 0.02, "Hawai‘i", transform=iax.transAxes,
+                 ha="right", va="bottom", fontsize=INSET_ISLAND_TITLE_FONT,
                  color="#333", path_effects=[pe.withStroke(linewidth=2.5, foreground="white")])
 
         iax.set_xticks([]); iax.set_yticks([])
@@ -360,7 +380,7 @@ ax_zoom.axis("off")
 
 # Title inside
 ax_zoom.text(0.5, 0.99, "Set C (detail)", ha="center", va="top",
-             transform=ax_zoom.transAxes, fontsize=SUBPLOT_TITLE_FONT+2, color="white",
+             transform=ax_zoom.transAxes, fontsize=SUBPLOT_TITLE_FONT+6, color="white",
              path_effects=[pe.withStroke(linewidth=3.2, foreground="black")], zorder=50)
 
 # thin frame

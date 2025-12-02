@@ -1,0 +1,47 @@
+{
+  "class_map": {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5
+  },
+  "num_classes": 6,
+  "img_size": 256,
+  "max_points": 2048,
+  "band_selection_9": [
+    4,
+    2,
+    1
+  ],
+  "band_selection_8": [
+    6,
+    4,
+    2
+  ],
+  "freeze_resnet": false,
+  "architecture": "resnet18+pointMLP_dualpool",
+  "weights": "IMAGENET1K_V1",
+  "class_weights": [
+    0.7087258267451544,
+    0.7933062752044527,
+    1.3696158072801563,
+    0.8586789526711893,
+    0.9168771694396289,
+    1.3527959640328562
+  ],
+  "val_split": 0.1,
+  "random_seed": 42,
+  "points_variable_length": true,
+  "log_priors": [
+    -1.51170054696763,
+    -1.6243315877140447,
+    -2.1696614183983107,
+    -1.7034326354280118,
+    -1.7689356556569336,
+    -2.1573264602404665
+  ],
+  "label_smoothing": 0.05,
+  "img_size_note": "WV3 chips normalized [2,98] then ImageNet mean/std"
+}

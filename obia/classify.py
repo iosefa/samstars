@@ -56,6 +56,7 @@ def classify(
     compute_reports: bool = False,
     compute_shap: bool = False,
     sample_shap: bool = False,
+    margin_threshold: float = 0.25,
     **kwargs,
 ):
     """
@@ -180,51 +181,57 @@ def classify(
     else:
         class_int = clf.classes_.astype(int)
 
-    y_pred_all       = np.empty(X_pred.shape[0], dtype=object)
-    pred_margin      = np.empty(X_pred.shape[0], dtype=float)
+    n = X_pred.shape[0]
+    y_pred_final       = np.empty(n, dtype=object)
+    y_pred_raw         = np.empty(n, dtype=object)
+    pred_margin        = np.empty(n, dtype=float)
+    reclassified_flag  = np.zeros(n, dtype=bool)
 
     for idx, seg in segments.iterrows():
-        # --------------------------------------------------------------
-        # 1.  Retrieve acceptable classes (if any)
-        # --------------------------------------------------------------
-        acceptable = None
-        if acceptable_classes_gdf is not None:
-            hit = acceptable_classes_gdf[acceptable_classes_gdf.intersects(seg.geometry)]
-            if not hit.empty:
-                acceptable = hit.iloc[0]["acceptable_classes"]
-
-        allowed_set = set(_coerce_acceptable(acceptable))
-
-        # --------------------------------------------------------------
-        # 2.  Slice probabilities
-        # --------------------------------------------------------------
-        probs_full = proba_all[idx]          # full vector, unchanged
+        # Full probability vector and labels (no masking)
+        probs_full = proba_all[idx]
         labels     = class_int
 
-        if allowed_set:
-            mask        = np.isin(labels, list(allowed_set))
-            probs_slice = probs_full[mask]
-            labels_slice= labels[mask]
-        else:
-            probs_slice = probs_full
-            labels_slice= labels
+        # Raw prediction from full vector
+        best_idx = int(np.argmax(probs_full))
+        y_raw = labels[best_idx]
+        y_pred_raw[idx] = y_raw
 
-        # --------------------------------------------------------------
-        # 3.  Choose label & compute margin **within allowed slice**
-        # --------------------------------------------------------------
-        best_idx          = np.argmax(probs_slice)
-        y_pred_all[idx]   = labels_slice[best_idx]
-
-        if probs_slice.size >= 2:
-            k        = probs_slice.size - 2
-            top2     = np.partition(probs_slice, k)[-2:]
-            pred_margin[idx] = top2[1] - top2[0]
+        # Compute top-2 margin from full vector
+        if probs_full.size >= 2:
+            k = probs_full.size - 2
+            top2 = np.partition(probs_full, k)[-2:]
+            margin = float(top2[1] - top2[0])
         else:
-            pred_margin[idx] = float(probs_slice[0])
+            margin = float(probs_full[0])
+        pred_margin[idx] = margin
+
+        # Optionally apply acceptable-classes rule ONLY if low-confidence
+        y_final = y_raw
+        if acceptable_classes_gdf is not None and margin < float(margin_threshold):
+            acceptable = None
+            hit = acceptable_classes_gdf[acceptable_classes_gdf.intersects(seg.geometry)]
+            if not hit.empty:
+                acceptable = hit.iloc[0].get("acceptable_classes", None)
+            allowed_set = set(_coerce_acceptable(acceptable))
+
+            # If the raw prediction is implausible, choose the highest-prob among allowed
+            if allowed_set and (y_raw not in allowed_set):
+                mask = np.isin(labels, list(allowed_set))
+                if np.any(mask):
+                    # Choose the best within allowed set; if runner-up is allowed, this will often pick it
+                    best_allowed_idx = int(np.argmax(probs_full[mask]))
+                    y_final = labels[mask][best_allowed_idx]
+                    reclassified_flag[idx] = True
+                # else: keep y_final as raw (no allowed alternative present)
+
+        y_pred_final[idx] = y_final
 
     # 8. assemble -------------------------------------------------------
-    segments["predicted_class"]  = y_pred_all
-    segments["prediction_margin"] = pred_margin.astype(float)
+    segments["predicted_class_raw"] = y_pred_raw
+    segments["predicted_class"]     = y_pred_final
+    segments["prediction_margin"]   = pred_margin.astype(float)
+    segments["reclassified"]        = reclassified_flag.astype(bool)
 
     result = ClassifiedImage(
         segments, cm, rpt, shap_vals,
