@@ -16,6 +16,10 @@ from segment_anything import sam_model_registry, SamPredictor
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from pycocotools import mask as mask_utils
+import shapely.geometry as geom
+import geopandas as gpd
+import rasterio
+from rasterio.crs import CRS
 
 # Ensure repo root is on path so `v2.*` imports work when invoked as a script.
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -31,29 +35,30 @@ class ChipDataset(Dataset):
     def __init__(self, chip_dir: Path, records_json: Path):
         self.chip_dir = chip_dir
         self.records = json.load(open(records_json))
-        self.ids = [Path(rec["file_name"]).stem for rec in self.records]
 
     def __len__(self):
-        return len(self.ids)
+        return len(self.records)
 
     def __getitem__(self, idx):
-        name = self.ids[idx]
-        img = np.load(self.chip_dir / "img" / f"{name}.npy").astype(np.float32)
-        msk = np.load(self.chip_dir / "msk" / f"{name}.npy").astype(np.float32)
-        prompt_path = self.chip_dir / "json" / f"{name}.json"
-        if prompt_path.exists():
-            point = np.array(json.load(open(prompt_path)).get("point", [img.shape[2] // 2, img.shape[1] // 2]), dtype=np.float32)
+        rec = self.records[idx]
+        img_path = Path(rec["file_name"])
+        name = img_path.stem
+        base = img_path.parent.parent
+        msk_path = base / "msk" / f"{name}.npy"
+        json_path = base / "json" / f"{name}.json"
+        chm_path = base / "chm" / f"{name}.npy"
+        cost_path = base / "cost" / f"{name}.npy"
+
+        img = np.load(img_path).astype(np.float32)
+        msk = np.load(msk_path).astype(np.float32)
+        if json_path.exists():
+            point = np.array(json.load(open(json_path)).get("point", [img.shape[2] // 2, img.shape[1] // 2]), dtype=np.float32)
         else:
             point = np.array([img.shape[2] // 2, img.shape[1] // 2], dtype=np.float32)
-        chm = None
-        cost = None
-        chm_path = self.chip_dir / "chm" / f"{name}.npy"
-        cost_path = self.chip_dir / "cost" / f"{name}.npy"
-        if chm_path.exists():
-            chm = np.load(chm_path).astype(np.float32)
-        if cost_path.exists():
-            cost = np.load(cost_path).astype(np.float32)
-        return img, msk, point, name, chm, cost
+        chm = np.load(chm_path).astype(np.float32) if chm_path.exists() else None
+        cost = np.load(cost_path).astype(np.float32) if cost_path.exists() else None
+        meta = rec.get("meta", {})
+        return img, msk, point, name, chm, cost, meta
 
 
 def gaussian_blur_torch(t: torch.Tensor, sigma: float = 2.0):
@@ -89,12 +94,22 @@ def preprocess_img(img: np.ndarray):
 
 
 def blend_prior(prob: torch.Tensor, chm: Optional[torch.Tensor], cost: Optional[torch.Tensor], w_chm: float, w_cost: float):
+    # prob: (H, W). Resize ancillary rasters to match prob spatial size.
+    def _match_shape(t: torch.Tensor):
+        if t.shape == prob.shape:
+            return t
+        t4 = t[None, None, ...]
+        t4 = F.interpolate(t4, size=prob.shape, mode="bilinear", align_corners=False)
+        return t4[0, 0]
+
     base = prob
     if chm is not None:
+        chm = _match_shape(chm)
         chm_n = (chm - torch.quantile(chm, 0.05)) / (torch.quantile(chm, 0.95) - torch.quantile(chm, 0.05) + 1e-6)
         chm_n = torch.clamp(chm_n, 0, 1)
         base = base * (1 - w_chm + w_chm * chm_n)
     if cost is not None:
+        cost = _match_shape(cost)
         cost_n = (cost - torch.quantile(cost, 0.05)) / (torch.quantile(cost, 0.95) - torch.quantile(cost, 0.05) + 1e-6)
         cost_n = torch.clamp(cost_n, 0, 1)
         base = base * (1 - w_cost + w_cost * (1 - cost_n))
@@ -117,12 +132,13 @@ def predict_prior(prior_inputs, predictor: SamPredictor, device, args):
     d = torch.sqrt((yy - point_np[1]) ** 2 + (xx - point_np[0]) ** 2)
     core_w = torch.exp(-(d ** 2) / (2 * args.core_sigma ** 2)) ** args.core_gamma
     logit = logit * (core_w / (core_w.max() + 1e-6))
-    prob = torch.sigmoid(torch.clamp(args.logit_scale * logit, -12, 12))
+    logit_up = F.interpolate(logit[None, None, ...], size=img_norm.shape[1:], mode="bilinear", align_corners=False)[0, 0]
+    prob = torch.sigmoid(torch.clamp(args.logit_scale * logit_up, -12, 12))
 
     chm_t = torch.tensor(chm_np, device=device, dtype=torch.float32) if chm_np is not None else None
     cost_t = torch.tensor(cost_np, device=device, dtype=torch.float32) if cost_np is not None else None
     prior = blend_prior(prob, chm_t, cost_t, args.chm_weight, args.cost_weight)
-    return img_norm, prior
+    return img_norm, prior, logit_up
 
 
 def compute_mask_metrics(pred_mask: np.ndarray, gt_mask: np.ndarray):
@@ -152,6 +168,8 @@ def build_coco_gt(val_items):
     annotations = []
     ann_id = 1
     for img_id, (name, msk) in enumerate(val_items, start=1):
+        if isinstance(msk, torch.Tensor):
+            msk = msk.cpu().numpy()
         images.append({"id": img_id, "file_name": name, "height": msk.shape[0], "width": msk.shape[1]})
         labeled = (msk > 0).astype(np.uint8)
         polys = mask_to_polygons(labeled)
@@ -170,66 +188,131 @@ def build_coco_gt(val_items):
             "iscrowd": 0,
         })
         ann_id += 1
-    coco_dict = {"images": images, "annotations": annotations, "categories": [{"id": 1, "name": "crown"}]}
+    coco_dict = {
+        "info": {"description": "logit-aware stardist val set"},
+        "licenses": [],
+        "images": images,
+        "annotations": annotations,
+        "categories": [{"id": 1, "name": "crown"}],
+    }
     return coco_dict
 
 
 def coco_eval(preds, coco_gt_dict):
+    # If no preds, return zeros to avoid pycocotools errors.
+    if not preds:
+        return {"coco_ap": 0.0, "coco_ap50": 0.0}
     coco_gt = COCO()
     coco_gt.dataset = coco_gt_dict
     coco_gt.createIndex()
-    coco_dt = coco_gt.loadRes(preds) if preds else coco_gt.loadRes([])
-    if len(coco_dt.getImgIds()) == 0:
+    if not coco_gt_dict.get("annotations"):
         return {"coco_ap": 0.0, "coco_ap50": 0.0}
-    coco_eval = COCOeval(coco_gt, coco_dt, iouType="segm")
-    coco_eval.evaluate()
-    coco_eval.accumulate()
-    coco_eval.summarize()
-    stats = coco_eval.stats
-    return {"coco_ap": float(stats[0] * 100), "coco_ap50": float(stats[1] * 100)}
+    try:
+        coco_dt = coco_gt.loadRes(preds)
+        if len(coco_dt.getImgIds()) == 0:
+            return {"coco_ap": 0.0, "coco_ap50": 0.0}
+        coco_eval = COCOeval(coco_gt, coco_dt, iouType="segm")
+        coco_eval.evaluate()
+        coco_eval.accumulate()
+        coco_eval.summarize()
+        stats = coco_eval.stats
+        return {"coco_ap": float(stats[0] * 100), "coco_ap50": float(stats[1] * 100)}
+    except Exception:
+        return {"coco_ap": 0.0, "coco_ap50": 0.0}
 
 
 def eval_on_val(model, predictor, dl, device, args):
     model.eval()
     ious, dices = [], []
-    coco_preds = []
-    val_items = []
+    geoms_world = []
+    crs_out = None
     with torch.no_grad():
-        for img_np, msk_np, point_np, name, chm_np, cost_np in dl:
+        for img_np, msk_np, point_np, name, chm_np, cost_np, meta in dl:
             img_np = img_np[0]; msk_np = msk_np[0]; point_np = point_np[0]
+            name = name[0] if isinstance(name, (list, tuple)) else name
             chm_np = chm_np[0] if chm_np[0] is not None else None
             cost_np = cost_np[0] if cost_np[0] is not None else None
-            val_items.append((name[0], msk_np))
-            img_norm, prior = predict_prior((img_np, point_np, chm_np, cost_np), predictor, device, args)
+            img_norm, prior, logit_up = predict_prior((img_np, point_np, chm_np, cost_np), predictor, device, args)
             img_t = torch.tensor(img_norm, device=device, dtype=torch.float32)
-            prior_t = prior.unsqueeze(0)
+            prior_resized = F.interpolate(prior.unsqueeze(0).unsqueeze(0), size=img_t.shape[-2:], mode="bilinear", align_corners=False)[0, 0]
+            prior_t = prior_resized.unsqueeze(0)
             x = torch.cat([img_t, prior_t], dim=0).unsqueeze(0)
             pred_prob, pred_rays = model(x)
             pred_prob_sig = torch.sigmoid(pred_prob)[0, 0].cpu().numpy()
 
             iou, dice = compute_mask_metrics(pred_prob_sig, msk_np)
             ious.append(iou); dices.append(dice)
+
+            # write logits/prob rasters if georef is available
+            tfm = meta.get("transform")
+            crs_meta = meta.get("crs")
+            if isinstance(crs_meta, (list, tuple)):
+                crs_meta = crs_meta[0] if len(crs_meta) > 0 else None
+            if tfm and crs_meta:
+                try:
+                    crs_obj = CRS.from_user_input(crs_meta)
+                    aff = rasterio.Affine(*tfm)
+                    prob_dir = args.out.parent / "val_probs"
+                    prob_dir.mkdir(parents=True, exist_ok=True)
+                    for arr, suffix in [(logit_up.cpu().numpy(), "logit"), (prior_resized.cpu().numpy(), "prior")]:
+                        path = prob_dir / f"{name}_{suffix}.tif"
+                        with rasterio.open(
+                            path,
+                            "w",
+                            driver="GTiff",
+                            height=arr.shape[0],
+                            width=arr.shape[1],
+                            count=1,
+                            dtype="float32",
+                            crs=crs_obj,
+                            transform=aff,
+                        ) as dst:
+                            dst.write(arr.astype(np.float32), 1)
+                except Exception:
+                    pass
+
             pred_rays_np = pred_rays[0].cpu().numpy().transpose(1, 2, 0)
             dec = decode_rays(pred_prob_sig, pred_rays_np, prob_thresh=0.5, nms_thresh=0.3)
-            img_id = len(val_items)
-            for score, poly in dec:
-                if not poly.is_valid or poly.area <= 0:
-                    continue
-                seg = [np.array(poly.exterior.coords).flatten().tolist()]
-                if len(seg[0]) < 6:
-                    continue
-                coco_preds.append({
-                    "image_id": img_id,
-                    "category_id": 1,
-                    "segmentation": seg,
-                    "score": float(score),
-                })
+            polys_pixel = [p for _, p in dec] if dec else []
+            if not polys_pixel:
+                # fallback: polygonize the binary mask
+                from skimage import measure
+                mask_bin = pred_prob_sig > 0.5
+                contours = measure.find_contours(mask_bin.astype(np.uint8), 0.5)
+                polys_pixel = [geom.Polygon(cnt[:, ::-1]) for cnt in contours if len(cnt) >= 3]
+
+            tfm = meta.get("transform")
+            crs_meta = meta.get("crs")
+            if isinstance(crs_meta, (list, tuple)):
+                crs_meta = crs_meta[0] if len(crs_meta) > 0 else None
+            if polys_pixel and tfm:
+                from affine import Affine
+                aff = Affine(*tfm)
+                if crs_out is None:
+                    crs_out = crs_meta
+                xs_list, ys_list = [], []
+                for poly in polys_pixel:
+                    coords = np.array(poly.exterior.coords)
+                    xs_list.append(coords[:, 0])
+                    ys_list.append(coords[:, 1])
+                xs_cat = np.concatenate(xs_list)
+                ys_cat = np.concatenate(ys_list)
+                xw_cat = aff.c + aff.a * xs_cat + aff.b * ys_cat
+                yw_cat = aff.f + aff.d * xs_cat + aff.e * ys_cat
+                offset = 0
+                for poly, xs, ys in zip(polys_pixel, xs_list, ys_list):
+                    n = len(xs)
+                    xw = xw_cat[offset:offset + n]
+                    yw = yw_cat[offset:offset + n]
+                    offset += n
+                    poly_world = geom.Polygon(zip(xw, yw))
+                    if poly_world.is_valid and poly_world.area > 0:
+                        geoms_world.append((0.0, poly_world))
     model.train()
-    coco_gt_dict = build_coco_gt(val_items) if val_items else None
-    coco_stats = coco_eval(coco_preds, coco_gt_dict) if coco_gt_dict else {"coco_ap": 0.0, "coco_ap50": 0.0}
     return {"iou": float(np.mean(ious)) if ious else 0.0,
             "dice": float(np.mean(dices)) if dices else 0.0,
-            **coco_stats}
+            "geoms_world": geoms_world,
+            "crs": crs_out}
 
 
 def main():
@@ -240,7 +323,7 @@ def main():
     pa.add_argument("--holdout", type=float, default=0.0, help="Holdout fraction if no val JSON provided")
     pa.add_argument("--split-seed", type=int, default=42, help="Seed for deterministic holdout split")
     pa.add_argument("--sam-ckpt", required=True, type=Path)
-    pa.add_argument("--epochs", type=int, default=5)
+    pa.add_argument("--epochs", type=int, default=2)
     pa.add_argument("--batch", type=int, default=1)
     pa.add_argument("--lr", type=float, default=1e-4)
     pa.add_argument("--n-rays", type=int, default=32)
@@ -295,14 +378,15 @@ def main():
         model.train()
         tot_loss = 0.0
         for batch in dl_train:
-            img_np, msk_np, point_np, name, chm_np, cost_np = batch
+            img_np, msk_np, point_np, name, chm_np, cost_np, meta = batch
             img_np = img_np[0]; msk_np = msk_np[0]; point_np = point_np[0]
             chm_np = chm_np[0] if chm_np[0] is not None else None
             cost_np = cost_np[0] if cost_np[0] is not None else None
 
             img_norm, prior = predict_prior((img_np, point_np, chm_np, cost_np), predictor, device, args)
             img_t = torch.tensor(img_norm, device=device, dtype=torch.float32)
-            prior_t = prior.unsqueeze(0)
+            prior_resized = F.interpolate(prior.unsqueeze(0).unsqueeze(0), size=img_t.shape[-2:], mode="bilinear", align_corners=False)[0, 0]
+            prior_t = prior_resized.unsqueeze(0)
             x = torch.cat([img_t, prior_t], dim=0).unsqueeze(0)
 
             rays_np, obj_np = compute_ray_targets(msk_np, n_rays=args.n_rays, erosion=1)
@@ -329,7 +413,13 @@ def main():
     print(f"✓ saved fused head to {args.out}")
 
     if dl_val:
+        train_count = sum(len(r.get("annotations", [])) for r in ds_train.records)
+        val_count = sum(len(r.get("annotations", [])) for r in ds_val.records) if ds_val else 0
         metrics = eval_on_val(model, predictor, dl_val, device, args)
+        geoms_world = metrics.pop("geoms_world", [])
+        crs_out = metrics.pop("crs", None)
+        metrics = {"train_instances": train_count, "val_instances": val_count, **metrics}
+        print(f"Val split: train_instances={train_count}, val_instances={val_count}")
         metrics_path = args.metrics_out or args.out.with_suffix(".metrics.json")
         with open(metrics_path, "w") as f:
             json.dump(metrics, f, indent=2)
@@ -338,6 +428,16 @@ def main():
             f.write("metric,value\n")
             for k, v in metrics.items():
                 f.write(f"{k},{v}\n")
+        if geoms_world:
+            crs_write = crs_out[0] if isinstance(crs_out, (list, tuple)) else crs_out
+            gdf = gpd.GeoDataFrame(
+                {"score": [g[0] for g in geoms_world]},
+                geometry=[g[1] for g in geoms_world],
+                crs=crs_write,
+            )
+            gpkg_path = args.out.parent / "val_preds.gpkg"
+            gdf.to_file(gpkg_path, layer="crowns", driver="GPKG")
+            print(f"✓ wrote val predictions to {gpkg_path}")
         print(f"✓ val metrics written to {metrics_path} and {csv_path}")
 
 

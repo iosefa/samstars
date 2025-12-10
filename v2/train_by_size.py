@@ -7,6 +7,9 @@ from __future__ import annotations
 import argparse, json, random, subprocess, sys
 from pathlib import Path
 
+import geopandas as gpd
+from shapely.geometry import box
+
 ROOT = Path(__file__).resolve().parent
 CHIPS_DIR = ROOT / "chips"
 RECORDS_PATH = CHIPS_DIR / "detectron_records.json"
@@ -91,6 +94,26 @@ def prepare_subset_dirs(subset, size_dir: Path, holdout: float, split_seed: int)
     return chip_dir_train, chip_dir_val, train_json, val_json
 
 
+def write_val_extent(val_json: Path, out_dir: Path):
+    if not val_json.exists():
+        return
+    recs = json.load(open(val_json))
+    polys = []
+    crs = None
+    for rec in recs:
+        meta = rec.get("meta") or {}
+        bounds = meta.get("bounds")
+        if not bounds:
+            continue
+        polys.append(box(*bounds))
+        if crs is None:
+            crs = meta.get("crs")
+    if not polys:
+        return
+    gdf = gpd.GeoDataFrame({"id": range(1, len(polys) + 1)}, geometry=polys, crs=crs)
+    gdf.to_file(out_dir / "val_extent.gpkg", layer="val_extent", driver="GPKG")
+
+
 def train_sam(size_dir: Path, chip_dir: Path):
     sam_dir = size_dir / "sam"
     sam_dir.mkdir(parents=True, exist_ok=True)
@@ -102,12 +125,13 @@ def train_sam(size_dir: Path, chip_dir: Path):
         "--out", str(ckpt_out),
         "--skip-chips",
         "--device", "cpu",
+        "--epochs", "3",
     ]
     run(cmd)
     return ckpt_out
 
 
-def train_detectron(size_dir: Path, train_json: Path, val_json: Path, chip_dir_train: Path, split_seed: int):
+def train_detectron(size_dir: Path, train_json: Path, val_json: Path, chip_dir_train: Path, chip_dir_val: Path, split_seed: int):
     det_dir = size_dir / "detectron"
     det_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
@@ -115,6 +139,7 @@ def train_detectron(size_dir: Path, train_json: Path, val_json: Path, chip_dir_t
         "--records", str(train_json),
         "--val-records", str(val_json),
         "--img-dir", str(chip_dir_train / "img"),
+        "--val-img-dir", str(chip_dir_val / "img"),
         "--output-dir", str(det_dir / "train_logs"),
         "--holdout", str(0.0),
         "--metrics-out", str(det_dir / "train_logs" / "metrics.json"),
@@ -168,9 +193,10 @@ def main():
         size_dir = args.output_root / f"{n:04d}"
         size_dir.mkdir(parents=True, exist_ok=True)
         chip_dir_train, chip_dir_val, train_json, val_json = prepare_subset_dirs(subset, size_dir, args.holdout, args.split_seed)
+        write_val_extent(val_json, size_dir)
 
         if args.run_detectron:
-            train_detectron(size_dir, train_json, val_json, chip_dir_train, args.split_seed)
+            train_detectron(size_dir, train_json, val_json, chip_dir_train, chip_dir_val, args.split_seed)
         if args.run_fused:
             sam_ckpt = train_sam(size_dir, chip_dir_train)
             train_fused(size_dir, chip_dir_train, train_json, val_json, sam_ckpt, args.split_seed)

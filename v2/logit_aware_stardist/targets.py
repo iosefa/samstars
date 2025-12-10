@@ -12,7 +12,11 @@ def ray_directions(n_rays: int):
 def _ray_distances_for_instance(inst_mask: np.ndarray, n_rays: int, erosion: int = 0):
     H, W = inst_mask.shape
     if erosion > 0:
-        inst_mask = binary_erosion(inst_mask, iterations=erosion)
+        # skimage.binary_erosion no longer supports iterations; apply footprint-based erosion.
+        footprint = np.ones((2 * erosion + 1, 2 * erosion + 1), dtype=bool)
+        inst_mask = binary_erosion(inst_mask.astype(bool), footprint=footprint)
+    else:
+        inst_mask = inst_mask.astype(bool)
     coords = np.argwhere(inst_mask)
     if coords.size == 0:
         return np.zeros((H, W, n_rays), np.float32), np.zeros((H, W), np.float32)

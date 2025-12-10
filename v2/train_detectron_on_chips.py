@@ -16,6 +16,7 @@ from detectron2 import model_zoo
 from detectron2.engine import DefaultTrainer
 from detectron2.data import DatasetCatalog, MetadataCatalog, build_detection_train_loader, build_detection_test_loader
 from detectron2.data import detection_utils as utils
+import detectron2.data.transforms as T
 from detectron2.structures import BoxMode
 
 ROOT = Path(__file__).resolve().parent
@@ -24,7 +25,7 @@ ROOT = Path(__file__).resolve().parent
 SEED = 42
 IMS_PER_BATCH = 2
 BASE_LR = 0.00025
-MAX_ITERS = 5000
+MAX_ITERS = 10000
 WARMUP_ITERS = 500
 BATCH_SIZE_PER_IMAGE = 128
 NUM_WORKERS = 2
@@ -32,6 +33,13 @@ SCORE_THRESH_TEST = 0.5
 HOLDOUT_FRACTION = 0.0
 DEFAULT_RECORDS = ROOT / "chips" / "detectron_records.json"
 DEFAULT_IMG_DIR = ROOT / "chips" / "img"
+
+AUGS = [
+    T.RandomFlip(horizontal=True, vertical=False, prob=0.5),
+    T.RandomFlip(horizontal=False, vertical=True, prob=0.5),
+    T.RandomBrightness(0.9, 1.1),
+    T.RandomContrast(0.9, 1.1),
+]
 
 
 def set_seed(seed=SEED):
@@ -52,33 +60,38 @@ def load_records(records_path: Path):
     return data
 
 
+def norm255(band):
+    finite = np.isfinite(band)
+    if not finite.any():
+        return np.zeros_like(band, dtype=np.uint8)
+    lo, hi = np.percentile(band[finite], [2, 98])
+    if hi <= lo:
+        lo, hi = float(np.nanmin(band)), float(np.nanmax(band))
+        if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+            return np.zeros_like(band, dtype=np.uint8)
+    band = np.clip(band, lo, hi)
+    band = (band - lo) / max(hi - lo, 1e-6) * 255.0
+    return band.astype(np.uint8)
+
+
 def mapper(dataset_dict):
     d = dataset_dict.copy()
     img = np.load(d["file_name"]).astype(np.float32)
-    def norm255(band):
-        finite = np.isfinite(band)
-        if not finite.any():
-            return np.zeros_like(band, dtype=np.uint8)
-        lo, hi = np.percentile(band[finite], [2, 98])
-        if hi <= lo:
-            lo, hi = float(np.nanmin(band)), float(np.nanmax(band))
-            if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
-                return np.zeros_like(band, dtype=np.uint8)
-        band = np.clip(band, lo, hi)
-        band = (band - lo) / max(hi - lo, 1e-6) * 255.0
-        return band.astype(np.uint8)
     if img.shape[0] >= 3:
         nir, red, grn = img[0], img[1], img[2]
     else:
         nir = red = grn = img[0]
     nir8, red8, grn8 = norm255(nir), norm255(red), norm255(grn)
     rgb = np.dstack([red8, grn8, nir8])
-    d["image"] = torch.as_tensor(rgb.transpose(2, 0, 1))
+    aug_input = T.AugInput(rgb)
+    transforms = [aug(aug_input) for aug in AUGS]
+    aug_rgb = aug_input.image
 
     annos = [a for a in d.get("annotations", []) if a.get("iscrowd", 0) == 0]
-    d["instances"] = utils.annotations_to_instances(
-        annos, image_size=rgb.shape[:2], mask_format="polygon"
-    )
+    annos = [utils.transform_instance_annotations(a, transforms, aug_rgb.shape[:2]) for a in annos]
+
+    d["image"] = torch.as_tensor(aug_rgb.transpose(2, 0, 1))
+    d["instances"] = utils.annotations_to_instances(annos, image_size=aug_rgb.shape[:2], mask_format="polygon")
     d.pop("annotations", None)
     return d
 
@@ -112,7 +125,8 @@ def main():
     pa = argparse.ArgumentParser(description="Train Detectron2 on chip subsets")
     pa.add_argument("--records", type=Path, default=DEFAULT_RECORDS, help="Path to train records JSON")
     pa.add_argument("--val-records", type=Path, default=None, help="Optional path to val records; if set, skips holdout split")
-    pa.add_argument("--img-dir", type=Path, default=DEFAULT_IMG_DIR, help="Directory containing chip npy images")
+    pa.add_argument("--img-dir", type=Path, default=DEFAULT_IMG_DIR, help="Directory containing training chip npy images")
+    pa.add_argument("--val-img-dir", type=Path, default=None, help="Directory containing validation chip npy images (defaults to --img-dir)")
     pa.add_argument("--output-dir", type=Path, default=ROOT / "detectron_chips_train_logs")
     pa.add_argument("--holdout", type=float, default=HOLDOUT_FRACTION, help="Holdout fraction for validation (chip-level)")
     pa.add_argument("--metrics-out", type=Path, default=None, help="Optional path to write metrics CSV/JSON (defaults under output-dir)")
@@ -126,9 +140,10 @@ def main():
 
     if args.val_records:
         val_records = load_records(args.val_records)
-        if args.img_dir:
+        val_dir = args.val_img_dir if args.val_img_dir else args.img_dir
+        if val_dir:
             for rec in val_records:
-                rec["file_name"] = str(args.img_dir / Path(rec["file_name"]).name)
+                rec["file_name"] = str(val_dir / Path(rec["file_name"]).name)
     else:
         val_records = None
 
@@ -161,7 +176,8 @@ def main():
     cfg.SOLVER.IMS_PER_BATCH = IMS_PER_BATCH
     cfg.SOLVER.BASE_LR = BASE_LR
     cfg.SOLVER.MAX_ITER = MAX_ITERS
-    cfg.SOLVER.STEPS = []
+    cfg.SOLVER.STEPS = [7000, 9000]
+    cfg.SOLVER.GAMMA = 0.1
     cfg.SOLVER.WARMUP_ITERS = WARMUP_ITERS
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = BATCH_SIZE_PER_IMAGE
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
@@ -189,12 +205,63 @@ def main():
         metrics_csv = metrics_json.with_suffix(".csv")
         train_count = count_instances(train_records)
         val_count = count_instances(val_records)
+        # crude pixel-union IoU/Dice between union of predicted and GT masks on val set
+        def compute_union_iou_dice(model, records):
+            if not records:
+                return {"iou": 0.0, "dice": 0.0}
+            model.eval()
+            ious, dices = [], []
+            with torch.no_grad():
+                for rec in records:
+                    name = Path(rec["file_name"]).name
+                    img = np.load(rec["file_name"]).astype(np.float32)
+                    if img.shape[0] >= 3:
+                        nir, red, grn = img[0], img[1], img[2]
+                    else:
+                        nir = red = grn = img[0]
+                    nir8, red8, grn8 = norm255(nir), norm255(red), norm255(grn)
+                    rgb = np.dstack([red8, grn8, nir8])
+                    inputs = {
+                        "image": torch.as_tensor(rgb.transpose(2, 0, 1)),
+                        "height": rgb.shape[0],
+                        "width": rgb.shape[1],
+                    }
+                    outputs = model([inputs])[0]
+                    pred_mask = torch.zeros((rgb.shape[0], rgb.shape[1]), dtype=torch.float32)
+                    if "instances" in outputs and outputs["instances"].has("pred_masks"):
+                        pm = outputs["instances"].pred_masks
+                        if pm.numel() > 0:
+                            pred_mask = torch.clamp(pm.float().sum(0), 0, 1)
+                    gt_mask = torch.zeros_like(pred_mask)
+                    for ann in rec.get("annotations", []):
+                        if "segmentation" in ann and len(ann["segmentation"]) > 0:
+                            r = utils.annotations_to_instances([ann], image_size=rgb.shape[:2], mask_format="polygon")
+                            if r.has("gt_masks"):
+                                gm = None
+                                # PolygonMasks has to_bitmasks(H,W); BitMasks has .tensor
+                                if hasattr(r.gt_masks, "to_bitmasks"):
+                                    bm = r.gt_masks.to_bitmasks(rgb.shape[0], rgb.shape[1])
+                                    gm = bm.tensor if hasattr(bm, "tensor") else None
+                                elif hasattr(r.gt_masks, "tensor"):
+                                    gm = r.gt_masks.tensor
+                                if gm is not None and gm.numel() > 0:
+                                    gt_mask = torch.clamp(gt_mask + gm.float().sum(0), 0, 1)
+                    inter = (pred_mask * gt_mask).sum().item()
+                    union = (pred_mask + gt_mask - pred_mask * gt_mask).sum().item()
+                    iou = inter / union if union > 0 else 0.0
+                    dice = (2 * inter) / (pred_mask.sum().item() + gt_mask.sum().item()) if (pred_mask.sum() + gt_mask.sum()) > 0 else 0.0
+                    ious.append(iou); dices.append(dice)
+            return {"iou": float(np.mean(ious)), "dice": float(np.mean(dices))}
+
+        pix_stats = compute_union_iou_dice(trainer.model, val_records)
         with open(metrics_json, "w") as f:
-            json.dump({"train_instances": train_count, "val_instances": val_count, "metrics": results}, f, indent=2)
+            json.dump({"train_instances": train_count, "val_instances": val_count, "metrics": results, **pix_stats}, f, indent=2)
         with open(metrics_csv, "w") as f:
             f.write("metric,value\n")
             f.write(f"train_instances,{train_count}\n")
             f.write(f"val_instances,{val_count}\n")
+            f.write(f"iou,{pix_stats['iou']}\n")
+            f.write(f"dice,{pix_stats['dice']}\n")
             for k, v in results.items():
                 if isinstance(v, dict):
                     for kk, vv in v.items():

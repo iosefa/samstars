@@ -149,6 +149,13 @@ def process_tile(tile: Path, out_dir: Path, size: int, stride: int, bands=(1, 2,
                     "height": size,
                     "width": size,
                     "annotations": annos,
+                    "meta": {
+                        "source_tile": str(img_path),
+                        "window": [int(x0), int(y0), int(x1), int(y1)],
+                        "transform": list(win_tfm)[:6],
+                        "bounds": [float(b) for b in win_geom.bounds],
+                        "crs": crs.to_wkt() if crs else None,
+                    },
                 })
             chip_id += 1
     return records
