@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import List
 
 import geopandas as gpd
-import numpy as np
 import rasterio
 from rasterio import windows
 from shapely.geometry import box

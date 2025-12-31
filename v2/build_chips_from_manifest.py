@@ -7,6 +7,7 @@ For each size dir:
   - extracts image/chm/cost patches, pads to size if needed
   - writes npys under chips_{train,val}/{img,msk,chm,cost,json}
   - writes detectron-ready chips under chips_{train,val}/{tif,gpkg}
+  - writes per-chip CHM GeoTIFFs under chips_{train,val}/tif as *_chm.tif
 """
 from __future__ import annotations
 import argparse, json
@@ -98,20 +99,22 @@ def build_chips(
         crowns = crowns_cache[crowns_path]
         win_geom = box(*rasterio.transform.array_bounds(h, w, tfm))
         clipped = clip_crowns(crowns, win_geom)
+        # Instance-labeled mask: each crown gets a unique ID (1..N)
+        shapes = [(geom, i + 1) for i, geom in enumerate(clipped.geometry)]
         mask = rasterize(
-            [(geom, 1) for geom in clipped.geometry],
+            shapes,
             out_shape=(h, w),
             transform=tfm,
             fill=0,
             all_touched=True,
-            dtype="uint8",
+            dtype="uint16",
         )
         if pad_h > 0 or pad_w > 0:
             mask = np.pad(mask, ((0, pad_h), (0, pad_w)))
 
         name = f"{rec['tile']}_{rec['chip_id']}"
         np.save(out_dir / "img" / f"{name}.npy", img_win.astype(np.float32))
-        np.save(out_dir / "msk" / f"{name}.npy", mask.astype(np.uint8))
+        np.save(out_dir / "msk" / f"{name}.npy", mask.astype(np.uint16))
         np.save(out_dir / "chm" / f"{name}.npy", chm_win.astype(np.float32))
         np.save(out_dir / "cost" / f"{name}.npy", cost_win.astype(np.float32))
         # simple point prompt: centroid of mask if non-empty
@@ -130,6 +133,11 @@ def build_chips(
             tif_out = out_dir / "tif" / f"{name}.tif"
             with rasterio.open(tif_out, "w", **tif_profile) as dst:
                 dst.write(tif_win)
+            chm_profile = tif_profile.copy()
+            chm_profile.update(count=1, dtype="float32")
+            chm_out = out_dir / "tif" / f"{name}_chm.tif"
+            with rasterio.open(chm_out, "w", **chm_profile) as dst:
+                dst.write(chm_win.astype(np.float32), 1)
 
         gpkg_out = None
         if write_gpkg:
