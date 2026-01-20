@@ -31,14 +31,10 @@ from PIL import Image
 from pyforestscan.handlers import read_lidar
 
 # ── EDIT THESE ────────────────────────────────────────────────────────────────
-SEGMENT_BY_CLASS = {
-    1: 154789,
-    2: 133906,
-    3: 111325,
-    4: 84270,
-    5: 33578,
-    6: 98561,
-}
+CHIP_DIR = Path("manuscript/assets/six_class_chips")
+OUTLINE_BY_CLASS = {cls: CHIP_DIR / f"class_{cls}_outline.gpkg" for cls in range(1, 7)}
+RGB_BY_CLASS = {cls: CHIP_DIR / f"class_{cls}.tif" for cls in range(1, 7)}
+CHM_BY_CLASS = {cls: CHIP_DIR / f"class_{cls}_chm.tif" for cls in range(1, 7)}
 IMG_BY_CLASS = {
     1: "manuscript/data/ahupuaa/class_examples/IMG_7264.jpeg",
     2: "manuscript/data/ahupuaa/class_examples/IMG_1768.jpeg",
@@ -51,17 +47,12 @@ CLASSES = ["(METPOL)","(GREROB)","(ACAKOA)","(DIOSAN)","(PROPAL)","(OTHER)"]
 SPECIES = ["M. polymorpha","G. robusta","A. koa","D. sandwicensis","P. pallida","Pooled others"]
 # ─────────────────────────────────────────────────────────────────────────────
 
-OBJECTS_GPKG = Path("objects.gpkg")
-FULL_RGB     = Path("/Users/iosefa/Dropbox/MergedImage2.tif")
-FULL_CHM     = Path("/Users/iosefa/Dropbox/chm_full.tif")
-CLASS_EX_DIR = Path("manuscript/data/ahupuaa/class_examples")
 OUT_DIR = Path(__file__).resolve().parents[1] / "output"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_FIG      = OUT_DIR / "figure2.png"
 
-EPT_JSON = "/Users/iosefa/Downloads/ept6635/ept.json"
+EPT_JSON = "/Users/iosefa/repos/obia/docs/example_data/full/ept/ept.json"
 EPT_SRS  = "EPSG:6635"
-PAD_M    = 5.0
 
 # Typography — publication-friendly
 plt.rcParams.update({
@@ -133,9 +124,11 @@ def center_crop_to_side(arr, target_side):
         return arr[r0:r1, r0:r1], r0, r0
     return arr[r0:r1, r0:r1, :], r0, r0
 
-def load_rgb_chip_or_full(current_cls, geom, objects_crs):
-    """Return (img HxWx3 float in [0,1], transform, width, height, crs) from class_examples."""
-    chip = CLASS_EX_DIR / f"rgb_{current_cls}.tif"
+def load_rgb_chip_or_full(current_cls):
+    """Return (img HxWx3 float in [0,1], transform, width, height, crs) from six_class_chips."""
+    chip = RGB_BY_CLASS.get(current_cls)
+    if chip is None:
+        raise FileNotFoundError(f"Missing RGB chip path for class {current_cls}")
     if not chip.exists():
         raise FileNotFoundError(f"Missing RGB chip: {chip}")
     with rasterio.open(chip) as src:
@@ -144,9 +137,11 @@ def load_rgb_chip_or_full(current_cls, geom, objects_crs):
         img = np.moveaxis(np.ma.filled(arr, np.nan), 0, -1)
         return pct_stretch(img), src.transform, src.width, src.height, src.crs
 
-def load_chm_chip_or_full(current_cls, geom, objects_crs):
-    """Return (chm HxW float meters, transform, width, height, crs) from class_examples."""
-    chip = CLASS_EX_DIR / f"chm_{current_cls}.tif"
+def load_chm_chip_or_full(current_cls):
+    """Return (chm HxW float meters, transform, width, height, crs) from six_class_chips."""
+    chip = CHM_BY_CLASS.get(current_cls)
+    if chip is None:
+        raise FileNotFoundError(f"Missing CHM chip path for class {current_cls}")
     if not chip.exists():
         raise FileNotFoundError(f"Missing CHM chip: {chip}")
     with rasterio.open(chip) as src:
@@ -199,23 +194,26 @@ def load_jpeg(path: Path):
     except Exception:
         return None
 
-# ── load objects ──────────────────────────────────────────────────────────────
-if not OBJECTS_GPKG.exists():
-    raise FileNotFoundError(f"Missing {OBJECTS_GPKG}")
-objs = gpd.read_file(OBJECTS_GPKG)
-if "segment_id" not in objs.columns:
-    raise RuntimeError("objects.gpkg must contain a 'segment_id' column.")
-objects_crs = objs.crs
-
-classes, geoms = [], []
+# ── load outlines ─────────────────────────────────────────────────────────────
+classes, geoms, geom_crs_list = [], [], []
 for cls in [1, 2, 3, 4, 5, 6]:
-    seg = SEGMENT_BY_CLASS.get(cls)
-    cand = objs[objs["segment_id"] == seg]
-    if cand.empty:
-        print(f"[WARN] No segment_id={seg} for class {cls}; skipping.")
+    outline = OUTLINE_BY_CLASS.get(cls)
+    if outline is None:
+        print(f"[WARN] No outline path for class {cls}; skipping.")
+        continue
+    if not outline.exists():
+        print(f"[WARN] Missing outline {outline}; skipping.")
+        continue
+    if cls == 6:
+        gdf = gpd.read_file(outline, layer="objects")
+    else:
+        gdf = gpd.read_file(outline)
+    if gdf.empty or gdf.geometry.isna().all():
+        print(f"[WARN] Empty outline in {outline}; skipping.")
         continue
     classes.append(cls)
-    geoms.append(cand.iloc[0].geometry)
+    geoms.append(gdf.geometry.dropna().iloc[0])
+    geom_crs_list.append(gdf.crs)
 
 n_cols = len(classes)
 
@@ -224,9 +222,9 @@ rgb_list, chm_list = [], []
 rgb_meta, chm_meta = [], []   # (transform, w, h, crs)
 
 for current_cls, geom in zip(classes, geoms):
-    rgb, t_r, w_r, h_r, crs_r = load_rgb_chip_or_full(current_cls, geom, objects_crs)
+    rgb, t_r, w_r, h_r, crs_r = load_rgb_chip_or_full(current_cls)
     rgb_list.append(rgb); rgb_meta.append((t_r, w_r, h_r, crs_r))
-    chm, t_c, w_c, h_c, crs_c = load_chm_chip_or_full(current_cls, geom, objects_crs)
+    chm, t_c, w_c, h_c, crs_c = load_chm_chip_or_full(current_cls)
     chm_list.append(chm); chm_meta.append((t_c, w_c, h_c, crs_c))
 
 # Chips are already standardized to 30 m squares; no additional cropping/resizing.
@@ -268,6 +266,7 @@ chm_axes = []
 
 # ── render columns ───────────────────────────────────────────────────────────
 for idx, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list, chm_list), start=1):
+    geom_crs = geom_crs_list[idx-1]
     # Titles (two lines)
     ax_title = fig.add_subplot(gs[0, idx]); ax_title.set_axis_off()
     ax_title.text(0.5, 0.5, f"{SPECIES[cls-1]}\n{CLASSES[cls-1]}",
@@ -276,8 +275,11 @@ for idx, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list
     # Row 1: Point Cloud (top row)
     ax_pc = fig.add_subplot(gs[1, idx]); ax_pc.set_box_aspect(1)
     try:
-        b = ([geom.bounds[0], geom.bounds[2]],[geom.bounds[1], geom.bounds[3]])
-        pcs = read_lidar(EPT_JSON, EPT_SRS, b, crop_poly=True, poly=geom.wkt, hag=True)
+        geom_pc = geom
+        if geom_crs is not None and str(geom_crs) != str(EPT_SRS):
+            geom_pc = reproject_geom(geom, geom_crs, EPT_SRS)
+        b = ([geom_pc.bounds[0], geom_pc.bounds[2]],[geom_pc.bounds[1], geom_pc.bounds[3]])
+        pcs = read_lidar(EPT_JSON, EPT_SRS, b, crop_poly=True, poly=geom_pc.wkt, hag=True)
         if pcs and len(pcs[0]) > 0:
             pts = pcs[0]
             ax_pc.scatter(pts["X"], pts["HeightAboveGround"], s=32,
@@ -285,7 +287,7 @@ for idx, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list
                           alpha=0.9, marker=".", linewidths=0)
             ax_pc.set_ylim(0, 20)
             # Fix x-axis span to 30 m centered on the polygon center
-            cx = (geom.bounds[0] + geom.bounds[2]) / 2.0
+            cx = (geom_pc.bounds[0] + geom_pc.bounds[2]) / 2.0
             ax_pc.set_xlim(cx - 15.0, cx + 15.0)
         else:
             ax_pc.text(0.5, 0.5, "no points", ha="center", va="center",
@@ -311,7 +313,7 @@ for idx, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list
                        vmin=chm_vmin, vmax=chm_vmax)
     # Overlay polygon outline on CHM
     t_c, w_c, h_c, crs_c = chm_meta[idx-1]
-    rings_c = geom_to_pixel_rings(geom, objects_crs, crs_c, t_c, off_r=0, off_c=0)
+    rings_c = geom_to_pixel_rings(geom, geom_crs or crs_c, crs_c, t_c, off_r=0, off_c=0)
     for xs, ys in rings_c:
         ax_chm.plot(xs, ys, color='white', linewidth=2.0, alpha=0.9)
         ax_chm.plot(xs, ys, color='black', linewidth=0.8, alpha=0.9)
@@ -364,7 +366,7 @@ for idx, (cls, geom, rgb_img, chm_img) in enumerate(zip(classes, geoms, rgb_list
     ax_rgb = fig.add_subplot(gs[3, idx]); ax_rgb.set_axis_off(); ax_rgb.set_box_aspect(1)
     ax_rgb.imshow(rgb_img, interpolation="nearest")
     t_r, w_r, h_r, crs_r = rgb_meta[idx-1]
-    rings = geom_to_pixel_rings(geom, objects_crs, crs_r, t_r, off_r=0, off_c=0)
+    rings = geom_to_pixel_rings(geom, geom_crs or crs_r, crs_r, t_r, off_r=0, off_c=0)
     for xs, ys in rings:
         ax_rgb.plot(xs, ys, color='white', linewidth=2.0, alpha=0.9)
         ax_rgb.plot(xs, ys, color='black', linewidth=0.8, alpha=0.9)

@@ -5,7 +5,7 @@ import rasterio
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from rasterio.mask import mask as rio_mask
-from shapely.geometry import mapping
+from shapely.geometry import mapping, box
 from shapely.ops import unary_union
 from affine import Affine
 from pathlib import Path
@@ -20,7 +20,7 @@ from matplotlib.lines import Line2D
 # ─────────────────────────────────────────────────────────────────────────────
 RGB_TIF          = "manuscript/data/ahupuaa/rgb.tif"
 EXTENT_GPKG      = "manuscript/data/ahupuaa/extent.gpkg"
-IOU_DIR          = Path("manuscript/data/set_a")
+TRAIN_SAM_DIR    = Path("v2/train-sam")
 BIG_ISLAND_GPKG  = "manuscript/data/hawaii.gpkg"
 
 SETC_EXTENT_GPKG = "manuscript/data/set_c/set_c_extent.gpkg"
@@ -224,21 +224,23 @@ rgb_01 = percentile_normalize(out,lo=2,hi=98)
 alpha = np.where(np.any(np.isfinite(out),axis=0),1.0,0.0).astype(np.float32)
 rgba_hwc = np.dstack([rgb_01[0],rgb_01[1],rgb_01[2],alpha])
 
-# Load Set A plot outlines
-plot_boxes = []
-for i in range(1,7):
-    p = IOU_DIR / f"setA_plot{i}.gpkg"
-    if p.exists():
-        g = gpd.read_file(p).to_crs(rast_crs)
-        g["__which__"] = i; plot_boxes.append(g)
-boxes_gdf = (gpd.GeoDataFrame(pd.concat(plot_boxes,ignore_index=True),crs=rast_crs)
-             if plot_boxes else gpd.GeoDataFrame(geometry=[],crs=rast_crs))
-PLOT_SHORT = {1:"P1",2:"P2",3:"P3",4:"P4",5:"P5",6:"P6"}
+# Load validation plot boxes from train-sam tiles
+tile_boxes = []
+if TRAIN_SAM_DIR.exists():
+    for tile_dir in sorted(TRAIN_SAM_DIR.glob("tile-*")):
+        img_path = tile_dir / "img.tif"
+        if not img_path.exists():
+            continue
+        with rasterio.open(img_path) as src:
+            geom = box(src.bounds.left, src.bounds.bottom, src.bounds.right, src.bounds.top)
+            g = gpd.GeoDataFrame({"__tile__": [tile_dir.name]}, geometry=[geom], crs=src.crs)
+        if g.crs != rast_crs:
+            g = g.to_crs(rast_crs)
+        tile_boxes.append(g)
+boxes_gdf = (gpd.GeoDataFrame(pd.concat(tile_boxes, ignore_index=True), crs=rast_crs)
+             if tile_boxes else gpd.GeoDataFrame(geometry=[], crs=rast_crs))
 
-# Load Set C extent
 setc_extent_gdf = None
-if Path(SETC_EXTENT_GPKG).exists():
-    setc_extent_gdf = gpd.read_file(SETC_EXTENT_GPKG).to_crs(rast_crs)
 
 # Load Set B points (ground photos)
 setb_points = None
@@ -276,48 +278,20 @@ if (setb_points is not None) and (not setb_points.empty):
                      color="#FFD24D", edgecolor="black", linewidth=0.6,
                      alpha=0.95, zorder=4)   # BELOW labels/outlines
 
-# --- Set A plot boxes ---
+# --- Validation plot boxes ---
 if not boxes_gdf.empty:
     boxes_gdf.boundary.plot(ax=ax_map, color="red",
                             linewidth=PLOT_BOX_LW, zorder=5)
 
-# --- Set A plot labels (draw AFTER points, so they’re on top) ---
+# --- Legend (validation plots, species inventory) ---
+handles=[]
 if not boxes_gdf.empty:
-    map_w = r - l; x_offset = 0.006 * map_w
-    for which, gsub in boxes_gdf.groupby("__which__"):
-        minx, miny, maxx, maxy = gsub.total_bounds
-        ax_map.text(maxx + x_offset, (miny + maxy) / 2,
-                    PLOT_SHORT.get(which, f"P{which}"),
-                    ha="left", va="center", fontsize=PLOT_TAG_FONT,
-                    weight="bold", color="white",
-                    path_effects=[pe.withStroke(linewidth=3.5,
-                                                foreground="black")],
-                    zorder=6)   # ABOVE points
-
-# --- Set C extent + label (always TOP) ---
-if setc_extent_gdf is not None and not setc_extent_gdf.empty:
-    setc_extent_gdf.boundary.plot(ax=ax_map, color="#2C7FB8",
-                                  linewidth=SETC_BOX_LW, linestyle="--",
-                                  zorder=7)
-    minx, miny, maxx, maxy = setc_extent_gdf.total_bounds
-    ax_map.text(maxx + 0.006 * (r - l), (miny + maxy) / 2,
-                "Set C", ha="left", va="center",
-                fontsize=PLOT_TAG_FONT, weight="bold", color="white",
-                path_effects=[pe.withStroke(linewidth=3.5,
-                                            foreground="black")],
-                zorder=8)   # HIGHEST
-
-# --- Legend (order: A → B → C) ---
-handles=[
-    Line2D([0],[0],color="red",lw=LEGEND_HANDLE_LW,label="Segmentation Plots (Set A)"),
-]
+    handles.append(Line2D([0],[0], color="red", lw=LEGEND_HANDLE_LW, label="Training/validation plots"))
 if (setb_points is not None) and (not setb_points.empty):
     handles.append(Line2D([0],[0], marker='o', linestyle='None',
                           markersize=8, markerfacecolor="#FFD24D",
                           markeredgecolor="black", markeredgewidth=0.8,
-                          label="Species Inventory (Set B)"))
-handles.append(Line2D([0],[0],color="#2C7FB8",lw=LEGEND_HANDLE_LW,
-                      linestyle="--",label="Integrated Plot (Set C)"))
+                          label="Species Inventory"))
 
 ax_map.legend(
     handles=handles,loc="upper right",
@@ -379,7 +353,7 @@ ax_zoom.imshow(blowup_img, extent=blowup_extent, origin="upper", interpolation="
 ax_zoom.axis("off")
 
 # Title inside
-ax_zoom.text(0.5, 0.99, "Set C (detail)", ha="center", va="top",
+ax_zoom.text(0.5, 0.99, "Forest Cover Detail", ha="center", va="top",
              transform=ax_zoom.transAxes, fontsize=SUBPLOT_TITLE_FONT+6, color="white",
              path_effects=[pe.withStroke(linewidth=3.2, foreground="black")], zorder=50)
 

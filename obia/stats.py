@@ -1,5 +1,7 @@
 import numpy as np
 import geopandas as gpd
+from pyproj import CRS, Transformer
+from shapely.ops import transform as shp_transform
 
 from skimage.feature import graycomatrix, graycoprops
 from tqdm import tqdm
@@ -347,7 +349,7 @@ def calculate_structural_stats(
         return stats_dict
     if calc_pai:
         pad = calculate_pad(voxels, voxel_resolution[-1])
-        pai = calculate_pai(pad, min_height=0)
+        pai = calculate_pai(pad, min_height=1, voxel_height=1)
         stats_dict['pai'] = np.mean(pai)
     if calc_fhd:
         fhd = calculate_fhd(voxels)
@@ -423,7 +425,8 @@ def create_objects(
         calculate_spectral=True, calculate_textural=True, calculate_structural=False, calculate_radiometric=False,
         calc_mean=True, calc_variance=True, calc_min=True, calc_max=True, calc_skewness=True, calc_kurtosis=True,
         calc_contrast=True, calc_dissimilarity=True, calc_homogeneity=True, calc_ASM=True, calc_energy=True, calc_correlation=True,
-        calc_pai=True, calc_fhd=True, calc_ch=True, calc_mean_intensity=True, calc_variance_intensity=True
+        calc_pai=True, calc_fhd=True, calc_ch=True, calc_mean_intensity=True, calc_variance_intensity=True,
+        ept_geom_srs=None
 ):
     """
     :param segments: GeoDataFrame containing the segmented regions to be analyzed.
@@ -433,6 +436,7 @@ def create_objects(
     :param spectral_bands: Optional; List of spectral bands to be used in the analysis. Defaults to all available bands.
     :param textural_bands: Optional; List of textural bands to be used in the analysis. Defaults to all available bands.
     :param voxel_resolution: Optional; Voxel resolution for 3D point cloud data analysis. Required if ept is provided. Defaults to None.
+    :param ept_geom_srs: Optional; CRS for reprojecting segment geometry when querying EPT. Defaults to None (no reprojection).
     :param calculate_spectral: Boolean; Whether to calculate spectral statistics. Defaults to True.
     :param calculate_textural: Boolean; Whether to calculate textural statistics. Defaults to True.
     :param calculate_structural: Boolean; Whether to calculate structural statistics using point cloud data. Defaults to False.
@@ -495,6 +499,12 @@ def create_objects(
     )
 
     results = []
+    transformer = None
+    if ept_geom_srs is not None and segments.crs is not None:
+        src_crs = CRS.from_user_input(segments.crs)
+        dst_crs = CRS.from_user_input(ept_geom_srs)
+        if src_crs != dst_crs:
+            transformer = Transformer.from_crs(src_crs, dst_crs, always_xy=True)
 
     for i, (idx, segment) in enumerate(tqdm(segments.iterrows(), total=len(segments), desc="Processing Segments")):
         geom = segment.geometry
@@ -534,10 +544,13 @@ def create_objects(
                 raise ValueError("Error: 'ept_srs' must be provided when 'ept' is not None.")
             if voxel_resolution is None:
                 raise ValueError("Error: 'voxel_resolution' must be provided when 'ept' is not None.")
-            xmin, ymin, xmax, ymax = geom.bounds
+            geom_ept = geom
+            if transformer is not None:
+                geom_ept = shp_transform(transformer.transform, geom)
+            xmin, ymin, xmax, ymax = geom_ept.bounds
             bounds = ([xmin, xmax], [ymin, ymax])
 
-            pointclouds = read_lidar(ept, ept_srs, bounds, crop_poly=True, poly=geom.wkt)
+            pointclouds = read_lidar(ept, ept_srs, bounds, crop_poly=True, poly=geom_ept.wkt)
             if not pointclouds:
                 print("no point clouds found for segment", segment_id)
                 if calculate_structural:

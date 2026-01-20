@@ -20,6 +20,7 @@ import shapely.geometry as geom
 import geopandas as gpd
 import rasterio
 from rasterio.crs import CRS
+from scipy.ndimage import gaussian_filter
 
 # Ensure repo root is on path so `v2.*` imports work when invoked as a script.
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -239,8 +240,10 @@ def eval_on_val(model, predictor, dl, device, args):
             x = torch.cat([img_t, prior_t], dim=0).unsqueeze(0)
             pred_prob, pred_rays = model(x)
             pred_prob_sig = torch.sigmoid(pred_prob)[0, 0].cpu().numpy()
+            pred_prob_smooth = gaussian_filter(pred_prob_sig, sigma=2.0)
 
-            iou, dice = compute_mask_metrics(pred_prob_sig, msk_np)
+            mask_bin = pred_prob_smooth > 0.5
+            iou, dice = compute_mask_metrics(mask_bin.astype(float), msk_np)
             ious.append(iou); dices.append(dice)
 
             # write logits/prob rasters if georef is available
@@ -254,7 +257,11 @@ def eval_on_val(model, predictor, dl, device, args):
                     aff = rasterio.Affine(*tfm)
                     prob_dir = args.out.parent / "val_probs"
                     prob_dir.mkdir(parents=True, exist_ok=True)
-                    for arr, suffix in [(logit_up.cpu().numpy(), "logit"), (prior_resized.cpu().numpy(), "prior")]:
+                    for arr, suffix in [
+                        (logit_up.cpu().numpy(), "logit"),
+                        (prior_resized.cpu().numpy(), "prior"),
+                        (pred_prob_smooth, "prob_smooth"),
+                    ]:
                         path = prob_dir / f"{name}_{suffix}.tif"
                         with rasterio.open(
                             path,
@@ -277,7 +284,6 @@ def eval_on_val(model, predictor, dl, device, args):
             if not polys_pixel:
                 # fallback: polygonize the binary mask
                 from skimage import measure
-                mask_bin = pred_prob_sig > 0.5
                 contours = measure.find_contours(mask_bin.astype(np.uint8), 0.5)
                 polys_pixel = [geom.Polygon(cnt[:, ::-1]) for cnt in contours if len(cnt) >= 3]
 

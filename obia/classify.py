@@ -85,14 +85,28 @@ def classify(
         label_enc = LabelEncoder().fit(y)
         y = label_enc.transform(y)  # 0 … n-1
 
-    X_tr, X_te, y_tr, y_te = train_test_split(
-        X, y, test_size=test_size, random_state=42, stratify=y
-    )
+    if test_size is None or float(test_size) <= 0:
+        X_tr, y_tr = X, y
+        X_te, y_te = None, None
+    else:
+        try:
+            X_tr, X_te, y_tr, y_te = train_test_split(
+                X, y, test_size=test_size, random_state=42, stratify=y
+            )
+        except ValueError as e:
+            if "least populated classes" in str(e) or "cannot be less than 2" in str(e):
+                print("[classify] stratified split failed; falling back to unstratified split.")
+                X_tr, X_te, y_tr, y_te = train_test_split(
+                    X, y, test_size=test_size, random_state=42, stratify=None
+                )
+            else:
+                raise
 
     scaler = StandardScaler().fit(X_tr) if method == "mlp" else None
     if scaler is not None:
         X_tr = scaler.transform(X_tr)
-        X_te = scaler.transform(X_te)
+        if X_te is not None:
+            X_te = scaler.transform(X_te)
 
     # 3. initialise classifier ----------------------------------------
     if method == "rf":
@@ -166,7 +180,7 @@ def classify(
 
     # 6. reports --------------------------------------------------------
     cm = rpt = None
-    if compute_reports:
+    if compute_reports and X_te is not None and y_te is not None:
         y_pred = clf.predict(X_te)
         cm     = confusion_matrix(y_te, y_pred)
         rpt    = classification_report(y_te, y_pred)

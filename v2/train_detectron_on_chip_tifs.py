@@ -63,7 +63,17 @@ def robust_norm255(band):
     return band.astype(np.uint8)
 
 
-def read_rgb_from_tif(path: Path, bands_1idx=(7, 5, 3)):
+def _chm_path_for_tif(tif_path: Path, chm_suffix: str) -> Path:
+    return tif_path.with_name(f"{tif_path.stem}{chm_suffix}")
+
+
+def read_img_from_tif(
+    path: Path,
+    *,
+    bands_1idx=(7, 5, 3),
+    use_chm: bool = False,
+    chm_suffix: str = "_chm.tif",
+):
     with rasterio.open(path) as src:
         available = src.count
         sel = [b for b in bands_1idx if b <= available] or [1]
@@ -77,7 +87,17 @@ def read_rgb_from_tif(path: Path, bands_1idx=(7, 5, 3)):
         nir, red, grn = arr[0], arr[1], arr[2]
     nir8, red8, grn8 = robust_norm255(nir), robust_norm255(red), robust_norm255(grn)
     rgb = np.dstack([red8, grn8, nir8]).astype(np.uint8)
-    return rgb
+
+    if not use_chm:
+        return rgb
+
+    chm_path = _chm_path_for_tif(path, chm_suffix)
+    if not chm_path.exists():
+        raise FileNotFoundError(f"Missing CHM chip: {chm_path}")
+    with rasterio.open(chm_path) as csrc:
+        chm = csrc.read(1).astype(np.float32)
+    chm8 = robust_norm255(chm)
+    return np.dstack([rgb, chm8]).astype(np.uint8)
 
 
 def _geom_to_img_coords(geom, src: rasterio.io.DatasetReader):
@@ -179,32 +199,47 @@ def count_instances_from_manifest(manifest_path: Path):
     return n_chips, n_inst
 
 
-def mapper_train(dataset_dict, bands_1idx):
+def mapper_train(dataset_dict, bands_1idx, use_chm, chm_suffix):
     d = copy.deepcopy(dataset_dict)
-    rgb = read_rgb_from_tif(Path(d["file_name"]), bands_1idx=bands_1idx)
-    aug_input = T.AugInput(rgb)
+    img = read_img_from_tif(
+        Path(d["file_name"]),
+        bands_1idx=bands_1idx,
+        use_chm=use_chm,
+        chm_suffix=chm_suffix,
+    )
+    aug_input = T.AugInput(img)
     transforms = [
         T.RandomFlip(horizontal=True, vertical=False, prob=0.5),
         T.RandomFlip(horizontal=False, vertical=True, prob=0.5),
-        T.RandomBrightness(0.9, 1.1),
-        T.RandomContrast(0.9, 1.1),
     ]
+    if not use_chm:
+        # Avoid applying color jitter to CHM.
+        transforms += [
+            T.RandomBrightness(0.9, 1.1),
+            T.RandomContrast(0.9, 1.1),
+        ]
     applied = [aug(aug_input) for aug in transforms]
-    aug_rgb = aug_input.image
+    aug_img = np.ascontiguousarray(aug_input.image)
     annos = [a for a in d.get("annotations", []) if a.get("iscrowd", 0) == 0]
-    annos = [utils.transform_instance_annotations(a, applied, aug_rgb.shape[:2]) for a in annos]
-    d["image"] = torch.as_tensor(aug_rgb.transpose(2, 0, 1))
-    d["instances"] = utils.annotations_to_instances(annos, image_size=aug_rgb.shape[:2], mask_format="polygon")
+    annos = [utils.transform_instance_annotations(a, applied, aug_img.shape[:2]) for a in annos]
+    d["image"] = torch.as_tensor(aug_img.transpose(2, 0, 1))
+    d["instances"] = utils.annotations_to_instances(annos, image_size=aug_img.shape[:2], mask_format="polygon")
     d.pop("annotations", None)
     return d
 
 
-def mapper_test(dataset_dict, bands_1idx):
+def mapper_test(dataset_dict, bands_1idx, use_chm, chm_suffix):
     d = copy.deepcopy(dataset_dict)
-    rgb = read_rgb_from_tif(Path(d["file_name"]), bands_1idx=bands_1idx)
-    d["image"] = torch.as_tensor(rgb.transpose(2, 0, 1))
+    img = read_img_from_tif(
+        Path(d["file_name"]),
+        bands_1idx=bands_1idx,
+        use_chm=use_chm,
+        chm_suffix=chm_suffix,
+    )
+    img = np.ascontiguousarray(img)
+    d["image"] = torch.as_tensor(img.transpose(2, 0, 1))
     annos = [a for a in d.get("annotations", []) if a.get("iscrowd", 0) == 0]
-    d["instances"] = utils.annotations_to_instances(annos, image_size=rgb.shape[:2], mask_format="polygon")
+    d["instances"] = utils.annotations_to_instances(annos, image_size=img.shape[:2], mask_format="polygon")
     d.pop("annotations", None)
     return d
 
@@ -213,12 +248,16 @@ class Trainer(DefaultTrainer):
     @classmethod
     def build_train_loader(cls, cfg):
         bands = tuple(cfg.INPUT.BANDS_1IDX)
-        return build_detection_train_loader(cfg, mapper=lambda d: mapper_train(d, bands))
+        use_chm = bool(getattr(cfg.INPUT, "USE_CHM", False))
+        chm_suffix = str(getattr(cfg.INPUT, "CHM_SUFFIX", "_chm.tif"))
+        return build_detection_train_loader(cfg, mapper=lambda d: mapper_train(d, bands, use_chm, chm_suffix))
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
         bands = tuple(cfg.INPUT.BANDS_1IDX)
-        return build_detection_test_loader(cfg, dataset_name, mapper=lambda d: mapper_test(d, bands))
+        use_chm = bool(getattr(cfg.INPUT, "USE_CHM", False))
+        chm_suffix = str(getattr(cfg.INPUT, "CHM_SUFFIX", "_chm.tif"))
+        return build_detection_test_loader(cfg, dataset_name, mapper=lambda d: mapper_test(d, bands, use_chm, chm_suffix))
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
@@ -256,6 +295,8 @@ def main():
     pa.add_argument("--skip-val-eval", action="store_true", help="Skip validation split and COCO eval")
     pa.add_argument("--quick", action="store_true", help="Override settings for a fast smoke test")
     pa.add_argument("--metrics-out", type=Path, default=None)
+    pa.add_argument("--use-chm", action="store_true", help="Append CHM as a 4th input channel")
+    pa.add_argument("--chm-suffix", type=str, default="_chm.tif", help="Suffix for CHM chip tif files")
     args = pa.parse_args()
 
     set_seed(SEED)
@@ -289,10 +330,16 @@ def main():
     cfg.INPUT.FORMAT = "BGR"
     cfg.INPUT.MASK_FORMAT = "polygon"
     cfg.INPUT.BANDS_1IDX = list(bands_1idx)
+    cfg.INPUT.USE_CHM = bool(args.use_chm)
+    cfg.INPUT.CHM_SUFFIX = str(args.chm_suffix)
     cfg.DATASETS.TRAIN = ("chips_train",)
     cfg.DATASETS.TEST = ("chips_val",)
     cfg.DATALOADER.NUM_WORKERS = NUM_WORKERS
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+    if args.use_chm:
+        cfg.MODEL.RESNETS.STEM_IN_CHANNELS = 4
+        cfg.MODEL.PIXEL_MEAN = [103.53, 116.28, 123.675, 0.0]
+        cfg.MODEL.PIXEL_STD = [1.0, 1.0, 1.0, 1.0]
     if args.quick:
         args.max_iters = min(args.max_iters, 200)
         args.ims_per_batch = min(args.ims_per_batch, 1)
@@ -344,7 +391,11 @@ def main():
 
     if not args.skip_val_eval and (val_records or args.holdout > 0.0):
         evaluator = COCOEvaluator("chips_val", output_dir=str(Path(cfg.OUTPUT_DIR) / "inference"))
-        val_loader = build_detection_test_loader(cfg, "chips_val", mapper=lambda d: mapper_test(d, bands_1idx))
+        val_loader = build_detection_test_loader(
+            cfg,
+            "chips_val",
+            mapper=lambda d: mapper_test(d, bands_1idx, args.use_chm, args.chm_suffix),
+        )
         metrics = inference_on_dataset(trainer.model, val_loader, evaluator)
         metrics_json = args.metrics_out or Path(cfg.OUTPUT_DIR) / "metrics.json"
         json.dump(metrics, open(metrics_json, "w"))

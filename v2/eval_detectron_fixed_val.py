@@ -41,6 +41,8 @@ def main() -> None:
     pa.add_argument("--max-dets", type=int, default=100, help="Max detections per image at test time")
     pa.add_argument("--rpn-post-nms-topk", type=int, default=1000, help="RPN post-NMS topk at test time")
     pa.add_argument("--bands", type=str, default="7,5,3")
+    pa.add_argument("--use-chm", action="store_true", help="Append CHM as a 4th input channel")
+    pa.add_argument("--chm-suffix", type=str, default="_chm.tif", help="Suffix for CHM chip tif files")
     pa.add_argument("--write-gpkg", action="store_true", help="Write GPKG predictions for each size")
     pa.add_argument("--write-per-chip", action="store_true", help="Write per-chip prediction GPKGs")
     pa.add_argument("--per-chip-dir", type=Path, default=None, help="Optional override for per-chip output dir")
@@ -83,6 +85,8 @@ def main() -> None:
             "--metrics-out",
             str(metrics_out),
         ]
+        if args.use_chm:
+            cmd += ["--use-chm", "--chm-suffix", args.chm_suffix]
         if args.write_gpkg:
             cmd += ["--output-gpkg", str(out_dir / "val_preds.gpkg")]
         if args.write_per_chip:

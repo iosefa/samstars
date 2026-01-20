@@ -153,6 +153,30 @@ def load_pairs(
     return X, Y
 
 
+def count_pairs(
+    manifest: Path,
+    *,
+    input_key: str = "index",
+    use_aux: bool = False,
+    chm_key: str = "chm",
+) -> int:
+    data = json.load(open(manifest))
+    count = 0
+    for rec in data:
+        fname = rec.get(input_key, "")
+        mpath = rec.get("mask", "")
+        if not fname or not mpath or not Path(mpath).exists():
+            continue
+        if not Path(fname).exists():
+            continue
+        if use_aux:
+            chm_path = rec.get(chm_key, "")
+            if not chm_path or not Path(chm_path).exists():
+                continue
+        count += 1
+    return count
+
+
 def main() -> None:
     pa = argparse.ArgumentParser()
     pa.add_argument("--train-probs", type=Path, required=True)
@@ -160,6 +184,14 @@ def main() -> None:
     pa.add_argument("--out-dir", type=Path, required=True)
     pa.add_argument("--epochs", type=int, default=50)
     pa.add_argument("--min-iters", type=int, default=0, help="Minimum iterations (converted to epochs)")
+    pa.add_argument("--auto-epochs-ref-size", type=str, default=None, help="Reference size for auto-epochs (e.g., 0100)")
+    pa.add_argument("--auto-epochs-ref-epochs", type=float, default=None, help="Reference epochs for auto-epochs")
+    pa.add_argument(
+        "--auto-epochs-probs-root",
+        type=Path,
+        default=None,
+        help="Root containing <size>/train_probs.json (defaults to train-probs parent)",
+    )
 
     # Original-matching knobs
     pa.add_argument(
@@ -215,6 +247,26 @@ def main() -> None:
         raise RuntimeError("No training data with masks found.")
 
     iters_per_epoch = max(1, len(Xtr))
+    if args.auto_epochs_ref_size and args.auto_epochs_ref_epochs:
+        probs_root = args.auto_epochs_probs_root
+        if probs_root is None:
+            probs_root = args.train_probs.parent.parent
+        ref_manifest = probs_root / args.auto_epochs_ref_size / "train_probs.json"
+        if not ref_manifest.exists():
+            raise FileNotFoundError(f"Missing ref train_probs.json: {ref_manifest}")
+        ref_n = count_pairs(
+            ref_manifest,
+            input_key=args.input_key,
+            use_aux=args.use_aux,
+            chm_key=args.chm_key,
+        )
+        cur_n = len(Xtr)
+        if ref_n <= 0 or cur_n <= 0:
+            raise RuntimeError("Auto-epochs requires non-zero training sample counts.")
+        target_steps = ref_n * float(args.auto_epochs_ref_epochs)
+        auto_epochs = int(np.ceil(target_steps / max(cur_n, 1)))
+        args.epochs = max(args.epochs, auto_epochs)
+        print(f"auto-epochs -> {auto_epochs} (ref_n={ref_n}, cur_n={cur_n})")
     if args.min_iters > 0:
         min_epochs = int((args.min_iters + iters_per_epoch - 1) // iters_per_epoch)
         args.epochs = max(args.epochs, min_epochs)

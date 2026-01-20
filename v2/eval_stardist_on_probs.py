@@ -165,6 +165,8 @@ def main() -> None:
     ious, dices = [], []
     pqs, sqs, rqs = [], [], []
     polys_world = []
+    scores_world = []
+    label_ids = []
     crs_out = None
     val_instances = 0
 
@@ -217,7 +219,11 @@ def main() -> None:
             predict_kwargs["prob_thresh"] = prob_thr
             predict_kwargs["nms_thresh"] = nms_thr
 
-        labels, _ = model.predict_instances(x_in, **predict_kwargs)
+        labels, details = model.predict_instances(x_in, **predict_kwargs)
+        score_by_label = {}
+        if isinstance(details, dict) and "prob" in details:
+            probs = np.asarray(details["prob"], dtype=float)
+            score_by_label = {i + 1: float(p) for i, p in enumerate(probs)}
 
         iou, dice = compute_iou_dice(labels, msk)
         pq, sq, rq = compute_pq(labels, msk, iou_thr=0.5)
@@ -241,12 +247,16 @@ def main() -> None:
                 mask_lbl = labels == lbl_id
                 contours = measure.find_contours(mask_lbl.astype(np.uint8), 0.5)
                 for cnt in contours:
+                    if cnt.shape[0] < 4:
+                        continue
                     xs, ys = cnt[:, 1], cnt[:, 0]
                     xw = aff.c + aff.a * xs + aff.b * ys
                     yw = aff.f + aff.d * xs + aff.e * ys
                     poly = geom.Polygon(zip(xw, yw))
                     if poly.is_valid and poly.area > 0:
                         polys_world.append(poly)
+                        scores_world.append(score_by_label.get(int(lbl_id), 1.0))
+                        label_ids.append(int(lbl_id))
 
     metrics = {
         "iou": float(np.mean(ious)) if ious else 0.0,
@@ -267,7 +277,11 @@ def main() -> None:
             f.write(f"{k},{v if v is not None else ''}\n")
 
     if polys_world and crs_out:
-        gdf = gpd.GeoDataFrame({"id": range(1, len(polys_world) + 1)}, geometry=polys_world, crs=crs_out)
+        gdf = gpd.GeoDataFrame(
+            {"id": range(1, len(polys_world) + 1), "label_id": label_ids, "score": scores_world},
+            geometry=polys_world,
+            crs=crs_out,
+        )
         gdf.to_file(args.out_dir / "val_preds.gpkg", layer="crowns", driver="GPKG")
         print(f"✓ wrote val polygons to {args.out_dir / 'val_preds.gpkg'}")
 

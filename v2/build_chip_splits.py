@@ -6,7 +6,7 @@ For each tile directory (expects img.tif + crowns.gpkg), this script:
   - slides a window (size/stride) over the raster,
   - keeps chips that intersect crowns,
   - records chip metadata (window, bounds, transform, CRS, source paths),
-  - shuffles chips with a seed,
+  - orders chips (configurable),
   - for each size increment, writes train/val JSON manifests (70/30 by default).
 """
 from __future__ import annotations
@@ -100,15 +100,32 @@ def main():
     pa.add_argument("--start-chips", type=int, default=10, help="First subset size")
     pa.add_argument("--step", type=int, default=10, help="Subset increment")
     pa.add_argument("--max-chips", type=int, default=None, help="Maximum subset size (defaults to all chips)")
+    pa.add_argument(
+        "--sizes",
+        type=str,
+        default=None,
+        help="Comma-separated sizes to write (overrides start/step/max)",
+    )
     pa.add_argument("--skip", nargs="*", default=[], help="Tile folder names to skip")
     pa.add_argument("--count-instances", action="store_true", help="Count crowns per chip and print per-size totals")
+    pa.add_argument(
+        "--order-by",
+        type=str,
+        default="instances-asc",
+        choices=["instances-asc", "instances-desc", "random", "none"],
+        help="Order chips before building nested subsets",
+    )
     pa.add_argument("--fixed-val-fraction", type=float, default=None, help="Use a single fixed validation set with this fraction")
     pa.add_argument("--fixed-val-count", type=int, default=None, help="Use a single fixed validation set with this count")
     pa.add_argument("--fixed-val-crowns", type=int, default=None, help="Use a single fixed validation set with this many crowns")
     pa.add_argument("--write-per-size-val", action="store_true", help="Also write val_manifest.json per size")
     args = pa.parse_args()
 
-    count_instances = args.count_instances or (args.fixed_val_crowns is not None)
+    count_instances = (
+        args.count_instances
+        or (args.fixed_val_crowns is not None)
+        or args.order_by.startswith("instances")
+    )
     all_chips: List[dict] = []
     skip = set(args.skip)
     for tile in sorted(p for p in args.tiles_dir.iterdir() if p.is_dir() and p.name not in skip):
@@ -119,8 +136,6 @@ def main():
     if not all_chips:
         raise SystemExit("No chips found.")
 
-    random.seed(args.split_seed)
-    random.shuffle(all_chips)
     total = len(all_chips)
 
     if sum(x is not None for x in (args.fixed_val_fraction, args.fixed_val_count, args.fixed_val_crowns)) > 1:
@@ -129,6 +144,9 @@ def main():
     fixed_val = []
     train_pool = all_chips
     if args.fixed_val_fraction is not None or args.fixed_val_count is not None or args.fixed_val_crowns is not None:
+        pool_for_val = list(all_chips)
+        rng = random.Random(args.split_seed)
+        rng.shuffle(pool_for_val)
         if args.fixed_val_fraction is not None:
             n_val = int(round(total * args.fixed_val_fraction))
         elif args.fixed_val_count is not None:
@@ -139,7 +157,7 @@ def main():
             target = int(args.fixed_val_crowns)
             acc = 0
             fixed_val = []
-            for rec in reversed(all_chips):
+            for rec in reversed(pool_for_val):
                 n_c = int(rec.get("n_crowns") or 0)
                 fixed_val.append(rec)
                 acc += n_c
@@ -149,16 +167,47 @@ def main():
             print(f"✓ fixed val crowns target={target}, selected={len(fixed_val)}, crowns={acc}")
         else:
             n_val = max(0, min(int(n_val or 0), total))
-            fixed_val = all_chips[-n_val:] if n_val else []
-            train_pool = all_chips[:-n_val] if n_val else all_chips
+            fixed_val = pool_for_val[-n_val:] if n_val else []
+            train_pool = [r for r in all_chips if r not in fixed_val]
         if fixed_val:
             out_val = args.out_root / "fixed_val_manifest.json"
             args.out_root.mkdir(parents=True, exist_ok=True)
             json.dump(fixed_val, open(out_val, "w"))
             print(f"✓ wrote fixed val manifest ({len(fixed_val)} chips) ➜ {out_val}")
 
+    if args.order_by == "random":
+        rng = random.Random(args.split_seed)
+        rng.shuffle(train_pool)
+    elif args.order_by.startswith("instances"):
+        train_pool = sorted(
+            train_pool,
+            key=lambda r: (
+                int(r.get("n_crowns") or 0),
+                r.get("tile", ""),
+                int(r.get("chip_id") or 0),
+            ),
+        )
+        if args.order_by == "instances-desc":
+            train_pool = list(reversed(train_pool))
+    else:
+        # keep existing order as generated
+        pass
+
     max_chips = args.max_chips or len(train_pool)
-    sizes = [s for s in range(args.start_chips, max_chips + 1, args.step) if s <= max_chips]
+    if args.sizes:
+        sizes = []
+        for s in args.sizes.split(","):
+            s = s.strip()
+            if not s:
+                continue
+            try:
+                sizes.append(int(s))
+            except ValueError:
+                raise SystemExit(f"Invalid size '{s}' in --sizes")
+        sizes = [s for s in sizes if s <= max_chips]
+        sizes = sorted(set(sizes))
+    else:
+        sizes = [s for s in range(args.start_chips, max_chips + 1, args.step) if s <= max_chips]
 
     for n in sizes:
         subset = train_pool[:n]

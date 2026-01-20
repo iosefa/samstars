@@ -99,7 +99,8 @@ class Chips(Dataset):
         msk = np.load(self.chip_dir / "msk" / f"{name}.npy")
         pt = np.array(json.load(open(self.chip_dir / "json" / f"{name}.json"))["point"])
 
-        img = self.resize.apply_image(img.transpose(1, 2, 0)).transpose(2, 0, 1) / 255.0
+        img_u8 = img.astype(np.uint8)
+        img = self.resize.apply_image(img_u8.transpose(1, 2, 0)).transpose(2, 0, 1) / 255.0
         pt = self.resize.apply_coords(pt[None], (self.img_size, self.img_size))[0]
         return (
             torch.tensor(img).float(),
@@ -108,11 +109,7 @@ class Chips(Dataset):
         )
 
 
-def train_decoder(chip_dir, ckpt_path, out_path, img_size=512, enc_size=1024, epochs=15, lr=5e-5, device=None):
-    device = (
-        device
-        or ("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
-    )
+def train_decoder(chip_dir, ckpt_path, out_path, img_size=512, enc_size=1024, epochs=15, lr=5e-5, device="cpu"):
     loader = DataLoader(Chips(chip_dir, img_size, enc_size), batch_size=1, shuffle=True)
 
     sam = sam_model_registry["vit_l"](checkpoint=ckpt_path).to(device)
@@ -133,7 +130,8 @@ def train_decoder(chip_dir, ckpt_path, out_path, img_size=512, enc_size=1024, ep
             img, msk, pt = img.to(device), msk.to(device), pt.to(device)
             with torch.no_grad():
                 emb = sam.image_encoder(sam.preprocess(img))
-            sparse, _ = sam.prompt_encoder(points=(pt[:, None, :], torch.ones((1, 1), device=device)), boxes=None, masks=None)
+            point_labels = torch.ones((1, 1), device=device)
+            sparse, _ = sam.prompt_encoder(points=(pt[:, None, :], point_labels), boxes=None, masks=None)
             logit_low, _ = sam.mask_decoder(
                 image_embeddings=emb,
                 image_pe=base_pe,
@@ -154,7 +152,6 @@ def train_decoder(chip_dir, ckpt_path, out_path, img_size=512, enc_size=1024, ep
 
 
 def resolve_pairs(args):
-    """Return a list of (image_path, crowns_path) tuples based on CLI args."""
     pairs = []
     if args.tiles:
         pairs.extend([(Path(img), Path(crowns)) for img, crowns in args.tiles])
@@ -174,7 +171,6 @@ def resolve_pairs(args):
     return pairs
 
 
-# ─── cli ──────────────────────────────────────────────────────────────────────
 def parse_args():
     parser = argparse.ArgumentParser(description="Prepare chips and fine-tune the SAM decoder")
     parser.add_argument("--image", default=ROOT / "image.tif", type=Path, help="8-band WorldView raster")
@@ -196,9 +192,10 @@ def parse_args():
     parser.add_argument("--img-size", default=512, type=int, help="Chip size (pixels)")
     parser.add_argument("--overlap", default=480, type=int, help="Chip overlap (pixels)")
     parser.add_argument("--rgb-bands", default=(6, 4, 2), nargs=3, type=int, help="0-based RGB band indices")
-    parser.add_argument("--epochs", default=15, type=int, help="Training epochs")
+    parser.add_argument("--epochs", default=3, type=int, help="Training epochs")
     parser.add_argument("--lr", default=5e-5, type=float, help="Learning rate")
     parser.add_argument("--skip-chips", action="store_true", help="Skip chip generation and reuse existing chips")
+    parser.add_argument("--device", default="cpu", help="Device to use (cpu or cuda)")
     return parser.parse_args()
 
 
@@ -211,7 +208,8 @@ def main():
     else:
         print(f"Skipping chip creation; using chips at {args.chip_dir}")
 
-    train_decoder(args.chip_dir, args.ckpt, args.out, args.img_size, 1024, args.epochs, args.lr)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    train_decoder(args.chip_dir, args.ckpt, args.out, args.img_size, 1024, args.epochs, args.lr, device=args.device)
     print(f"✓ weights → {args.out}")
 
 

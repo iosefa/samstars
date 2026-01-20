@@ -18,7 +18,9 @@ DEFAULT_MODELS_ROOT = ROOT / "models" / "sizes"
 SAM_BASE_CKPT = ROOT.parent / "sam" / "sam_vit_l_0b3195.pth"
 SAM_TRAIN_SCRIPT = ROOT.parent / "sam" / "train_sam_end_to_end.py"
 DETECTRON_TRAIN = ROOT / "train_detectron_on_chips.py"
-FUSED_TRAIN = ROOT / "train_logit_aware_stardist.py"
+SAM_PROB_SCRIPT = ROOT / "run_sam_probs_on_chips.py"
+STARDIST_TRAIN_SCRIPT = ROOT / "train_stardist_on_probs.py"
+STARDIST_EVAL_SCRIPT = ROOT / "eval_stardist_on_probs.py"
 
 
 def run(cmd):
@@ -174,12 +176,15 @@ def main():
     pa.add_argument("--split-seed", type=int, default=42, help="Seed for deterministic train/val split")
     pa.add_argument("--holdout", type=float, default=0.3, help="Holdout fraction for validation")
     pa.add_argument("--run-detectron", action="store_true", help="Train Detectron on subsets")
-    pa.add_argument("--run-fused", action="store_true", help="Train SAM + fused StarDist on subsets")
+    pa.add_argument("--run-sam", action="store_true", help="Train SAM decoder and/or run SAM prob inference on subsets")
+    pa.add_argument("--run-stardist", action="store_true", help="Train+eval StarDist on SAM prob rasters (assumes probs already exist)")
+    pa.add_argument("--skip-sam-train", action="store_true", help="Reuse existing SAM weights if present")
+    pa.add_argument("--skip-sam-probs", action="store_true", help="Assume SAM probs already exist under each size")
     pa.add_argument("--output-root", type=Path, default=DEFAULT_MODELS_ROOT, help="Base directory for per-size outputs")
     args = pa.parse_args()
 
-    if not (args.run_detectron or args.run_fused):
-        args.run_detectron = args.run_fused = True
+    if not (args.run_detectron or args.run_sam or args.run_stardist):
+        args.run_detectron = True
 
     records = load_records()
     random.seed(args.seed)
@@ -195,11 +200,43 @@ def main():
         chip_dir_train, chip_dir_val, train_json, val_json = prepare_subset_dirs(subset, size_dir, args.holdout, args.split_seed)
         write_val_extent(val_json, size_dir)
 
+        sam_ckpt = size_dir / "sam" / "sam_crowns_decoder.pth"
+        prob_dir = size_dir / "sam_probs"
+        sd_dir = size_dir / "stardist"
+        sd_dir.mkdir(parents=True, exist_ok=True)
+
         if args.run_detectron:
             train_detectron(size_dir, train_json, val_json, chip_dir_train, chip_dir_val, args.split_seed)
-        if args.run_fused:
-            sam_ckpt = train_sam(size_dir, chip_dir_train)
-            train_fused(size_dir, chip_dir_train, train_json, val_json, sam_ckpt, args.split_seed)
+
+        if args.run_sam:
+            if not (args.skip_sam_train and sam_ckpt.exists()):
+                sam_ckpt = train_sam(size_dir, chip_dir_train)
+            if not args.skip_sam_probs:
+                run_probs = [
+                    sys.executable, str(SAM_PROB_SCRIPT),
+                    "--chip-dir", str(chip_dir_train),
+                    "--records-json", str(train_json),
+                    "--val-records-json", str(val_json),
+                    "--sam-ckpt", str(sam_ckpt),
+                    "--out-dir", str(prob_dir),
+                ]
+                run(run_probs)
+
+        if args.run_stardist:
+            train_sd = [
+                sys.executable, str(STARDIST_TRAIN_SCRIPT),
+                "--train-probs", str(prob_dir / "train_probs.json"),
+                "--val-probs", str(prob_dir / "val_probs.json"),
+                "--out-dir", str(sd_dir),
+            ]
+            run(train_sd)
+            eval_sd = [
+                sys.executable, str(STARDIST_EVAL_SCRIPT),
+                "--val-probs", str(prob_dir / "val_probs.json"),
+                "--model-dir", str(sd_dir),
+                "--out-dir", str(sd_dir),
+            ]
+            run(eval_sd)
         print(f"✓ completed size {n}")
 
 

@@ -169,6 +169,7 @@ def main():
     pa = argparse.ArgumentParser(description="Build chip npys from train_manifest.json.")
     pa.add_argument("--manifest", type=Path, help="train_manifest.json (single size)")
     pa.add_argument("--splits-root", type=Path, help="Root containing per-size folders with train_manifest.json")
+    pa.add_argument("--sizes", type=str, default=None, help="Comma-separated sizes to process (with --splits-root)")
     pa.add_argument("--out-dir", type=Path, required=True, help="Output root; per-size chips under out-dir/<size>/chips_train")
     pa.add_argument("--size", type=int, default=512)
     pa.add_argument("--no-tif", action="store_true", help="Skip writing GeoTIFF chips")
@@ -187,7 +188,12 @@ def main():
         )
         print(f"✓ built fixed val chips to {out_dir}")
     if args.splits_root:
-        for size_dir in sorted(p for p in args.splits_root.iterdir() if p.is_dir()):
+        if args.sizes:
+            size_set = {s.strip() for s in args.sizes.split(",") if s.strip()}
+            size_dirs = [args.splits_root / s for s in sorted(size_set)]
+        else:
+            size_dirs = sorted(p for p in args.splits_root.iterdir() if p.is_dir())
+        for size_dir in size_dirs:
             train_manifest = size_dir / "train_manifest.json"
             val_manifest = size_dir / "val_manifest.json"
             if train_manifest.exists():

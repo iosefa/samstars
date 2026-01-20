@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# DEPRECATED: class-agnostic PQ/SQ/RQ; use class-aware summaries instead.
 """
 Summarize figure6-style IoU for multiple Detectron eval runs against a fixed val set.
 
