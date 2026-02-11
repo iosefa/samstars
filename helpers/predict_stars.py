@@ -25,6 +25,7 @@ from pathlib import Path
 import argparse
 
 import rasterio
+import numpy as np
 from tifffile import imread
 from csbdeep.utils import normalize
 from stardist.models import StarDist2D
@@ -56,6 +57,7 @@ def main() -> None:
     pa.add_argument("--model-dir", default="models", help="folder containing the model sub-dir")
     pa.add_argument("--model-name", default="stardist", help="sub-directory with config/weights")
     pa.add_argument("--input", required=True, help="canopy_index.tif to segment")
+    pa.add_argument("--aux", default=None, help="optional aux raster (e.g., CHM) for multi-channel models")
     pa.add_argument("--out-tif",  default="labels_pred.tif", help="output GeoTIFF label image")
     pa.add_argument("--out-png",  default="preview.png",    help="optional quick-look PNG")
     pa.add_argument("--prob-thr", type=float, default=0.15, help="StarDist prob_thresh")
@@ -70,9 +72,29 @@ def main() -> None:
         )
 
     model = StarDist2D(None, name=args.model_name, basedir=args.model_dir)
+    n_channel_in = int(getattr(model.config, "n_channel_in", 1))
 
     img = imread(args.input)
-    img_norm = normalize(img, 1, 99.8, axis=(0, 1))[..., None]
+    if img.ndim > 2:
+        img = img[..., 0]
+    img = img.astype("float32")
+
+    if n_channel_in == 1:
+        img_norm = normalize(img, 1, 99.8, axis=(0, 1))[..., None]
+    elif n_channel_in == 2:
+        if not args.aux:
+            raise ValueError("This StarDist model expects 2 channels; pass --aux (e.g., chm.tif).")
+        aux = imread(args.aux)
+        if aux.ndim > 2:
+            aux = aux[..., 0]
+        aux = aux.astype("float32")
+
+        h = min(img.shape[0], aux.shape[0])
+        w = min(img.shape[1], aux.shape[1])
+        x = np.stack([img[:h, :w], aux[:h, :w]], axis=-1).astype("float32")
+        img_norm = normalize(x, 1, 99.8, axis=(0, 1)).astype("float32")
+    else:
+        raise ValueError(f"Unsupported n_channel_in={n_channel_in} for helpers/predict_stars.py")
 
     labels, _ = model.predict_instances(
         img_norm,
@@ -84,6 +106,13 @@ def main() -> None:
 
     with rasterio.open(args.input) as src:
         meta = src.meta.copy()
+        # If we cropped to match aux size, trim labels back to input size via padding.
+        if labels.shape != (src.height, src.width):
+            out = np.zeros((src.height, src.width), dtype=labels.dtype)
+            hh = min(src.height, labels.shape[0])
+            ww = min(src.width, labels.shape[1])
+            out[:hh, :ww] = labels[:hh, :ww]
+            labels = out
         meta.update(count=1, dtype="uint16", compress="lzw")
         with rasterio.open(args.out_tif, "w", **meta) as dst:
             dst.write(labels.astype("uint16"), 1)

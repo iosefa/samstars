@@ -80,7 +80,8 @@ def build_tiles(*,
                 cost_weights=(0.4, 0.3, 0.3, 0.0),
                 seed_params: SeedParams | None = None,
                 thin_seeds: bool = True,                    # ← NEW
-                thin_dist: float = 0.8) -> None:            # ← NEW
+                thin_dist: float = 0.8,
+                write_den: bool = False) -> None:           # ← NEW
 
     out.mkdir(parents=True, exist_ok=True)
     with rasterio.open(img) as img_ds:
@@ -174,6 +175,8 @@ def build_tiles(*,
 
             _w1(chm_tile,  "chm.tif")
             _w1(cost_arr,  "cost.tif")
+            if write_den:
+                _w1(den_tile, "den.tif")
             if not seeds_tile.empty:
                 seeds_tile.to_file(tile_dir/"seeds.gpkg", driver="GPKG")
 
@@ -204,6 +207,8 @@ def _parse_cli():
                           help="Spatially thin seeds at 0.7 m (default)")
     thin_grp.add_argument("--no-thin",  dest="thin", action="store_false",
                           help="Keep all seeds (no thinning)")
+    pa.add_argument("--write-den", action="store_true",
+                    help="Write per-tile den.tif (density raster)")
     return pa.parse_args()
 
 def _main():
@@ -213,7 +218,8 @@ def _main():
                     slic=ns.slic, out=ns.out,
                     tile=ns.tile, overlap=ns.overlap,
                     cost_weights=tuple(ns.weights),
-                    thin_seeds=ns.thin)
+                    thin_seeds=ns.thin,
+                    write_den=ns.write_den)
     except Exception as e:
         print("Error:", e, file=sys.stderr); sys.exit(1)
 

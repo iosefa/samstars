@@ -63,6 +63,8 @@ def main():
     # SAM inference over tiles
     for tile in tiles:
         prob = tile / args.prob_name
+        index = tile / "sam_index.tif"
+        logit = tile / "logit.tif"
         if prob.exists() and not args.force_sam_infer:
             print(f"✓ {prob} exists; skipping SAM inference.")
             continue
@@ -82,7 +84,9 @@ def main():
             "--cost", str(cost),
             "--sam-dec", str(args.sam_dec_out),
             "--sam-meta", str(args.sam_ckpt),
-            "--out", str(prob),
+            "--out-index", str(index),
+            "--out-prob", str(prob),
+            "--out-logit", str(logit),
         ]
         run(cmd)
 

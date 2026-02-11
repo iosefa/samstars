@@ -258,3 +258,13 @@ v2 copy/
 manuscript/RIS/
 manuscript/*.ris
 manuscript/supplementary_information.html
+
+# ML run artifacts under data/
+data/**/train_logs/
+data/**/logs/
+data/**/last_checkpoint
+data/**/events.out.tfevents.*
+
+# Local run outputs
+data/anahulu-test-out/
+data/anahulu-test-manifest-out/

@@ -73,7 +73,14 @@ def main() -> None:
     pa.add_argument("--seeds", default="seeds.gpkg")
     pa.add_argument("--sam-meta", default="sam_vit_l_0b3195.pth")
     pa.add_argument("--sam-dec",  default="sam_crowns_decoder.pth")
+    # Legacy: --out is treated as sam_index output path.
     pa.add_argument("--out",   default="canopy_index.tif")
+    pa.add_argument("--out-index", default=None,
+                    help="Output path for fused SAM index raster (default: --out).")
+    pa.add_argument("--out-prob", default=None,
+                    help="Optional output path for smoothed SAM probability raster.")
+    pa.add_argument("--out-logit", default=None,
+                    help="Optional output path for pre-smoothing probability mosaic (legacy logit debug).")
     args = pa.parse_args()
 
     with rasterio.open(args.img) as img_ds, \
@@ -256,12 +263,23 @@ def main() -> None:
     index = np.where(np.isnan(index), NODATA_VAL,
                      ((index - idx_min) / (idx_max - idx_min + 1e-6)).astype("float32"))
 
+    out_index = args.out_index if args.out_index else args.out
+
     meta = {"driver": "GTiff", "height": H, "width": W, "count": 1,
             "dtype": "float32", "crs": crs, "transform": tfm,
             "compress": "deflate", "predictor": 2, "zlevel": 6,
             "nodata": NODATA_VAL}
-    with rasterio.open(args.out, "w", **meta) as dst:
+
+    with rasterio.open(out_index, "w", **meta) as dst:
         dst.write(index, 1)
+
+    if args.out_prob:
+        with rasterio.open(args.out_prob, "w", **meta) as dst:
+            dst.write(prob_s.astype("float32"), 1)
+
+    if args.out_logit:
+        with rasterio.open(args.out_logit, "w", **meta) as dst:
+            dst.write(prob_mosaic.astype("float32"), 1)
 
 
 if __name__ == "__main__":

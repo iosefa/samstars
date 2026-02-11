@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """
-Figure: Whole-extent predicted/reference + PQ + imagery (2 rows × 5 cols)
+Figure: Whole-extent predicted/reference + PQ + imagery (1 row × 4 cols)
 
-Rows:
-  A (top)    : Class-agnostic (geometry only; IoU ≥ 0.50)
-  B (bottom) : Semantic (geometry + class match; IoU ≥ 0.50)
+Row:
+  Semantic (geometry + class match; IoU ≥ 0.50)
 
 Columns:
-  1) Combined predicted + reference (no class / by class)
-  2) PQ illustration — class-agnostic (top) and semantic (bottom)
-  3) WorldView-3 image (PQ_worldview.tif) — predicted (solid) + reference (dashed) outlines
-  4) CHM image (PQ_chm.tif)               — predicted (solid) + reference (dashed) outlines
-  5) Drone image (PQ_drone.tif)           — predicted (solid) + reference (dashed) outlines
+  1) Combined predicted + reference (by class)
+  2) WorldView-3 / CHM (diagonal split)
+  3) Drone image
+  4) Panoptic Quality (semantic)
 """
 
 from pathlib import Path
@@ -650,96 +648,67 @@ def main():
     pred_cat_geo, ref_fn_geo = classify_geometry_only(pred, ref, inter)
     pred_cat_sem, ref_fn_sem = classify_semantic(pred, ref, inter, PRED_CLASS, REF_CLASS)
 
-    # Figure layout: 2 rows × 4 columns (horizontal arrangement)
+    # Figure layout: 1 row × 4 columns (semantic only)
     # Use GridSpec wspace/hspace to force near-touching columns
     # Choose figure size to make subplot cells nearly square with equal aspect
-    fig_h = 10.0
-    left_m, right_m, top_m, bottom_m = 0.03, 0.97, 0.95, 0.22
+    fig_h = 6.0
+    left_m, right_m, top_m, bottom_m = 0.03, 0.97, 0.92, 0.18
     usable_w = (right_m - left_m)
     usable_h = (top_m - bottom_m)
-    fig_w = 2.0 * fig_h * (usable_h / usable_w)  # 4 columns vs 2 rows
+    fig_w = 1.0 * fig_h * (usable_h / usable_w)  # 4 columns vs 1 row
     fig, axes = plt.subplots(
-        2, 4, figsize=(fig_w, fig_h),
+        1, 4, figsize=(fig_w, fig_h),
         constrained_layout=False,
-        gridspec_kw={"wspace": 0.0, "hspace": 0.15}
+        gridspec_kw={"wspace": 0.0, "hspace": 0.0}
     )
 
     # New order: Col1 Combined, Col2 WV/CHM, Col3 UAV, Col4 PQ
 
     # Column 1: Combined Pred + Ref
-    plot_combined_geo(axes[0, 0], pred, ref)
-    plot_combined_class(axes[1, 0], pred, ref)
-
-    # Column 2: Diagonal WV3/CHM imagery
-    # Top row: generic magenta overlays
-    plot_imagery_diagonal(axes[0, 1], axes[1, 1], WV_TIF, CHM_TIF, pred, ref, extent, "", "")
-
-    # Column 3: Drone imagery with THICK outlines
-    # Top row: generic magenta overlays
-    plot_imagery_row(axes[0, 2], axes[1, 2], DRONE_TIF, pred, ref, extent, "", "")
+    plot_combined_class(axes[0], pred, ref)
 
     # Column 4: PQ panels (moved last)
-    plot_pq_panel(axes[0, 3], pred, ref, pred_cat_geo, ref_fn_geo, "")
-    plot_pq_panel(axes[1, 3], pred, ref, pred_cat_sem, ref_fn_sem, "")
+    plot_pq_panel(axes[3], pred, ref, pred_cat_sem, ref_fn_sem, "")
 
     # Column titles (top row only); ensure aligned at same vertical position
-    axes[0, 0].set_title("Predicted + Reference", y=1.02)
-    axes[0, 1].set_title("WorldView 3 / CHM", y=1.02)
-    axes[0, 2].set_title("UAV", y=1.02)
-    axes[0, 3].set_title("Panoptic Quality", y=1.02)
-    for j in range(4):
-        axes[1, j].set_title("")
+    axes[0].set_title("Predicted + Reference", y=1.02)
+    axes[1].set_title("WorldView 3 / CHM", y=1.02)
+    axes[2].set_title("UAV", y=1.02)
+    axes[3].set_title("Panoptic Quality", y=1.02)
     # Apply class-specific rendering (second row only), using distinct colors and legends
     from matplotlib.lines import Line2D
     gr_col = ROW2_CLASS_COLORS.get("GREROB", CLASS_COLORS.get("GREROB", DEFAULT_CLASS_COLOR))
     di_col = ROW2_CLASS_COLORS.get("DIOSAN", CLASS_COLORS.get("DIOSAN", DEFAULT_CLASS_COLOR))
 
-    # Col 2 bottom: BOTH classes (GREROB, DIOSAN) on WV/CHM diagonal
-    axes[1, 1].cla()
-    draw_dual_class_pair_diagonal(axes[1, 1], WV_TIF, CHM_TIF, pred, ref, extent, class_codes=["GREROB", "DIOSAN"])
+    # Col 2: BOTH classes (GREROB, DIOSAN) on WV/CHM diagonal
+    draw_dual_class_pair_diagonal(axes[1], WV_TIF, CHM_TIF, pred, ref, extent, class_codes=["GREROB", "DIOSAN"])
     handles_wv = [
         Line2D([], [], color=gr_col, linewidth=LW_PRED_IMAGERY, linestyle='--', label='Predicted GREROB'),
         Line2D([], [], color=gr_col, linewidth=LW_REF_IMAGERY,  linestyle='-',  label='Reference GREROB'),
         Line2D([], [], color=di_col, linewidth=LW_PRED_IMAGERY, linestyle='--', label='Predicted DIOSAN'),
         Line2D([], [], color=di_col, linewidth=LW_REF_IMAGERY,  linestyle='-',  label='Reference DIOSAN'),
     ]
-    legend_inside_top_right(axes[1, 1], handles_wv)
+    legend_inside_top_right(axes[1], handles_wv)
 
-    # Col 3 bottom: BOTH classes (GREROB, DIOSAN) on UAV raster
-    axes[1, 2].cla()
-    draw_dual_class_pair_raster(axes[1, 2], DRONE_TIF, pred, ref, extent, class_codes=["GREROB", "DIOSAN"])
+    # Col 3: BOTH classes (GREROB, DIOSAN) on UAV raster
+    draw_dual_class_pair_raster(axes[2], DRONE_TIF, pred, ref, extent, class_codes=["GREROB", "DIOSAN"])
     handles_uav = [
         Line2D([], [], color=gr_col, linewidth=LW_PRED_IMAGERY, linestyle='--', label='Predicted GREROB'),
         Line2D([], [], color=gr_col, linewidth=LW_REF_IMAGERY,  linestyle='-',  label='Reference GREROB'),
         Line2D([], [], color=di_col, linewidth=LW_PRED_IMAGERY, linestyle='--', label='Predicted DIOSAN'),
         Line2D([], [], color=di_col, linewidth=LW_REF_IMAGERY,  linestyle='-',  label='Reference DIOSAN'),
     ]
-    legend_inside_top_right(axes[1, 2], handles_uav)
+    legend_inside_top_right(axes[2], handles_uav)
 
     # Tighten spacing between columns only (keep visible row spacing)
     # Leave extra bottom space for a single, horizontal global legend
     bottom_m = 0.22
-    plt.subplots_adjust(wspace=0.0, hspace=0.15,
+    plt.subplots_adjust(wspace=0.0, hspace=0.0,
                         left=left_m, right=right_m, top=top_m, bottom=bottom_m)
 
-    # Row labels on the left-most column
-    try:
-        axes[0, 0].text(-0.14, 0.5, "Class Agnostic", rotation=90,
-                        va="center", ha="center", transform=axes[0, 0].transAxes,
-                        fontsize=ROW_LABEL_SIZE, color="#333")
-        axes[1, 0].text(-0.14, 0.5, "Semantic", rotation=90,
-                        va="center", ha="center", transform=axes[1, 0].transAxes,
-                        fontsize=ROW_LABEL_SIZE, color="#333")
-    except Exception:
-        pass
     # Build a single global legend across the bottom (horizontal)
     global_handles = []
-    # 1) Top-row combined (charcoal): Pred dashed, Ref solid
-    ds_handles = _dataset_line_handles()
-    ds_handles[0].set_label('Predicted')
-    ds_handles[1].set_label('Reference')
-    global_handles.extend(ds_handles)
-    # 2) Second-row class-specific colors (GREROB purple, DIOSAN gold)
+    # 1) Class-specific colors (GREROB purple, DIOSAN gold)
     gr_col = ROW2_CLASS_COLORS.get("GREROB", CLASS_COLORS.get("GREROB", DEFAULT_CLASS_COLOR))
     di_col = ROW2_CLASS_COLORS.get("DIOSAN", CLASS_COLORS.get("DIOSAN", DEFAULT_CLASS_COLOR))
     cls_handles = [
@@ -749,7 +718,7 @@ def main():
         mlines.Line2D([], [], color=di_col, linewidth=LW_REF_IMAGERY,  linestyle='-',  label='Reference DIOSAN'),
     ]
     global_handles.extend(cls_handles)
-    # 3) PQ items (TP, FP, FN) — placed last (far right)
+    # 2) PQ items (TP, FP, FN) — placed last (far right)
     pq_handles = [
         mpatches.Patch(color=COLS_PQ["TP"], label="TP"),
         mpatches.Patch(color=COLS_PQ["FP"], label="FP"),

@@ -10,7 +10,7 @@ from shapely.ops import unary_union
 from affine import Affine
 from pathlib import Path
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, ConnectionPatch
 import matplotlib.patheffects as pe
 from rasterio.enums import Resampling
 from matplotlib.lines import Line2D
@@ -20,7 +20,7 @@ from matplotlib.lines import Line2D
 # ─────────────────────────────────────────────────────────────────────────────
 RGB_TIF          = "manuscript/data/ahupuaa/rgb.tif"
 EXTENT_GPKG      = "manuscript/data/ahupuaa/extent.gpkg"
-TRAIN_SAM_DIR    = Path("v2/train-sam")
+TRAIN_SAM_DIR    = Path("data/train-sam")
 BIG_ISLAND_GPKG  = "manuscript/data/hawaii.gpkg"
 
 SETC_EXTENT_GPKG = "manuscript/data/set_c/set_c_extent.gpkg"
@@ -28,6 +28,10 @@ SETC_BLOWUP_TIF  = Path("manuscript/data/set_c/set_c_detail.tif")
 
 # NEW: Set B (ground photos) points
 TRAININGS_GPKG   = "manuscript/data/set_b/trainings_filtered.gpkg"
+
+RIGHT_TILE_IDS    = ["tile-002", "tile-008"]
+RIGHT_TILE_LABELS = ["Plot A", "Plot B"]
+RIGHT_TILE_COLORS = ["#2E86AB", "#F6AE2D"]
 
 TARGET_MAX_DIM    = 4000
 OUT_DIR = Path(__file__).resolve().parents[1] / "output"
@@ -202,6 +206,37 @@ def read_rgb_532_with_extent(path, lo=2.0, hi=98.0, gamma=0.95, sat_boost=1.20):
         out = np.clip(out, 0, 1) ** gamma
     return out, extent
 
+def read_rgb_auto_with_extent(path, lo=2.0, hi=98.0, gamma=1.0, sat=0.85, prefer_532=True):
+    """Return (img_float HxWx3 in [0,1], extent) using 5/3/2 by default when available."""
+    with rasterio.open(path) as src:
+        if prefer_532 and src.count >= 5:
+            idx = [5, 3, 2]
+        elif src.count >= 3:
+            idx = [3, 2, 1]
+        else:
+            idx = [1, 1, 1]
+        bands = [src.read(i, out_dtype="float32", resampling=Resampling.bilinear) for i in idx]
+        t = src.transform
+        h, w = src.height, src.width
+        extent = (t.c, t.c + t.a*w, t.f + t.e*h, t.f)  # left, right, bottom, top
+
+    img = np.stack(bands, axis=-1)
+    out = np.zeros_like(img, dtype="float32")
+    for i in range(3):
+        band = img[..., i]
+        finite = np.isfinite(band)
+        if finite.any():
+            p_lo, p_hi = np.percentile(band[finite], [lo, hi])
+            if np.isfinite(p_lo) and np.isfinite(p_hi) and p_hi > p_lo:
+                band = (band - p_lo) / max(p_hi - p_lo, 1e-6)
+                out[..., i] = np.clip(band, 0, 1)
+    if gamma is not None and gamma > 0:
+        out = np.clip(out, 0, 1) ** gamma
+    if sat is not None:
+        lum = 0.2989 * out[..., 0] + 0.5870 * out[..., 1] + 0.1140 * out[..., 2]
+        out = lum[..., None] * (1.0 - sat) + out * sat
+    return out, extent
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Load base map
 # ─────────────────────────────────────────────────────────────────────────────
@@ -282,6 +317,15 @@ if (setb_points is not None) and (not setb_points.empty):
 if not boxes_gdf.empty:
     boxes_gdf.boundary.plot(ax=ax_map, color="red",
                             linewidth=PLOT_BOX_LW, zorder=5)
+    # Highlight the two reference plots
+    selected_centroids = {}
+    for tile_id, color, label in zip(RIGHT_TILE_IDS, RIGHT_TILE_COLORS, RIGHT_TILE_LABELS):
+        g = boxes_gdf[boxes_gdf["__tile__"] == tile_id]
+        if g.empty:
+            continue
+        g.boundary.plot(ax=ax_map, color="red", linewidth=PLOT_BOX_LW + 0.8, zorder=6)
+        ct = g.geometry.iloc[0].centroid
+        selected_centroids[tile_id] = ct
 
 # --- Legend (validation plots, species inventory) ---
 handles=[]
@@ -311,20 +355,17 @@ if Path(BIG_ISLAND_GPKG).exists():
         # Shade Pu‘u Wa‘awa‘a extent polygon with a subtle fill in the inset
         extent.plot(ax=iax, facecolor="#FDE2E4", edgecolor="#222", linewidth=1.0, alpha=0.85, zorder=2)
 
-        # Label Pu‘u Wa‘awa‘a above the polygon with a leader line to the extent
+        # Label Pu‘uWa‘awa‘a above the island with a leader line to the extent
         ex_union = union_all_safe(extent)
         ex_ct = ex_union.centroid
-        # Compute a y position slightly above the extent, and center horizontally within the inset
-        minx, miny, maxx, maxy = extent.total_bounds
+        # Compute a y position above the island, and center horizontally within the inset
+        minx, miny, maxx, maxy = big_island.total_bounds
         x0, x1 = iax.get_xlim(); y0, y1 = iax.get_ylim()
         x_span = max(1e-6, (x1 - x0)); y_span = max(1e-6, (y1 - y0))
         lbl_x = x0 + 0.5 * x_span  # centered horizontally in inset
-        lbl_y = maxy + 0.05 * y_span
-        # keep inside top of inset
-        if lbl_y > y1 - 0.02 * y_span:
-            lbl_y = y1 - 0.02 * y_span
+        lbl_y = y1 + 0.03 * y_span  # just above top edge
         iax.annotate(
-            "Pu‘u Wa‘awa‘a",
+            "Pu‘uwa‘awa‘a",
             xy=(ex_ct.x, ex_ct.y), xycoords='data',
             xytext=(lbl_x, lbl_y), textcoords='data',
             ha='center', va='bottom', fontsize=INSET_ISLAND_TITLE_FONT,
@@ -332,12 +373,17 @@ if Path(BIG_ISLAND_GPKG).exists():
             arrowprops=dict(arrowstyle='-', color='black', linewidth=1.1, shrinkA=0, shrinkB=0)
         )
 
-        # Place Hawai‘i label at bottom-right inside the inset bbox
-        iax.text(0.98, 0.02, "Hawai‘i", transform=iax.transAxes,
-                 ha="right", va="bottom", fontsize=INSET_ISLAND_TITLE_FONT,
+        # Place Hawai‘i label at top-right inside the inset bbox
+        iax.text(0.98, 0.98, "Hawai‘i", transform=iax.transAxes,
+                 ha="right", va="top", fontsize=INSET_ISLAND_TITLE_FONT,
                  color="#333", path_effects=[pe.withStroke(linewidth=2.5, foreground="white")])
 
         iax.set_xticks([]); iax.set_yticks([])
+
+        # Add scalebar to the inset (20 km)
+        add_scalebar(iax, where="bottom-right",
+                     fontsize=INSET_ISLAND_TITLE_FONT-2,
+                     target_m=20000, units="km", zorder=5)
 
         # 🔑 Add full border around the inset
         for spine in iax.spines.values():
@@ -345,32 +391,61 @@ if Path(BIG_ISLAND_GPKG).exists():
             spine.set_linewidth(1.4)
             spine.set_color("black")
 
-# Right column: full-height Set C detail (georeferenced)
-zoom_left, zoom_bottom, zoom_width, zoom_height = 0.58, 0.00, 0.49, 1.00
+# Right column: two plot details (tile-002, tile-008)
+zoom_left = 0.62
+zoom_width = 0.34
+zoom_height = 0.44
+gap = 0.04
 
-ax_zoom = fig.add_axes([zoom_left, zoom_bottom, zoom_width, zoom_height], zorder=2)
-ax_zoom.imshow(blowup_img, extent=blowup_extent, origin="upper", interpolation="nearest")
-ax_zoom.axis("off")
+tile_imgs = []
+for tile_id in RIGHT_TILE_IDS:
+    tile_path = TRAIN_SAM_DIR / tile_id / "img.tif"
+    if tile_path.exists():
+        tile_img, tile_extent = read_rgb_auto_with_extent(tile_path, lo=1.0, hi=99.0, gamma=1.0, sat=0.8, prefer_532=True)
+    else:
+        tile_img = np.ones((400, 400, 3), dtype="float32") * 0.95
+        tile_extent = (0, 400, 400, 0)
+    tile_imgs.append((tile_id, tile_img, tile_extent))
 
-# Title inside
-ax_zoom.text(0.5, 0.99, "Forest Cover Detail", ha="center", va="top",
-             transform=ax_zoom.transAxes, fontsize=SUBPLOT_TITLE_FONT+6, color="white",
-             path_effects=[pe.withStroke(linewidth=3.2, foreground="black")], zorder=50)
+tile_widths = [abs(ext[1] - ext[0]) for _, _, ext in tile_imgs]
+tile_heights = [abs(ext[3] - ext[2]) for _, _, ext in tile_imgs]
+target_w = min(tile_widths) if tile_widths else 0
+target_h = min(tile_heights) if tile_heights else 0
 
-# thin frame
-for sp in ax_zoom.spines.values():
-    sp.set_visible(True); sp.set_linewidth(1.4); sp.set_color("#333333")
+ax_zoom_top = fig.add_axes([zoom_left, 0.52, zoom_width, zoom_height], zorder=2)
+ax_zoom_bot = fig.add_axes([zoom_left, 0.04, zoom_width, zoom_height], zorder=2)
 
-# *** scalebars ***
-# main map: 4 km centered
+for ax_zoom, (tile_id, tile_img, tile_extent), color in zip(
+    [ax_zoom_top, ax_zoom_bot], tile_imgs, RIGHT_TILE_COLORS
+):
+    ax_zoom.imshow(tile_img, extent=tile_extent, origin="upper", interpolation="nearest")
+    if target_w > 0 and target_h > 0:
+        cx = 0.5 * (tile_extent[0] + tile_extent[1])
+        cy = 0.5 * (tile_extent[2] + tile_extent[3])
+        ax_zoom.set_xlim(cx - target_w / 2.0, cx + target_w / 2.0)
+        ax_zoom.set_ylim(cy - target_h / 2.0, cy + target_h / 2.0)
+    ax_zoom.axis("off")
+    if "selected_centroids" in globals() and tile_id in selected_centroids:
+        ct = selected_centroids[tile_id]
+        conn = ConnectionPatch(
+            xyA=(ct.x, ct.y), coordsA=ax_map.transData,
+            xyB=(0.0, 0.5), coordsB=ax_zoom.transAxes,
+            color="black", linewidth=1.6, zorder=30
+        )
+        fig.add_artist(conn)
+    for sp in ax_zoom.spines.values():
+        sp.set_visible(True); sp.set_linewidth(1.6); sp.set_color("black")
+    ax_zoom.set_frame_on(True)
+    ax_zoom.add_patch(Rectangle((0, 0), 1, 1, transform=ax_zoom.transAxes,
+                                fill=False, edgecolor="black",
+                                linewidth=2.0, zorder=80))
+    add_scalebar(ax_zoom, where="bottom-right",
+                 fontsize=SCALEBAR_FONT, units="m", zorder=60)
+
+# *** scalebar for main map ***
 add_scalebar(ax_map, where="center-bottom",
              fontsize=SCALEBAR_FONT, target_m=4000,
              units="km", zorder=60)
-
-# set C detail: 500 m bottom-right (adjust if you need a different length)
-add_scalebar(ax_zoom, where="bottom-right",
-             fontsize=SCALEBAR_FONT+2,
-             target_m=40, units="m", zorder=60)
 
 fig.savefig(OUT_FIG,dpi=300,bbox_inches="tight")
 print(f"[OK] Saved {OUT_FIG}")
