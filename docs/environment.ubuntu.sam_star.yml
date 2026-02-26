@@ -1,0 +1,24 @@
+name: sam_star
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pytorch=2.7.*
+  - torchvision=0.22.*
+  - pytorch-cuda=12.8
+  - numpy=1.26.*
+  - scipy
+  - scikit-image
+  - rasterio
+  - geopandas
+  - shapely
+  - pandas
+  - matplotlib
+  - opencv
+  - tqdm
+  - pip
+  - pip:
+      - segment-anything==1.0
+      - pycocotools
