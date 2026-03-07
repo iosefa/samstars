@@ -72,6 +72,7 @@ SCORE_THRESH_TEST = 0.5    # used at inference time for predictor
 
 
 def set_seed(seed=SEED):
+    """Set seed."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -120,6 +121,7 @@ def _geom_to_img_coords(geom, src: rasterio.io.DatasetReader):
     inv_affine = ~src.transform
 
     def _affine_xy(x, y, z=None):
+        """Internal helper function."""
         col, row = inv_affine * (x, y)
         return (col, row)
 
@@ -268,9 +270,11 @@ def register_datasets():
         val_recs = []
 
     def get_train():
+        """Get train."""
         return train_recs
 
     def get_val():
+        """Get val."""
         return val_recs
 
     DatasetCatalog.register("crowns_train", get_train)
@@ -287,6 +291,7 @@ def register_datasets():
 
 # Custom mapper to read 3-band WV3 (NIR,R,G) instead of standard RGB files
 def crowns_mapper(dataset_dict):
+    """Crowns mapper."""
     d = copy.deepcopy(dataset_dict)
 
     # --- Read 8-band WV3 with rasterio and pick NIR,R,G (1-indexed 7,5,3) ---
@@ -298,6 +303,7 @@ def crowns_mapper(dataset_dict):
 
     # robust per-band normalization to 0-255 (2–98 percentile)
     def norm255(band):
+        """Norm255."""
         finite = np.isfinite(band)
         if not finite.any():
             return np.zeros_like(band, dtype=np.uint8)
@@ -335,14 +341,17 @@ def crowns_mapper(dataset_dict):
 class Trainer(DefaultTrainer):
     @classmethod
     def build_train_loader(cls, cfg):
+        """Build train loader."""
         return build_detection_train_loader(cfg, mapper=crowns_mapper)
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
+        """Build test loader."""
         return build_detection_test_loader(cfg, dataset_name, mapper=crowns_mapper)
 
 
 def main():
+    """Run the command-line entry point."""
     set_seed(SEED)
     register_datasets()
 

@@ -18,11 +18,13 @@ from pathlib import Path
 
 
 def _run(cmd):
+    """Internal helper function."""
     print(" ".join(cmd))
     subprocess.run(cmd, check=True)
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Run SAM+StarDist per size with fixed val set.")
     pa.add_argument("--sizes", type=str, required=True, help="Comma-separated sizes, e.g. 0001,0003,0005")
     pa.add_argument("--splits-root", type=Path, required=True)

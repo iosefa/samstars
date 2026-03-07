@@ -4,6 +4,7 @@ from shapely.geometry import Polygon
 
 
 def ray_directions(n_rays: int):
+    """Ray directions."""
     angles = np.linspace(0, 2 * np.pi, n_rays, endpoint=False)
     return np.stack([np.cos(angles), np.sin(angles)], axis=1)
 

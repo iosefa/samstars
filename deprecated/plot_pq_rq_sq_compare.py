@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 
 def _load_df(path: Path, xcol: str, n_points: int | None) -> pd.DataFrame:
+    """Internal helper function."""
     df = pd.read_csv(path)
     if xcol not in df.columns:
         raise SystemExit(f"Missing column '{xcol}' in {path}")
@@ -23,6 +24,7 @@ def _load_df(path: Path, xcol: str, n_points: int | None) -> pd.DataFrame:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Plot PQ/RQ/SQ from two models.")
     pa.add_argument("--summary-a", type=Path, required=True)
     pa.add_argument("--summary-b", type=Path, required=True)

@@ -24,6 +24,7 @@ COLORS = {"pq": "#0072B2", "rq": "#E69F00", "sq": "#CC79A7"}
 
 
 def _load_df(path: Path, xcol: str, n_points: int | None) -> pd.DataFrame:
+    """Internal helper function."""
     df = pd.read_csv(path)
     if xcol not in df.columns:
         raise SystemExit(f"Missing column '{xcol}' in {path}")
@@ -34,6 +35,7 @@ def _load_df(path: Path, xcol: str, n_points: int | None) -> pd.DataFrame:
 
 
 def _prep_xy(df: pd.DataFrame, xcol: str, metric: str, origin: bool):
+    """Internal helper function."""
     x = df[xcol].astype(float).values
     y = df[metric].astype(float).values
     if origin:
@@ -51,6 +53,7 @@ def _prep_xy(df: pd.DataFrame, xcol: str, metric: str, origin: bool):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Publication-ready 3-panel PQ/RQ/SQ curves for two models.")
     pa.add_argument("--summary-a", type=Path, required=True, help="SAM-Star summary_iou.csv")
     pa.add_argument("--summary-b", type=Path, required=True, help="Detectron summary_iou.csv")
@@ -84,6 +87,7 @@ def main() -> None:
         ax.grid(True, alpha=0.3)
 
     def _plot_panel(ax, df, label):
+        """Internal helper function."""
         for metric in METRICS:
             x, y = _prep_xy(df, args.x, metric, args.origin)
             ax.plot(

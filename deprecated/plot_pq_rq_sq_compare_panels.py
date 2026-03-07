@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 
 def _load_df(path: Path, xcol: str, n_points: int | None) -> pd.DataFrame:
+    """Internal helper function."""
     df = pd.read_csv(path)
     if xcol not in df.columns:
         raise SystemExit(f"Missing column '{xcol}' in {path}")
@@ -24,6 +25,7 @@ def _load_df(path: Path, xcol: str, n_points: int | None) -> pd.DataFrame:
 
 
 def _prep_xy(df: pd.DataFrame, xcol: str, metric: str, origin: bool):
+    """Internal helper function."""
     x = df[xcol].astype(float).values
     y = df[metric].astype(float).values
     if origin:
@@ -33,6 +35,7 @@ def _prep_xy(df: pd.DataFrame, xcol: str, metric: str, origin: bool):
 
 
 def _smooth_y(y, window: int, origin: bool):
+    """Internal helper function."""
     if window <= 1:
         return y
     y_sm = pd.Series(y, dtype="float64").rolling(
@@ -45,6 +48,7 @@ def _smooth_y(y, window: int, origin: bool):
 
 
 def _diff_interp(xa, ya, xb, yb):
+    """Internal helper function."""
     xa = np.asarray(xa, dtype=float)
     ya = np.asarray(ya, dtype=float)
     xb = np.asarray(xb, dtype=float)
@@ -65,6 +69,7 @@ def _diff_interp(xa, ya, xb, yb):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Compare PQ/RQ/SQ across two models in panels.")
     pa.add_argument("--summary-a", type=Path, required=True)
     pa.add_argument("--summary-b", type=Path, required=True)

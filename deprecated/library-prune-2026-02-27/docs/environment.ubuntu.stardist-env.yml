@@ -1,0 +1,19 @@
+name: stardist-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=1.26.*
+  - scipy
+  - scikit-image
+  - rasterio
+  - geopandas
+  - shapely
+  - pandas
+  - matplotlib
+  - tqdm
+  - pip
+  - pip:
+      - csbdeep==0.8.1
+      - stardist==0.9.1
+      - "tensorflow>=2.15,<2.19"

@@ -13,6 +13,7 @@ import pandas as pd
 
 
 def _count_train_instances(chips_root: Path, size: str) -> int:
+    """Internal helper function."""
     manifest = chips_root / size / "chips_train" / "detectron_manifest.json"
     if not manifest.exists():
         return 0
@@ -26,6 +27,7 @@ def _count_train_instances(chips_root: Path, size: str) -> int:
 
 
 def _load_metrics(eval_dir: Path) -> dict | None:
+    """Internal helper function."""
     metrics_json = eval_dir / "metrics.json"
     if metrics_json.exists():
         return json.load(open(metrics_json))
@@ -37,6 +39,7 @@ def _load_metrics(eval_dir: Path) -> dict | None:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Summarize StarDist metrics over sizes.")
     pa.add_argument("--eval-root", type=Path, required=True)
     pa.add_argument("--chips-root", type=Path, required=True)

@@ -17,11 +17,13 @@ from segment_anything import sam_model_registry, SamPredictor
 
 
 def stretch01(arr, p=(2, 98)):
+    """Stretch01."""
     lo, hi = np.percentile(arr[np.isfinite(arr)], p)
     return np.clip((arr - lo) / (hi - lo + 1e-6), 0, 1)
 
 
 def smooth_prob(logit, core_sigma=8.0, core_gamma=1.7, logit_scale=1.4, smooth_sigma=6.0, chm=None, cost=None, w_chm=0.75, w_cost=0.25):
+    """Smooth prob."""
     prob = torch.sigmoid(torch.clamp(logit_scale * logit, -12, 12))
     yy, xx = torch.meshgrid(torch.arange(prob.shape[-2], device=prob.device), torch.arange(prob.shape[-1], device=prob.device), indexing="ij")
     cy, cx = prob.shape[-2] / 2, prob.shape[-1] / 2
@@ -33,6 +35,7 @@ def smooth_prob(logit, core_sigma=8.0, core_gamma=1.7, logit_scale=1.4, smooth_s
         prob_np = gaussian_filter(prob_np, smooth_sigma)
         prob = torch.from_numpy(prob_np).to(prob.device)
     def _resize(arr_np):
+        """Internal helper function."""
         t = torch.from_numpy(arr_np).to(prob.device, dtype=prob.dtype)
         if t.shape != prob.shape:
             t = F.interpolate(t[None, None, ...], size=prob.shape, mode="bilinear", align_corners=False)[0, 0]
@@ -48,6 +51,7 @@ def smooth_prob(logit, core_sigma=8.0, core_gamma=1.7, logit_scale=1.4, smooth_s
 
 
 def run_split(chip_dir: Path, recs_json: Path, predictor: SamPredictor, out_dir: Path):
+    """Run split."""
     recs = json.load(open(recs_json))
     out_records = []
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -81,6 +85,7 @@ def run_split(chip_dir: Path, recs_json: Path, predictor: SamPredictor, out_dir:
 
 
 def main():
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser()
     pa.add_argument("--chip-dir", type=Path, required=True)
     pa.add_argument("--records-json", type=Path, required=True)

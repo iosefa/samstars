@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 
 def read_metric(csv_path: Path, metric: str):
+    """Read metric."""
     vals = {}
     with open(csv_path, newline="") as f:
         reader = csv.reader(f)
@@ -30,6 +31,7 @@ def read_metric(csv_path: Path, metric: str):
 
 
 def main():
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Plot metric vs training size from metrics.csv files.")
     pa.add_argument("--root", type=Path, default=Path("v2/models_detectron/sizes"), help="Root containing per-size subdirs")
     pa.add_argument("--metric", default="segm.AP", help="Metric key to plot (e.g., segm.AP, segm.AP50, bbox.AP)")

@@ -33,6 +33,7 @@ HATCH_COLOR = "#666666"
 
 
 def _load_df(path: Path) -> pd.DataFrame:
+    """Internal helper function."""
     return pd.read_csv(path)
 
 
@@ -44,6 +45,7 @@ def _prep_curve(
     scale_100: bool,
     counts_map: dict[str, int] | None,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Internal helper function."""
     if ycol not in df.columns:
         raise SystemExit(f"Missing column '{ycol}' in {df}")
     if counts_map is not None and "size" in df.columns:
@@ -72,6 +74,7 @@ def _prep_curve(
 
 
 def _base_model_name(label: str) -> str:
+    """Internal helper function."""
     for key in MODEL_KEYS:
         if label.startswith(key):
             return key
@@ -79,11 +82,13 @@ def _base_model_name(label: str) -> str:
 
 
 def _model_color(label: str) -> str:
+    """Internal helper function."""
     base = _base_model_name(label)
     return MODEL_COLORS.get(base, "#000000")
 
 
 def _load_counts_map(path: Path, count_col: str) -> dict[str, int]:
+    """Internal helper function."""
     df = pd.read_csv(path)
     if "size" not in df.columns or count_col not in df.columns:
         raise SystemExit(f"{path} must include size and {count_col} columns")
@@ -91,6 +96,7 @@ def _load_counts_map(path: Path, count_col: str) -> dict[str, int]:
 
 
 def _load_box_csvs(paths: list[Path], size_labels: list[str], model_order: list[str] | None) -> pd.DataFrame:
+    """Internal helper function."""
     frames = []
     for path, label in zip(paths, size_labels):
         df = _load_df(path)
@@ -110,6 +116,7 @@ def _load_box_csvs(paths: list[Path], size_labels: list[str], model_order: list[
 
 
 def _boxplot(ax, df: pd.DataFrame, title: str, show_counts: bool, count_mode: str):
+    """Internal helper function."""
     bins = list(df["bin"].dropna().unique())
     models = list(df["base_model"].dropna().unique())
     size_labels = list(df["size_label"].dropna().unique())
@@ -218,6 +225,7 @@ def _boxplot(ax, df: pd.DataFrame, title: str, show_counts: bool, count_mode: st
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Four-panel AP50 + density/height + class-aware PQ figure.")
     pa.add_argument("--ap-summary-a", type=Path, required=True)
     pa.add_argument("--ap-summary-b", type=Path, required=True)

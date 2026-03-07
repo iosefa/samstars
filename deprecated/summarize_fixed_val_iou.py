@@ -19,6 +19,7 @@ IOU_THR = 0.5
 
 
 def _load_validation(manifest_path: Path) -> gpd.GeoDataFrame:
+    """Internal helper function."""
     pairs = json.load(open(manifest_path))
     val_gdfs = []
     for rec in pairs:
@@ -30,6 +31,7 @@ def _load_validation(manifest_path: Path) -> gpd.GeoDataFrame:
 
 
 def _count_train_instances(manifest_path: Path) -> int:
+    """Internal helper function."""
     pairs = json.load(open(manifest_path))
     total = 0
     for rec in pairs:
@@ -40,6 +42,7 @@ def _count_train_instances(manifest_path: Path) -> int:
 
 
 def _greedy_match(pairs: pd.DataFrame, iou_col: str = "iou") -> pd.DataFrame:
+    """Internal helper function."""
     out = pairs.sort_values(iou_col, ascending=False)
     used_p = set()
     used_v = set()
@@ -58,6 +61,7 @@ def _greedy_match(pairs: pd.DataFrame, iou_col: str = "iou") -> pd.DataFrame:
 
 
 def compute_iou_stats(preds: gpd.GeoDataFrame, validation: gpd.GeoDataFrame) -> dict:
+    """Compute iou stats."""
     preds = preds.reset_index(drop=True).copy()
     preds["pid"] = preds.index
     validation = validation.reset_index(drop=True).copy()
@@ -138,12 +142,14 @@ def compute_iou_stats(preds: gpd.GeoDataFrame, validation: gpd.GeoDataFrame) -> 
 
 
 def _apply_score_thresh(preds: gpd.GeoDataFrame, score_thresh: float) -> gpd.GeoDataFrame:
+    """Internal helper function."""
     if "score" not in preds.columns:
         return preds
     return preds.loc[preds["score"] >= score_thresh].copy()
 
 
 def _parse_sizes_arg(sizes_arg: str | None, preds_root: Path) -> list[str]:
+    """Internal helper function."""
     if sizes_arg:
         return [s.strip() for s in sizes_arg.split(",") if s.strip()]
     sizes = []
@@ -157,6 +163,7 @@ def _parse_sizes_arg(sizes_arg: str | None, preds_root: Path) -> list[str]:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Summarize IoU for fixed-val Detectron runs.")
     pa.add_argument("--val-manifest", type=Path, required=True)
     pa.add_argument("--preds-root", type=Path, default=Path("v2/detectron_fixed_val"))

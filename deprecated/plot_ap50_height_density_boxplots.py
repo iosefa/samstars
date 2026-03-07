@@ -19,6 +19,7 @@ MODEL_COLORS = ["#0072B2", "#E69F00", "#009E73", "#CC79A7"]
 
 
 def _load(csv_path: Path, model_order: list[str] | None):
+    """Internal helper function."""
     df = pd.read_csv(csv_path)
     if "model" not in df.columns or "bin" not in df.columns or "ap50" not in df.columns:
         raise SystemExit(f"Expected columns model/bin/ap50 in {csv_path}")
@@ -30,6 +31,7 @@ def _load(csv_path: Path, model_order: list[str] | None):
 
 
 def _boxplot(ax, df: pd.DataFrame, title: str, ylabel: str, show_counts: bool, count_mode: str):
+    """Internal helper function."""
     bins = list(df["bin"].dropna().unique())
     models = list(df["model"].dropna().unique())
     if not bins or not models:
@@ -97,6 +99,7 @@ def _boxplot(ax, df: pd.DataFrame, title: str, ylabel: str, show_counts: bool, c
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Boxplot AP50 by height/density bins for two models.")
     pa.add_argument("--height-csv", type=Path, required=True)
     pa.add_argument("--density-csv", type=Path, required=True)

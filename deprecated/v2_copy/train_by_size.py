@@ -19,11 +19,13 @@ FUSED_TRAIN = ROOT / "train_logit_aware_stardist.py"
 
 
 def run(cmd):
+    """Run."""
     print(" ", " ".join(map(str, cmd)))
     subprocess.run(cmd, check=True)
 
 
 def load_records():
+    """Load records."""
     recs = json.load(open(RECORDS_PATH))
     if not recs:
         raise RuntimeError(f"No records in {RECORDS_PATH}")
@@ -31,6 +33,7 @@ def load_records():
 
 
 def ensure_symlink(src: Path, dst: Path):
+    """Ensure symlink."""
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists() or dst.is_symlink():
         dst.unlink()
@@ -38,6 +41,7 @@ def ensure_symlink(src: Path, dst: Path):
 
 
 def prepare_subset_dirs(subset, size_dir: Path, holdout: float, split_seed: int):
+    """Prepare subset dirs."""
     chip_dir_train = size_dir / "chips_train"
     chip_dir_val = size_dir / "chips_val"
     for base in (chip_dir_train, chip_dir_val):
@@ -52,10 +56,12 @@ def prepare_subset_dirs(subset, size_dir: Path, holdout: float, split_seed: int)
     val_recs = recs[k:] if holdout > 0 else []
 
     def exists_for(name: str, sub: str):
+        """Exists for."""
         ext = "json" if sub == "json" else "npy"
         return (CHIPS_DIR / sub / f"{name}.{ext}").exists()
 
     def link_recs(recs_list, base_dir):
+        """Link recs."""
         filtered = []
         for rec in recs_list:
             name = Path(rec["file_name"]).name.replace(".npy", "")
@@ -72,6 +78,7 @@ def prepare_subset_dirs(subset, size_dir: Path, holdout: float, split_seed: int)
     val_recs = link_recs(val_recs, chip_dir_val)
 
     def adjust_paths(recs_list, base_dir):
+        """Adjust paths."""
         out = []
         for rec in recs_list:
             fname = Path(rec["file_name"]).name
@@ -92,6 +99,7 @@ def prepare_subset_dirs(subset, size_dir: Path, holdout: float, split_seed: int)
 
 
 def train_sam(size_dir: Path, chip_dir: Path):
+    """Train sam."""
     sam_dir = size_dir / "sam"
     sam_dir.mkdir(parents=True, exist_ok=True)
     ckpt_out = sam_dir / "sam_crowns_decoder.pth"
@@ -108,6 +116,7 @@ def train_sam(size_dir: Path, chip_dir: Path):
 
 
 def train_detectron(size_dir: Path, train_json: Path, val_json: Path, chip_dir_train: Path, split_seed: int):
+    """Train detectron."""
     det_dir = size_dir / "detectron"
     det_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
@@ -124,6 +133,7 @@ def train_detectron(size_dir: Path, train_json: Path, val_json: Path, chip_dir_t
 
 
 def train_fused(size_dir: Path, chip_dir_train: Path, train_json: Path, val_json: Path, sam_ckpt: Path, split_seed: int):
+    """Train fused."""
     sd_dir = size_dir / "stardist"
     sd_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
@@ -141,6 +151,7 @@ def train_fused(size_dir: Path, chip_dir_train: Path, train_json: Path, val_json
 
 
 def main():
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Train models on cumulative chip subsets (fused SAM-conditioned StarDist).")
     pa.add_argument("--step", type=int, default=10)
     pa.add_argument("--start-chips", type=int, default=10, help="Start size (chips) for first subset")

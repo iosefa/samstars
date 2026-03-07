@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Plot PQ/RQ/SQ vs training size.")
     pa.add_argument("--summary-csv", type=Path, required=True)
     pa.add_argument("--out", type=Path, required=True)
@@ -37,11 +38,13 @@ def main() -> None:
     x = df[args.x].astype(float).values
 
     def _with_origin(y):
+        """Internal helper function."""
         if len(x) == 0:
             return x, y
         return [0.0] + list(x), [0.0] + list(y)
 
     def _prep_xy(y):
+        """Internal helper function."""
         xx, yy = _with_origin(y)
         xx = np.asarray(xx, dtype=float)
         yy = np.asarray(yy, dtype=float)
@@ -65,6 +68,7 @@ def main() -> None:
             method = "moving"
 
     def _smooth(y):
+        """Internal helper function."""
         if method != "moving":
             return None
         if args.smooth_window <= 1:

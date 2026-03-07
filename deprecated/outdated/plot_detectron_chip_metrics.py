@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 
 def read_per_chip_metrics(csv_path: Path):
+    """Read per chip metrics."""
     ap_vals = []
     iou_vals = []
     with open(csv_path, newline="") as f:
@@ -36,6 +37,7 @@ def read_per_chip_metrics(csv_path: Path):
 
 
 def count_train_instances(manifest_path: Path):
+    """Count train instances."""
     import json
     data = json.load(open(manifest_path))
     total = 0
@@ -49,6 +51,7 @@ def count_train_instances(manifest_path: Path):
 
 
 def main():
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Plot Detectron per-chip AP/IoU vs training instances.")
     pa.add_argument("--detectron-root", type=Path, default=Path("v2/detectron"), help="Root with per-size eval outputs")
     pa.add_argument("--chips-root", type=Path, default=Path("v2/chips_125_50"), help="Root with per-size chips_train manifests")

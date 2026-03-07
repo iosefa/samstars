@@ -16,6 +16,7 @@ import geopandas as gpd
 
 
 def clip_annotations(gdf: gpd.GeoDataFrame, bbox_geom) -> gpd.GeoDataFrame:
+    """Clip annotations."""
     sub = gdf[gdf.intersects(bbox_geom)].copy()
     if sub.empty:
         return sub
@@ -26,6 +27,7 @@ def clip_annotations(gdf: gpd.GeoDataFrame, bbox_geom) -> gpd.GeoDataFrame:
 
 
 def poly_to_coco_segmentation(poly):
+    """Poly to coco segmentation."""
     coords = np.array(poly.exterior.coords, dtype=float)
     if coords.shape[0] < 3:
         return []
@@ -33,6 +35,7 @@ def poly_to_coco_segmentation(poly):
 
 
 def process_tile(tile: Path, out_dir: Path, size: int, stride: int, bands=(1, 2, 3)) -> List[dict]:
+    """Process tile."""
     img_path = tile / "img.tif"
     crowns_path = tile / "crowns.gpkg"
     chm_path = tile / "chm.tif"
@@ -108,6 +111,7 @@ def process_tile(tile: Path, out_dir: Path, size: int, stride: int, bands=(1, 2,
             annos = []
             inv = ~win_tfm
             def world_to_pixel(x, y, z=None):
+                """World to pixel."""
                 col, row = inv * (x, y)
                 return (col, row)
 
@@ -155,6 +159,7 @@ def process_tile(tile: Path, out_dir: Path, size: int, stride: int, bands=(1, 2,
 
 
 def main():
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Build chips and annotations from tiles.")
     pa.add_argument("--tiles-dir", required=True, type=Path)
     pa.add_argument("--out", required=True, type=Path)

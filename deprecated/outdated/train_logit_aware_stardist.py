@@ -34,13 +34,16 @@ from v2.logit_aware_stardist.postproc import decode_rays
 
 class ChipDataset(Dataset):
     def __init__(self, chip_dir: Path, records_json: Path):
+        """Initialize the instance."""
         self.chip_dir = chip_dir
         self.records = json.load(open(records_json))
 
     def __len__(self):
+        """Return the number of items."""
         return len(self.records)
 
     def __getitem__(self, idx):
+        """Return one item by index."""
         rec = self.records[idx]
         img_path = Path(rec["file_name"])
         name = img_path.stem
@@ -63,6 +66,7 @@ class ChipDataset(Dataset):
 
 
 def gaussian_blur_torch(t: torch.Tensor, sigma: float = 2.0):
+    """Gaussian blur torch."""
     if sigma <= 0:
         return t
     size = int(6 * sigma + 1) | 1
@@ -78,6 +82,7 @@ def gaussian_blur_torch(t: torch.Tensor, sigma: float = 2.0):
 
 
 def normalize_band(band: np.ndarray):
+    """Normalize band."""
     finite = np.isfinite(band)
     if finite.any():
         lo, hi = np.percentile(band[finite], [2, 98])
@@ -90,13 +95,16 @@ def normalize_band(band: np.ndarray):
 
 
 def preprocess_img(img: np.ndarray):
+    """Preprocess img."""
     bands = [normalize_band(img[c]) for c in range(img.shape[0])]
     return np.stack(bands, axis=0)
 
 
 def blend_prior(prob: torch.Tensor, chm: Optional[torch.Tensor], cost: Optional[torch.Tensor], w_chm: float, w_cost: float):
     # prob: (H, W). Resize ancillary rasters to match prob spatial size.
+    """Blend prior."""
     def _match_shape(t: torch.Tensor):
+        """Internal helper function."""
         if t.shape == prob.shape:
             return t
         t4 = t[None, None, ...]
@@ -118,6 +126,7 @@ def blend_prior(prob: torch.Tensor, chm: Optional[torch.Tensor], cost: Optional[
 
 
 def predict_prior(prior_inputs, predictor: SamPredictor, device, args):
+    """Predict prior."""
     img_np, point_np, chm_np, cost_np = prior_inputs
     img_norm = preprocess_img(img_np)
     sam_img = (img_norm[[1, 2, 0]] * 255).astype(np.uint8).transpose(1, 2, 0)
@@ -143,6 +152,7 @@ def predict_prior(prior_inputs, predictor: SamPredictor, device, args):
 
 
 def compute_mask_metrics(pred_mask: np.ndarray, gt_mask: np.ndarray):
+    """Compute mask metrics."""
     pred_bin = pred_mask > 0.5
     gt_bin = gt_mask > 0.5
     inter = np.logical_and(pred_bin, gt_bin).sum()
@@ -153,6 +163,7 @@ def compute_mask_metrics(pred_mask: np.ndarray, gt_mask: np.ndarray):
 
 
 def mask_to_polygons(mask: np.ndarray):
+    """Mask to polygons."""
     from skimage import measure
     contours = measure.find_contours(mask.astype(np.uint8), 0.5)
     polys = []
@@ -165,6 +176,7 @@ def mask_to_polygons(mask: np.ndarray):
 
 
 def build_coco_gt(val_items):
+    """Build coco gt."""
     images = []
     annotations = []
     ann_id = 1
@@ -201,6 +213,7 @@ def build_coco_gt(val_items):
 
 def coco_eval(preds, coco_gt_dict):
     # If no preds, return zeros to avoid pycocotools errors.
+    """Coco eval."""
     if not preds:
         return {"coco_ap": 0.0, "coco_ap50": 0.0}
     coco_gt = COCO()
@@ -223,6 +236,7 @@ def coco_eval(preds, coco_gt_dict):
 
 
 def eval_on_val(model, predictor, dl, device, args):
+    """Eval on val."""
     model.eval()
     ious, dices = [], []
     geoms_world = []
@@ -322,6 +336,7 @@ def eval_on_val(model, predictor, dl, device, args):
 
 
 def main():
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Train logit-aware StarDist head using chips and SAM logits + CHM/COST weighting.")
     pa.add_argument("--chip-dir", required=True, type=Path)
     pa.add_argument("--records-json", required=True, type=Path, help="train records JSON")

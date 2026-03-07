@@ -13,6 +13,7 @@ import numpy as np
 
 
 def _parse_percentiles(p_str: str) -> tuple[float, float]:
+    """Internal helper function."""
     parts = [float(p.strip()) for p in p_str.split(",") if p.strip()]
     if len(parts) != 2:
         raise ValueError("percentiles must be two comma-separated values (e.g., 2,98)")
@@ -20,6 +21,7 @@ def _parse_percentiles(p_str: str) -> tuple[float, float]:
 
 
 def _sample_values(arr: np.ndarray, max_n: int, rng: np.random.Generator) -> np.ndarray:
+    """Internal helper function."""
     flat = np.asarray(arr, np.float32).ravel()
     flat = flat[np.isfinite(flat)]
     if flat.size == 0:
@@ -31,6 +33,7 @@ def _sample_values(arr: np.ndarray, max_n: int, rng: np.random.Generator) -> np.
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Compute global scale stats for SAM + StarDist.")
     pa.add_argument("--chips-root", type=Path, required=True)
     pa.add_argument("--sizes", type=str, default=None, help="Comma-separated sizes; default is all under chips-root")

@@ -5,11 +5,13 @@ from skimage.morphology import binary_erosion
 
 
 def ray_directions(n_rays: int):
+    """Ray directions."""
     angles = np.linspace(0, 2 * np.pi, n_rays, endpoint=False)
     return np.stack([np.cos(angles), np.sin(angles)], axis=1)
 
 
 def _ray_distances_for_instance(inst_mask: np.ndarray, n_rays: int, erosion: int = 0):
+    """Internal helper function."""
     H, W = inst_mask.shape
     if erosion > 0:
         inst_mask = binary_erosion(inst_mask, iterations=erosion)
@@ -37,6 +39,7 @@ def _ray_distances_for_instance(inst_mask: np.ndarray, n_rays: int, erosion: int
 
 
 def compute_ray_targets(mask: np.ndarray, n_rays: int = 32, erosion: int = 0):
+    """Compute ray targets."""
     labeled = label(mask > 0)
     H, W = mask.shape
     rays = np.zeros((H, W, n_rays), dtype=np.float32)

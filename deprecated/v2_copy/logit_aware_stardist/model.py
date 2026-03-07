@@ -4,6 +4,7 @@ from torch import nn
 
 
 def conv_block(in_ch: int, out_ch: int, k: int = 3, s: int = 1, p: int | None = None):
+    """Conv block."""
     if p is None:
         p = k // 2
     return nn.Sequential(
@@ -20,6 +21,7 @@ class LogitAwareStarDist(nn.Module):
     """
 
     def __init__(self, in_ch: int = 4, base: int = 32, n_rays: int = 32):
+        """Initialize the instance."""
         super().__init__()
         self.n_rays = n_rays
 
@@ -40,6 +42,7 @@ class LogitAwareStarDist(nn.Module):
         self.ray_head = nn.Conv2d(base, n_rays, kernel_size=1)
 
     def forward(self, x: torch.Tensor):
+        """Forward."""
         e1 = self.enc1(x)
         e2 = self.enc2(e1)
         e3 = self.enc3(e2)

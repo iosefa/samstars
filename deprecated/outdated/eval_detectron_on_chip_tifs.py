@@ -28,6 +28,7 @@ from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 
 
 def robust_norm255(band):
+    """Robust norm255."""
     finite = np.isfinite(band)
     if not finite.any():
         return np.zeros_like(band, dtype=np.uint8)
@@ -42,6 +43,7 @@ def robust_norm255(band):
 
 
 def read_rgb_from_tif(path: Path, bands_1idx=(7, 5, 3)):
+    """Read rgb from tif."""
     with rasterio.open(path) as src:
         available = src.count
         sel = [b for b in bands_1idx if b <= available] or [1]
@@ -59,6 +61,7 @@ def read_rgb_from_tif(path: Path, bands_1idx=(7, 5, 3)):
 
 
 def mask_to_polygons(mask_bool, transform, min_mask_px=50):
+    """Mask to polygons."""
     if mask_bool.sum() < min_mask_px:
         return []
     polys = []
@@ -75,9 +78,11 @@ def mask_to_polygons(mask_bool, transform, min_mask_px=50):
 
 
 def _geom_to_img_coords(geom, src: rasterio.io.DatasetReader):
+    """Internal helper function."""
     inv_affine = ~src.transform
 
     def _affine_xy(x, y, z=None):
+        """Internal helper function."""
         col, row = inv_affine * (x, y)
         return (col, row)
 
@@ -92,6 +97,7 @@ def _geom_to_img_coords(geom, src: rasterio.io.DatasetReader):
 
 
 def _poly_to_coco_segmentation(poly: Polygon):
+    """Internal helper function."""
     if not isinstance(poly, Polygon):
         return []
     exterior = np.array(poly.exterior.coords, dtype=np.float32)
@@ -101,6 +107,7 @@ def _poly_to_coco_segmentation(poly: Polygon):
 
 
 def build_records(manifest_path: Path):
+    """Build records."""
     data = json.load(open(manifest_path))
     records = []
     for rec in data:
@@ -162,6 +169,7 @@ def build_records(manifest_path: Path):
 
 
 def mapper_test(dataset_dict, bands_1idx):
+    """Mapper test."""
     d = dataset_dict.copy()
     rgb = read_rgb_from_tif(Path(d["file_name"]), bands_1idx=bands_1idx)
     d["image"] = torch.as_tensor(rgb.transpose(2, 0, 1))
@@ -172,6 +180,7 @@ def mapper_test(dataset_dict, bands_1idx):
 
 
 def write_metrics_csv(metrics, out_csv: Path):
+    """Write metrics csv."""
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     with open(out_csv, "w", newline="") as f:
         writer = csv.writer(f)
@@ -181,6 +190,7 @@ def write_metrics_csv(metrics, out_csv: Path):
 
 
 def _valid_polys(geoms):
+    """Internal helper function."""
     polys = []
     for g in geoms:
         if g is None or g.is_empty:
@@ -196,12 +206,14 @@ def _valid_polys(geoms):
 
 
 def _geom_iou(a, b):
+    """Internal helper function."""
     inter = a.intersection(b).area
     union = a.union(b).area
     return inter / union if union > 0 else 0.0
 
 
 def compute_union_iou(gt_polys, pred_polys):
+    """Compute union iou."""
     if not gt_polys and not pred_polys:
         return 1.0
     if not gt_polys or not pred_polys:
@@ -212,6 +224,7 @@ def compute_union_iou(gt_polys, pred_polys):
 
 
 def compute_ap50(gt_polys, pred_polys, pred_scores, iou_thr=0.5):
+    """Compute ap50."""
     if not gt_polys:
         return float("nan")
     if not pred_polys:
@@ -254,6 +267,7 @@ def compute_ap50(gt_polys, pred_polys, pred_scores, iou_thr=0.5):
 
 
 def main():
+    """Run the command-line entry point."""
     pa = argparse.ArgumentParser(description="Evaluate Detectron2 on chip GeoTIFFs.")
     pa.add_argument("--val-manifest", type=Path, required=True, help="detectron_manifest.json for val chips")
     pa.add_argument("--weights", type=Path, required=True, help="Trained weights .pth")

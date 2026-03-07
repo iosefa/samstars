@@ -35,6 +35,7 @@ DEFAULT_IMG_DIR = ROOT / "chips" / "img"
 
 
 def set_seed(seed=SEED):
+    """Set seed."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -43,6 +44,7 @@ def set_seed(seed=SEED):
 
 
 def load_records(records_path: Path):
+    """Load records."""
     data = json.load(open(records_path))
     for rec in data:
         for ann in rec["annotations"]:
@@ -53,9 +55,11 @@ def load_records(records_path: Path):
 
 
 def mapper(dataset_dict):
+    """Mapper."""
     d = dataset_dict.copy()
     img = np.load(d["file_name"]).astype(np.float32)
     def norm255(band):
+        """Norm255."""
         finite = np.isfinite(band)
         if not finite.any():
             return np.zeros_like(band, dtype=np.uint8)
@@ -86,14 +90,17 @@ def mapper(dataset_dict):
 class Trainer(DefaultTrainer):
     @classmethod
     def build_train_loader(cls, cfg):
+        """Build train loader."""
         return build_detection_train_loader(cfg, mapper=mapper)
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
+        """Build test loader."""
         return build_detection_test_loader(cfg, dataset_name, mapper=mapper)
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
+        """Build evaluator."""
         from detectron2.evaluation import COCOEvaluator
         import os
         if output_folder is None:
@@ -103,10 +110,12 @@ class Trainer(DefaultTrainer):
 
 
 def count_instances(records):
+    """Count instances."""
     return sum(len(r.get("annotations", [])) for r in records)
 
 
 def main():
+    """Run the command-line entry point."""
     set_seed(SEED)
     import argparse
     pa = argparse.ArgumentParser(description="Train Detectron2 on chip subsets")
