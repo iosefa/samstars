@@ -1,0 +1,62 @@
+site_name: SAMStars
+site_description: Multimodal instance segmentation of individual trees
+repo_url: https://github.com/iosefa/sam
+docs_dir: docs
+
+theme:
+    name: material
+    palette:
+        primary: green
+        accent: deep-orange
+    icon:
+        repo: fontawesome/brands/github
+    features:
+        - navigation.instant
+        - search.highlight
+    custom_dir: overrides
+
+plugins:
+    - search
+    - mkdocstrings:
+        handlers:
+            python:
+                paths:
+                    - .
+                options:
+                    show_root_heading: true
+                    show_source: false
+
+markdown_extensions:
+    - attr_list
+    - pymdownx.superfences
+    - pymdownx.highlight:
+          linenums: true
+    - toc:
+          permalink: true
+
+nav:
+    - Home: index.md
+    - Installation: installation.md
+    - Quick Start: quickstart.md
+    - Segmentation: segmentation.md
+    - Training: training.md
+    - Data Preparation: data_preparation.md
+    - Examples: examples.md
+    - Reference:
+        - CLI Scripts: reference/cli.md
+        - API Levels: reference/api_levels.md
+    - API Reference:
+        - samstars.features.cost_surface: api/sam_cost.md
+        - samstars.features.seed_generation: api/sam_seed.md
+        - samstars.data.scaling: api/pipelines_shared_scale_stats.md
+        - samstars.data.tiling: api/helpers_make_tiles.md
+        - samstars.segmentation.engine: api/segmentation_engine.md
+        - samstars.segmentation.proposals: api/pipelines_sam_predict.md
+        - samstars.segmentation.refinement: api/pipelines_stardist_predict.md
+        - samstars.training.sam_training: api/pipelines_sam_train.md
+        - samstars.training.stardist_training: api/pipelines_stardist_train.md
+        - samstars.utils: api/utils_utils.md
+    - Report Issues: https://github.com/iosefa/sam/issues
+
+extra_css:
+    - overrides/custom.css
