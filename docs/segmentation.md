@@ -168,4 +168,4 @@ PYTHONPATH=$PWD python examples/run_stardist_resumable.py \
 - Partial completion:
   - rerun with same output paths; pipeline is resumable for proposal outputs
 
-For full function-level details, see [API Levels](reference/api_levels.md) and [API Reference](api/pipelines_sam_predict.md).
+For full function-level details, see [API Levels](reference/api_levels.md) and [API Reference](api/segmentation_proposals.md).

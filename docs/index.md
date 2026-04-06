@@ -21,12 +21,17 @@ The project was developed with WorldView + lidar data and is designed to general
 
 ## Quick Example
 
-```bash
-bash examples/run_manifest_samstars.sh \
-  --tiles-dir /abs/path/tiles \
-  --out-dir /abs/path/manifest_run \
-  --device cuda \
-  --sam-only
+```python
+from pathlib import Path
+
+from samstars.segmentation.engine import run_segmentation
+
+run_segmentation(
+    tiles_dir=Path("/abs/path/run_dir/tiles"),
+    out_dir=Path("/abs/path/run_dir/manifest_run"),
+    ckpt_root=Path("/abs/path/checkpoints"),
+    device="cuda",
+)
 ```
 
 Use [Installation](installation.md) to set up first.

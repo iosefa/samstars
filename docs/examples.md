@@ -1,13 +1,16 @@
 # Examples
 
-Runnable entrypoints live in `examples/`.
+The `examples/` directory contains runnable wrappers around the library API.
 
-## Main run commands
+Use these when you want a ready-to-run command.
+Use the Python API in [Quick Start](quickstart.md) and [Segmentation](segmentation.md) when you want to integrate `samstars` directly into your own code.
+
+## Main wrappers
 
 - `examples/run_manifest_samstars.sh`
 - `examples/run_stardist_resumable.py`
 
-## Utility commands
+## Utility wrappers
 
 - `examples/build_inference_manifests_from_tiles.py`
 - `examples/build_pending_manifest_from_sam_outputs.py`

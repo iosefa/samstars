@@ -46,16 +46,16 @@ nav:
         - CLI Scripts: reference/cli.md
         - API Levels: reference/api_levels.md
     - API Reference:
-        - samstars.features.cost_surface: api/sam_cost.md
-        - samstars.features.seed_generation: api/sam_seed.md
-        - samstars.data.scaling: api/pipelines_shared_scale_stats.md
-        - samstars.data.tiling: api/helpers_make_tiles.md
+        - samstars.features.cost_surface: api/features_cost_surface.md
+        - samstars.features.seed_generation: api/features_seed_generation.md
+        - samstars.data.scaling: api/data_scaling.md
+        - samstars.data.tiling: api/data_tiling.md
         - samstars.segmentation.engine: api/segmentation_engine.md
-        - samstars.segmentation.proposals: api/pipelines_sam_predict.md
-        - samstars.segmentation.refinement: api/pipelines_stardist_predict.md
-        - samstars.training.sam_training: api/pipelines_sam_train.md
-        - samstars.training.stardist_training: api/pipelines_stardist_train.md
-        - samstars.utils: api/utils_utils.md
+        - samstars.segmentation.proposals: api/segmentation_proposals.md
+        - samstars.segmentation.refinement: api/segmentation_refinement.md
+        - samstars.training.sam_training: api/training_sam.md
+        - samstars.training.stardist_training: api/training_stardist.md
+        - samstars.utils: api/utils.md
     - Report Issues: https://github.com/iosefa/sam/issues
 
 extra_css:

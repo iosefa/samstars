@@ -6,9 +6,9 @@ SAMStars is documented in two levels.
 
 Use these for most applications:
 
-- `samstars.data.*`
-- `samstars.segmentation.*`
-- `samstars.training.*`
+- `samstars.data`
+- `samstars.segmentation`
+- `samstars.training`
 
 These provide end-to-end operations with sensible defaults.
 
@@ -16,7 +16,7 @@ These provide end-to-end operations with sensible defaults.
 
 Use these when you need custom control:
 
-- `samstars.features.*`
+- `samstars.features`
 - `samstars.utils`
 
 These expose building blocks (costs, seeds, transforms, utilities).

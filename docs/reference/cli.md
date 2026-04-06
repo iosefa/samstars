@@ -1,22 +1,22 @@
-# CLI Entry Points
+# Command-Line Entry Points
 
-CLI entry points currently used in SAMStars runs.
+These commands are provided as runnable wrappers around the `samstars` Python API.
 
-## Build and Tiling
+## Data preparation
 
 - `samstars/data/tiling.py`
 - `examples/build_inference_manifests_from_tiles.py`
 - `examples/build_pending_manifest_from_sam_outputs.py`
 
-## SAM
+## Proposal generation
 
 - `samstars/segmentation/proposals.py`
 
-## StarDist
+## Refinement
 
 - `examples/build_scale_stats_from_probs_manifest.py`
 - `samstars/segmentation/refinement.py`
 
-## Orchestration
+## End-to-end wrappers
 
 - `examples/run_manifest_samstars.sh`
