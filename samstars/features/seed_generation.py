@@ -46,6 +46,27 @@ def detect_peaks(raster_path: Path | str,
     )
 
 
+def _sample_raster_values(
+    raster_path: Path | str,
+    xs: np.ndarray,
+    ys: np.ndarray,
+) -> np.ndarray:
+    """Sample raster values at world-coordinate point locations."""
+    with rasterio.open(raster_path) as src:
+        arr = src.read(1, masked=True).astype(np.float32).filled(np.nan)
+        rr, cc = rowcol(src.transform, xs, ys, op=float)
+
+    rr = np.rint(rr).astype(int)
+    cc = np.rint(cc).astype(int)
+    valid = (
+        (rr >= 0) & (rr < arr.shape[0]) &
+        (cc >= 0) & (cc < arr.shape[1])
+    )
+    out = np.full(xs.shape, np.nan, dtype=np.float32)
+    out[valid] = arr[rr[valid], cc[valid]]
+    return out
+
+
 def build_sparse_cost_graph(xs: np.ndarray,
                             ys: np.ndarray,
                             cost: np.ndarray,
@@ -102,12 +123,13 @@ class SeedParams:
     min_eps: float = 1.0
     max_eps: float = 6.0
     z_thresh: float = 1.0
-    min_samples: int = 3
+    min_samples: int = 1
     merge_radius: float = 3.0
     cost_weight: float = 3.0
     xy_thresh: float = 0.3
     samples: int = 8
     dz_merge: float = 1.0
+    min_canopy_height: float = 2.0
     debug_dist: bool = False
 
 
@@ -124,6 +146,19 @@ def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
         sys.exit("No seeds after CHM & density sampling.")
 
     seeds["x"], seeds["y"] = seeds.geometry.x, seeds.geometry.y
+    seeds["canopy_height"] = _sample_raster_values(
+        params.chm_raster,
+        seeds["x"].to_numpy(),
+        seeds["y"].to_numpy(),
+    )
+    seeds = seeds[np.isfinite(seeds["canopy_height"])]
+    seeds = seeds[seeds["canopy_height"] >= params.min_canopy_height].reset_index(drop=True)
+    if seeds.empty:
+        sys.exit(
+            "No seeds after applying the CHM canopy-height filter "
+            f"(min_canopy_height={params.min_canopy_height})."
+        )
+
     pts_xy = seeds[["x", "y"]].values
 
     kd = cKDTree(pts_xy)

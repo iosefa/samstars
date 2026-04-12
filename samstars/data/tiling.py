@@ -82,6 +82,12 @@ def build_tiles(*,
                 seed_params: SeedParams | None = None,
                 thin_seeds: bool = True,                    # ← NEW
                 thin_dist: float = 0.8,
+                seed_d_min: float = 4.5,
+                seed_min_dist_px: int = 4,
+                seed_gauss_sigma: int = 2,
+                seed_min_samples: int = 1,
+                seed_merge_radius: float = 3.0,
+                seed_min_canopy_height: float = 2.0,
                 write_den: bool = False,                    # ← NEW
                 skip_existing: bool = True) -> None:
 
@@ -162,7 +168,14 @@ def build_tiles(*,
                 sp = seed_params or SeedParams(
                     chm_raster=tmpd/"chm.tif",
                     den_raster=tmpd/"den.tif",
-                    cost_raster=tmpd/"cost.tif")
+                    cost_raster=tmpd/"cost.tif",
+                    d_min=seed_d_min,
+                    min_dist_px=seed_min_dist_px,
+                    gauss_sigma=seed_gauss_sigma,
+                    min_samples=seed_min_samples,
+                    merge_radius=seed_merge_radius,
+                    min_canopy_height=seed_min_canopy_height,
+                )
                 try:
                     seeds = canonical_seeds(sp)
                 except SystemExit:
@@ -227,6 +240,18 @@ def _parse_cli():
                           help="Keep all seeds (no thinning)")
     pa.add_argument("--write-den", action="store_true",
                     help="Write per-tile den.tif (density raster)")
+    pa.add_argument("--seed-d-min", type=float, default=4.5,
+                    help="Minimum peak value for CHM/density seed candidates (default: 4.5)")
+    pa.add_argument("--seed-min-dist-px", type=int, default=4,
+                    help="Peak suppression radius in pixels for seed candidates (default: 4)")
+    pa.add_argument("--seed-gauss-sigma", type=int, default=2,
+                    help="Gaussian smoothing sigma in pixels before peak finding (default: 2)")
+    pa.add_argument("--seed-min-samples", type=int, default=1,
+                    help="Minimum nearby candidates needed to keep a seed cluster (default: 1)")
+    pa.add_argument("--seed-merge-radius", type=float, default=3.0,
+                    help="Maximum effective distance in metres when merging nearby seed candidates (default: 3.0)")
+    pa.add_argument("--seed-min-canopy-height", type=float, default=2.0,
+                    help="Drop seeds where local CHM is below this height in metres (default: 2.0)")
     skip_grp = pa.add_mutually_exclusive_group()
     skip_grp.add_argument("--skip-existing", dest="skip_existing", action="store_true", default=True,
                           help="Skip tiles that already have complete outputs (default)")
@@ -243,6 +268,12 @@ def _main():
                     tile=ns.tile, overlap=ns.overlap,
                     cost_weights=tuple(ns.weights),
                     thin_seeds=ns.thin,
+                    seed_d_min=ns.seed_d_min,
+                    seed_min_dist_px=ns.seed_min_dist_px,
+                    seed_gauss_sigma=ns.seed_gauss_sigma,
+                    seed_min_samples=ns.seed_min_samples,
+                    seed_merge_radius=ns.seed_merge_radius,
+                    seed_min_canopy_height=ns.seed_min_canopy_height,
                     write_den=ns.write_den,
                     skip_existing=ns.skip_existing)
     except Exception as e:
