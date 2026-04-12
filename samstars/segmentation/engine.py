@@ -32,6 +32,9 @@ def run_segmentation(
     skip_existing_sam: bool = True,
     fast: bool = True,
     fast_batch_size: int = 32,
+    crop_smooth_sigma: float = 2.0,
+    smooth_sigma: float = 4.0,
+    post_smooth_sigma: float = 0.0,
 ) -> dict:
     """Run end-to-end segmentation from tiles to crown polygons."""
     out_dir = Path(out_dir)
@@ -81,6 +84,9 @@ def run_segmentation(
             rgb_lo_hi=None,
             fast=fast,
             fast_batch=fast_batch_size,
+            crop_smooth_sigma=crop_smooth_sigma,
+            smooth_sigma=smooth_sigma,
+            post_smooth_sigma=post_smooth_sigma,
         )
 
     if not run_stardist:

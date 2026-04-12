@@ -20,6 +20,9 @@ Optional:
   --ckpt-root PATH            SAM ckpt root (default: data/chips_128_100_full)
   --skip-existing-sam         Run SAM only on chips without existing sam_index/sam_prob/logit (default)
   --no-skip-existing-sam      Recompute SAM for every chip in manifest
+  --crop-smooth-sigma FLOAT   Per-crop SAM logit blur sigma (default: 2)
+  --smooth-sigma FLOAT        Global SAM probability mosaic blur sigma (default: 4.0)
+  --post-smooth-sigma FLOAT   Optional post-fusion index blur sigma (default: 0.0)
   --stardist-model-dir PATH   StarDist model dir (default: data/stardist_index/0474)
   --stardist-model-name NAME  StarDist model name (default: stardist)
   --stardist-input-key KEY    StarDist manifest input key: index|file_name|logit (default: index)
@@ -51,6 +54,9 @@ SAM_ONLY="false"
 STARDIST_ONLY="false"
 SKIP_EXISTING_SAM="true"
 STARDIST_CPU="false"
+CROP_SMOOTH_SIGMA="2"
+SMOOTH_SIGMA="4.0"
+POST_SMOOTH_SIGMA="0.0"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -68,6 +74,9 @@ while [[ $# -gt 0 ]]; do
     --scale-stats) SCALE_STATS="$2"; shift 2 ;;
     --skip-existing-sam) SKIP_EXISTING_SAM="true"; shift ;;
     --no-skip-existing-sam) SKIP_EXISTING_SAM="false"; shift ;;
+    --crop-smooth-sigma) CROP_SMOOTH_SIGMA="$2"; shift 2 ;;
+    --smooth-sigma) SMOOTH_SIGMA="$2"; shift 2 ;;
+    --post-smooth-sigma) POST_SMOOTH_SIGMA="$2"; shift 2 ;;
     --stardist-cpu) STARDIST_CPU="true"; shift ;;
     --sam-only) SAM_ONLY="true"; shift ;;
     --stardist-only) STARDIST_ONLY="true"; shift ;;
@@ -138,7 +147,10 @@ PY
       --sizes "$SIZE_ID" \
       --splits train \
       --device "$DEVICE" \
-      --fast
+      --fast \
+      --crop-smooth-sigma "$CROP_SMOOTH_SIGMA" \
+      --smooth-sigma "$SMOOTH_SIGMA" \
+      --post-smooth-sigma "$POST_SMOOTH_SIGMA"
   fi
 fi
 

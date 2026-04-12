@@ -97,9 +97,8 @@ def box_from_window(win: Window, tfm) -> box:
     return box(*rasterio.transform.array_bounds(int(win.height), int(win.width), tfm))
 
 
-def smooth_mosaic(prob_mosaic: np.ndarray) -> np.ndarray:
+def smooth_mosaic(prob_mosaic: np.ndarray, sigma_px: float) -> np.ndarray:
     """Original: blur prob mosaic and divide by blurred valid-mask (handles sparse coverage)."""
-    sigma_px = SMOOTH_SIGMA
     prob_blur = gaussian_filter(prob_mosaic, sigma_px, mode="nearest")
     val_mask = (prob_mosaic > 0).astype(np.float32)
     val_blur = gaussian_filter(val_mask, sigma_px, mode="nearest")
@@ -144,6 +143,9 @@ def process_chip(
     rgb_lo_hi=None,
     fast: bool = False,
     fast_batch: int = 32,
+    crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
+    smooth_sigma: float = SMOOTH_SIGMA,
+    post_smooth_sigma: float = POST_SMOOTH_SIGMA,
 ):
     """Process chip."""
     img_path = Path(rec["img_path"])
@@ -312,8 +314,8 @@ def process_chip(
                 logit_full = F.interpolate(low_res, (H, W), mode="bilinear", align_corners=False)[0, 0]
                 logit = logit_full[r0:r1, c0:c1].detach().cpu().numpy().astype(np.float32)
 
-                if CROP_SMOOTH_SIGMA > 0:
-                    logit = gaussian_filter(logit, CROP_SMOOTH_SIGMA, mode="nearest")
+                if crop_smooth_sigma > 0:
+                    logit = gaussian_filter(logit, crop_smooth_sigma, mode="nearest")
 
                 chm_patch = CHM[r0:r1, c0:c1]
                 chm_blur_p = chm_blur[r0:r1, c0:c1]
@@ -434,8 +436,8 @@ def process_chip(
                 logit = logit.detach().cpu().numpy().astype(np.float32)
 
                 # Light blur in logit space (original used cv2.GaussianBlur)
-                if CROP_SMOOTH_SIGMA > 0:
-                    logit = gaussian_filter(logit, CROP_SMOOTH_SIGMA, mode="nearest")
+                if crop_smooth_sigma > 0:
+                    logit = gaussian_filter(logit, crop_smooth_sigma, mode="nearest")
 
                 # CHM boost: compare blurred CHM to seed CHM
                 rr, cc = (r - r0), (c - c0)
@@ -456,7 +458,7 @@ def process_chip(
     # --- Global smoothing and index fusion (original) ---
     prob_mosaic_out = prob_mosaic.copy()  # debug output (pre-smooth mosaic)
 
-    prob_s = smooth_mosaic(prob_mosaic)
+    prob_s = smooth_mosaic(prob_mosaic, smooth_sigma)
     prob_s = np.nan_to_num(prob_s, nan=0.0, posinf=1.0, neginf=0.0).astype(np.float32)
     print("prob_s pcts:", np.nanpercentile(prob_s, [0, 50, 90, 99, 100]))
 
@@ -470,8 +472,8 @@ def process_chip(
     idx_min = float(np.nanmin(index)) if np.isfinite(index).any() else 0.0
     idx_max = float(np.nanmax(index)) if np.isfinite(index).any() else 1.0
 
-    if POST_SMOOTH_SIGMA > 0:
-        index = gaussian_filter(index, POST_SMOOTH_SIGMA, mode="nearest")
+    if post_smooth_sigma > 0:
+        index = gaussian_filter(index, post_smooth_sigma, mode="nearest")
 
     denom = (idx_max - idx_min)
     if not np.isfinite(denom) or denom <= 0:
@@ -510,6 +512,9 @@ def run_manifests(
     rgb_lo_hi=None,
     fast: bool = False,
     fast_batch: int = 32,
+    crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
+    smooth_sigma: float = SMOOTH_SIGMA,
+    post_smooth_sigma: float = POST_SMOOTH_SIGMA,
 ):
     """Run manifests."""
     if sizes:
@@ -548,6 +553,9 @@ def run_manifests(
                     rgb_lo_hi=rgb_lo_hi,
                     fast=fast,
                     fast_batch=fast_batch,
+                    crop_smooth_sigma=crop_smooth_sigma,
+                    smooth_sigma=smooth_sigma,
+                    post_smooth_sigma=post_smooth_sigma,
                 )
                 if res is None:
                     continue
@@ -621,6 +629,24 @@ def main() -> None:
         help="Fast mode: reuse a single SAM embedding per chip and batch prompts.",
     )
     pa.add_argument("--fast-batch-size", type=int, default=32, help="Batch size for fast mode prompts")
+    pa.add_argument(
+        "--crop-smooth-sigma",
+        type=float,
+        default=CROP_SMOOTH_SIGMA,
+        help="Per-crop Gaussian blur sigma applied before seed-centered probability weighting.",
+    )
+    pa.add_argument(
+        "--smooth-sigma",
+        type=float,
+        default=SMOOTH_SIGMA,
+        help="Global Gaussian blur sigma for the SAM probability mosaic.",
+    )
+    pa.add_argument(
+        "--post-smooth-sigma",
+        type=float,
+        default=POST_SMOOTH_SIGMA,
+        help="Optional post-fusion Gaussian blur sigma for the index raster.",
+    )
     args = pa.parse_args()
 
     sizes = [s.strip() for s in args.sizes.split(",") if s.strip()] if args.sizes else None
@@ -650,6 +676,9 @@ def main() -> None:
         rgb_lo_hi=rgb_lo_hi,
         fast=args.fast,
         fast_batch=args.fast_batch_size,
+        crop_smooth_sigma=args.crop_smooth_sigma,
+        smooth_sigma=args.smooth_sigma,
+        post_smooth_sigma=args.post_smooth_sigma,
     )
 
 
