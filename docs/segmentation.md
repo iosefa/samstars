@@ -1,8 +1,8 @@
 # Segmentation
 
-This page covers end-to-end individual tree crown segmentation in SAMStars.
+This page covers end-to-end individual tree crown segmentation in samstars.
 
-SAMStars uses a two-stage segmentation strategy:
+samstars uses a two-stage segmentation strategy:
 
 1. Lidar-guided prompting for high-recall canopy detection.
 2. Shape-aware instance separation to split adjacent crowns.
@@ -28,9 +28,9 @@ Given high-resolution imagery and a point cloud, delineate upper-canopy individu
 
 - CHM raster
 - Density raster
-- Tile manifests
+- prepared tile inputs or tile manifests
 
-These derived inputs are produced during data preparation from the source data.
+These derived inputs are produced automatically for a small scene or during data preparation for large-scene runs.
 
 ## Conceptual stages
 
@@ -55,10 +55,28 @@ from pathlib import Path
 from samstars.segmentation.engine import run_segmentation
 
 run_segmentation(
+    img=Path("/abs/path/image_8band.tif"),
+    chm=Path("/abs/path/chm.tif"),
+    den=Path("/abs/path/first_return_density.tif"),
+    out_dir=Path("/abs/path/run_dir/manifest_run"),
+    ckpt_root=Path("/abs/path/ckpt_root"),
+    device="cpu",
+)
+```
+
+Use `"cuda"` on supported Linux/NVIDIA systems.
+
+## Prepared tiles variant
+
+```python
+from pathlib import Path
+from samstars.segmentation.engine import run_segmentation
+
+run_segmentation(
     tiles_dir=Path("/abs/path/run_dir/tiles"),
     out_dir=Path("/abs/path/run_dir/manifest_run"),
     ckpt_root=Path("/abs/path/ckpt_root"),
-    device="cuda",
+    device="cpu",
 )
 ```
 

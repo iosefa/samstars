@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import subprocess
 import sys
@@ -11,6 +12,7 @@ from pathlib import Path
 from samstars.data import (
     build_inference_manifest_from_tiles,
     build_pending_manifest,
+    build_single_tile,
     build_scale_stats_from_probs_manifest,
 )
 from samstars.segmentation.proposals import run_manifests
@@ -18,7 +20,10 @@ from samstars.segmentation.proposals import run_manifests
 
 def run_segmentation(
     *,
-    tiles_dir: Path,
+    tiles_dir: Path | None = None,
+    img: Path | None = None,
+    chm: Path | None = None,
+    den: Path | None = None,
     out_dir: Path,
     ckpt_root: Path,
     device: str = "cpu",
@@ -36,10 +41,33 @@ def run_segmentation(
     smooth_sigma: float = 4.0,
     post_smooth_sigma: float = 0.0,
 ) -> dict:
-    """Run end-to-end segmentation from tiles to crown polygons."""
+    """Run end-to-end segmentation from prepared tiles or one raw input scene."""
     out_dir = Path(out_dir)
-    tiles_dir = Path(tiles_dir)
     ckpt_root = Path(ckpt_root)
+
+    raw_inputs = (img, chm, den)
+    if tiles_dir is not None and any(v is not None for v in raw_inputs):
+        raise ValueError("Provide either tiles_dir or img/chm/den, not both.")
+    if tiles_dir is None:
+        if any(v is None for v in raw_inputs):
+            raise ValueError("Provide either tiles_dir or all of img/chm/den.")
+        source_key = json.dumps(
+            {
+                "img": str(Path(img).resolve()),
+                "chm": str(Path(chm).resolve()),
+                "den": str(Path(den).resolve()),
+            },
+            sort_keys=True,
+        )
+        prepared_root = out_dir / ".prepared_tiles" / hashlib.sha1(source_key.encode("utf-8")).hexdigest()[:12]
+        tiles_dir = build_single_tile(
+            img=Path(img),
+            chm=Path(chm),
+            den=Path(den),
+            out=prepared_root,
+            skip_existing=True,
+        )
+    tiles_dir = Path(tiles_dir)
 
     manifests_root = out_dir / "manifests"
     sam_out_root = out_dir / "sam_probs"

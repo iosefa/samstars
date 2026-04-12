@@ -1,6 +1,6 @@
 # API Levels
 
-SAMStars is documented in two levels.
+samstars is documented in two levels.
 
 ## High-level API (recommended)
 

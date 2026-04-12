@@ -1,4 +1,4 @@
-site_name: SAMStars
+site_name: samstars
 site_description: Multimodal instance segmentation of individual trees
 repo_url: https://github.com/iosefa/sam
 docs_dir: docs

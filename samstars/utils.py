@@ -1,4 +1,4 @@
-"""General utility functions for SAMStars."""
+"""General utility functions for samstars."""
 
 import numpy as np
 from PIL.Image import fromarray

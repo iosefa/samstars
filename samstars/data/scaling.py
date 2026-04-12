@@ -1,4 +1,4 @@
-"""Scaling-stat helpers for SAMStars inputs and aux channels."""
+"""Scaling-stat helpers for samstars inputs and aux channels."""
 
 from __future__ import annotations
 

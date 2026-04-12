@@ -1,4 +1,4 @@
-"""SAMStars library package."""
+"""samstars library package."""
 
 from .features import (
     CostSurfaceWeights,
