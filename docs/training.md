@@ -7,6 +7,11 @@ This page covers model training entrypoints.
 - `samstars/training/sam_training.py`
 - `samstars/training/stardist_training.py`
 
+At the package level, these are exposed as:
+
+- `samstars.training.sam_training`
+- `samstars.training.stardist_training`
+
 ## Typical workflow
 
 1. Prepare training data/manifests.

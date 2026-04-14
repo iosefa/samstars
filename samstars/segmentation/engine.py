@@ -15,7 +15,6 @@ from samstars.data import (
     build_single_tile,
     build_scale_stats_from_probs_manifest,
 )
-from samstars.segmentation.proposals import run_manifests
 
 
 def run_segmentation(
@@ -102,6 +101,8 @@ def run_segmentation(
             sam_manifest_root = pending_manifest_root
 
     if run_sam and (not skip_existing_sam or pending_count > 0):
+        from samstars.segmentation.proposals import run_manifests
+
         run_manifests(
             sam_manifest_root,
             ckpt_root,
