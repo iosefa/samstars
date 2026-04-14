@@ -85,11 +85,16 @@ run_segmentation(
 ### Proposal stage only
 
 ```python
+from pathlib import Path
+from samstars.segmentation.engine import run_segmentation
+
 run_segmentation(
-    tiles_dir=Path("/abs/path/run_dir/tiles"),
+    img=Path("/abs/path/image_8band.tif"),
+    chm=Path("/abs/path/chm.tif"),
+    den=Path("/abs/path/first_return_density.tif"),
     out_dir=Path("/abs/path/run_dir/manifest_run"),
     ckpt_root=Path("/abs/path/ckpt_root"),
-    device="cuda",
+    device="cpu",
     run_stardist=False,
 )
 ```
@@ -97,8 +102,13 @@ run_segmentation(
 ### Refinement stage only (from existing proposal outputs)
 
 ```python
+from pathlib import Path
+from samstars.segmentation.engine import run_segmentation
+
 run_segmentation(
-    tiles_dir=Path("/abs/path/run_dir/tiles"),
+    img=Path("/abs/path/image_8band.tif"),
+    chm=Path("/abs/path/chm.tif"),
+    den=Path("/abs/path/first_return_density.tif"),
     out_dir=Path("/abs/path/run_dir/manifest_run"),
     ckpt_root=Path("/abs/path/ckpt_root"),
     run_sam=False,
@@ -109,8 +119,13 @@ run_segmentation(
 ### CPU fallback for StarDist
 
 ```python
+from pathlib import Path
+from samstars.segmentation.engine import run_segmentation
+
 run_segmentation(
-    tiles_dir=Path("/abs/path/run_dir/tiles"),
+    img=Path("/abs/path/image_8band.tif"),
+    chm=Path("/abs/path/chm.tif"),
+    den=Path("/abs/path/first_return_density.tif"),
     out_dir=Path("/abs/path/run_dir/manifest_run"),
     ckpt_root=Path("/abs/path/ckpt_root"),
     run_sam=False,
@@ -118,6 +133,8 @@ run_segmentation(
     stardist_cpu=True,
 )
 ```
+
+Use the prepared-tile path when you already have a tile directory and want to rerun the same scene without rebuilding the internal prepared inputs.
 
 ### Resume failed refinement robustly (per-record isolation)
 

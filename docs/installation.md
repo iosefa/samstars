@@ -4,25 +4,44 @@
 
 Use one of these:
 
-1. **Recommended**: create a conda base environment (`python`, `gdal`, `pdal`) and install `samstars` from PyPI with pip.
-2. **GitHub**: install latest source version.
+1. **PyPI install**: install the library and segmentation stack with pip.
+2. **GitHub/source install**: install from this repository.
 3. **Developer/reproducible setup**: use the pinned conda environment files.
 
-`samstars` uses geospatial and ML dependencies (`gdal`, `pdal`, and GPU/CPU runtime libraries), so conda is usually the smoothest setup.
+`samstars` uses geospatial and ML dependencies.
+Many of them have pip wheels on common platforms, but Conda is still the smoothest path when you need a fully reproducible environment or platform-specific GPU stacks.
 
-## Option 1 (Recommended): conda base env + pip install
-
-Create and activate an environment with native geospatial dependencies:
-
-```bash
-conda create -n samstars -c conda-forge python=3.10 gdal pdal
-conda activate samstars
-```
-
-Install the package:
+## Option 1: pip install the library
 
 ```bash
 pip install samstars
+```
+
+This installs the full segmentation stack, including the SAM proposal runtime and the StarDist refinement runtime.
+
+On Apple Silicon, the TensorFlow package selection is handled automatically by platform markers.
+On Linux/NVIDIA, pip will typically install CPU PyTorch wheels by default; if you want a CUDA-specific stack, the Conda environment remains the simpler path.
+
+## Option 2: install from GitHub or from a local clone
+
+Latest source from GitHub:
+
+```bash
+pip install "git+https://github.com/iosefa/sam.git"
+```
+
+Editable development install from a local clone:
+
+```bash
+git clone https://github.com/iosefa/sam.git
+cd sam
+pip install -e .
+```
+
+Editable development install with docs tooling:
+
+```bash
+pip install -e ".[docs]"
 ```
 
 Verify:
@@ -30,22 +49,6 @@ Verify:
 ```bash
 python -c "import samstars; print('samstars import ok')"
 pip show samstars
-```
-
-## Option 2: install from GitHub
-
-Latest source:
-
-```bash
-pip install git+https://github.com/iosefa/sam.git
-```
-
-Editable development install:
-
-```bash
-git clone https://github.com/iosefa/sam.git
-cd sam
-pip install -e .
 ```
 
 ## Option 3 (Developer/Reproducible): pinned conda environment files
@@ -77,6 +80,7 @@ mamba env update -n samstars -f environment.ubuntu.samstars.yml
 - For NVIDIA acceleration on Ubuntu/Linux, you need a working NVIDIA driver on the host.
 - Some environments run fully on GPU, while some steps may need CPU fallback depending on card/runtime compatibility.
 - The provided Ubuntu environment file includes CUDA-enabled packages used by this project.
+- The pip install does not try to select CUDA-specific PyTorch wheels automatically.
 
 Check CUDA availability:
 

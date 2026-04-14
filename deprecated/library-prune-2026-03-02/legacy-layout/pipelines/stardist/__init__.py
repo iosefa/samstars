@@ -1,2 +1,0 @@
-"""StarDist pipeline modules."""
-

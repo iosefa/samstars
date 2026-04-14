@@ -3,12 +3,27 @@
 `samstars` is a Python library for instance segmentation of individual trees
 using lidar-derived rasters and WorldView imagery.
 
-The current codebase keeps the core training/inference workflow and moves
-paper-specific code and artifacts out of the library path.
+## Installation
 
-Legacy `sam/0*_*.py` training scripts were deprecated and moved under:
-`deprecated/library-prune-2026-03-02/sam-legacy-training/`.
+Install the full library:
 
-Start with:
-- `docs/installation.md`
-- `examples/run_manifest_samstars.sh`
+```bash
+pip install samstars
+```
+
+Editable source install:
+
+```bash
+pip install -e .
+```
+
+If pip wheels are not available for your platform, or if you want the most
+reproducible setup, use the platform Conda environment files documented in
+[`docs/installation.md`](docs/installation.md).
+
+## Notes
+
+- `pip install samstars` installs the full segmentation stack, including SAM and StarDist runtime dependencies.
+- `pip install -e .` installs the current checkout in editable mode.
+- Linux/NVIDIA users who want CUDA-enabled PyTorch may still prefer the Conda environment files.
+- Apple Silicon TensorFlow packages are selected automatically by dependency markers.
