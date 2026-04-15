@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-Run a trained StarDist model on SAM outputs and write predicted crowns as polygons.
+Run a trained StarDist model on proposal outputs and write predicted crowns as polygons.
 
 Inputs:
-  - A SAM probs manifest JSON produced by `samstars/segmentation/proposals.py`
-    (e.g., `<sam_out_root>/<size>/val_probs.json`).
+  - A proposal-records JSON produced by `samstars/segmentation/proposals.py`.
   - A StarDist model directory (Keras) containing a `stardist/` subfolder with
     `config.json` and weights (e.g., `weights_best.h5`).
 
 Outputs:
-  - `<out_dir>/preds.gpkg` (layer: crowns) with fields: id, source, label, score
+  - `<out_dir>/crowns.gpkg` (layer: crowns) with fields: id, source, label, score
   - Optional per-input label rasters under `<out_dir>/labels/` if `--write-labels`
 
 This is inference-only (no ground truth masks required).
@@ -145,8 +144,8 @@ def _first_crs_wkt(recs: list[dict], input_key: str) -> str | None:
 
 def main() -> None:
     """Run the command-line entry point."""
-    pa = argparse.ArgumentParser(description="Run StarDist inference on SAM output manifests (no GT masks).")
-    pa.add_argument("--probs-json", type=Path, required=True, help="SAM probs manifest JSON (e.g., val_probs.json)")
+    pa = argparse.ArgumentParser(description="Run StarDist refinement from proposal records.")
+    pa.add_argument("--proposal-records", type=Path, required=True, help="Proposal-record JSON from the proposal stage")
     pa.add_argument("--model-dir", type=Path, required=True, help="Directory containing the StarDist model subdir")
     pa.add_argument("--model-name", type=str, default="stardist", help="Model subdir name (default: stardist)")
     pa.add_argument("--out-dir", type=Path, required=True)
@@ -158,7 +157,7 @@ def main() -> None:
         "--input-key",
         type=str,
         default="index",
-        help="Manifest key to use as StarDist input (default: index). Use file_name for raw SAM prob.",
+        help="Proposal-record key to use as StarDist input (default: index). Use file_name for raw SAM prob.",
     )
     pa.add_argument("--normalize", action="store_true", help="Enable csbdeep percentile normalization")
     pa.add_argument("--no-normalize", action="store_true", help="Disable csbdeep percentile normalization")
@@ -166,11 +165,11 @@ def main() -> None:
     # Aux
     pa.add_argument("--use-aux", action="store_true", help="Use CHM aux channel (stacks [primary, chm01])")
     pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON (required for --use-aux)")
-    pa.add_argument("--chm-key", type=str, default="chm", help="Manifest key for CHM path")
+    pa.add_argument("--chm-key", type=str, default="chm", help="Proposal-record key for CHM path")
 
     # Outputs
     pa.add_argument("--write-labels", action="store_true", help="Write per-input label rasters under out_dir/labels")
-    pa.add_argument("--preds-name", type=str, default="preds.gpkg", help="Output GeoPackage filename")
+    pa.add_argument("--preds-name", type=str, default="crowns.gpkg", help="Output GeoPackage filename")
 
     # Polygon filtering (useful when inputs overlap)
     pa.add_argument(
@@ -191,9 +190,9 @@ def main() -> None:
     else:
         do_normalize = True
 
-    recs = json.load(open(args.probs_json))
+    recs = json.load(open(args.proposal_records))
     if not isinstance(recs, list):
-        raise SystemExit(f"{args.probs_json} is not a list of records.")
+        raise SystemExit(f"{args.proposal_records} is not a list of records.")
 
     scale_stats = load_scale_stats(args.scale_stats) if args.scale_stats else None
     if args.use_aux and scale_stats is None:

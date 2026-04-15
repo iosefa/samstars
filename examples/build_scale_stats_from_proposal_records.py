@@ -4,15 +4,15 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from samstars.data import build_scale_stats_from_probs_manifest
+from samstars.data import build_scale_stats_from_proposal_records
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     pa = argparse.ArgumentParser(
-        description="Build StarDist scale-stats JSON (chm_01 lo/hi) from a SAM probs manifest."
+        description="Build StarDist scale-stats JSON (chm_01 lo/hi) from proposal records."
     )
-    pa.add_argument("--probs-json", type=Path, required=True, help="Path to train_probs.json / val_probs.json")
+    pa.add_argument("--proposal-records", type=Path, required=True, help="Path to proposal_records.json")
     pa.add_argument("--out", type=Path, required=True, help="Output JSON path (e.g., scale_2_98.json)")
     pa.add_argument(
         "--percentiles",
@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
         default="2,98",
         help="Low/high percentiles as 'low,high' (default: 2,98)",
     )
-    pa.add_argument("--chm-key", type=str, default="chm", help="Manifest key containing CHM raster path")
+    pa.add_argument("--chm-key", type=str, default="chm", help="Proposal-record key containing CHM raster path")
     pa.add_argument(
         "--nodata-values",
         type=str,
@@ -46,8 +46,8 @@ def main() -> None:
     except Exception as exc:
         raise SystemExit(f"Invalid --nodata-values '{args.nodata_values}': {exc}") from exc
 
-    out = build_scale_stats_from_probs_manifest(
-        probs_json=args.probs_json,
+    out = build_scale_stats_from_proposal_records(
+        proposal_records=args.proposal_records,
         out=args.out,
         percentiles=(p_lo, p_hi),
         chm_key=args.chm_key,

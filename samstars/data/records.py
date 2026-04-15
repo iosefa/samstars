@@ -1,4 +1,4 @@
-"""Manifest build, validation, and update helpers."""
+"""Run-record build and update helpers for tiled segmentation."""
 
 from __future__ import annotations
 
@@ -8,15 +8,13 @@ from pathlib import Path
 import rasterio
 
 
-def build_inference_manifest_from_tiles(
+def build_tile_records(
     *,
     tiles_dir: Path,
     out_root: Path,
     size_id: str = "0474",
-    split: str = "train",
-    write_both: bool = False,
-) -> tuple[list[dict], list[Path]]:
-    """Build manifest-style JSON records from tile folders."""
+) -> tuple[list[dict], Path]:
+    """Build tile-level run records from a prepared tile directory."""
     size_dir = out_root / size_id
     size_dir.mkdir(parents=True, exist_ok=True)
 
@@ -44,30 +42,26 @@ def build_inference_manifest_from_tiles(
     if not recs:
         raise RuntimeError(f"No valid tiles found in {tiles_dir}")
 
-    split_names = ["train_manifest.json", "val_manifest.json"] if write_both else [f"{split}_manifest.json"]
-    outs: list[Path] = []
-    for name in split_names:
-        out = size_dir / name
-        json.dump(recs, open(out, "w"))
-        outs.append(out)
-    return recs, outs
+    out_path = size_dir / "tiles.json"
+    json.dump(recs, open(out_path, "w"))
+    return recs, out_path
 
 
-def build_pending_manifest(
+def build_pending_tile_records(
     *,
-    manifest_path: Path,
-    sam_out_dir: Path,
+    records_path: Path,
+    proposal_rasters_dir: Path,
     out_path: Path,
 ) -> tuple[int, int, int]:
-    """Write pending-only manifest by skipping records with complete SAM outputs."""
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Missing manifest: {manifest_path}")
-    if not sam_out_dir.exists():
-        raise FileNotFoundError(f"Missing SAM output dir: {sam_out_dir}")
+    """Write a pending-only tile-record file by skipping finished proposal outputs."""
+    if not records_path.exists():
+        raise FileNotFoundError(f"Missing records: {records_path}")
+    if not proposal_rasters_dir.exists():
+        raise FileNotFoundError(f"Missing proposal raster dir: {proposal_rasters_dir}")
 
-    recs = json.load(open(manifest_path))
+    recs = json.load(open(records_path))
     if not isinstance(recs, list):
-        raise RuntimeError(f"Manifest is not a list: {manifest_path}")
+        raise RuntimeError(f"Records file is not a list: {records_path}")
 
     pending = []
     done = 0
@@ -78,9 +72,9 @@ def build_pending_manifest(
             pending.append(rec)
             continue
         name = f"{tile}_{chip_id}"
-        idx = sam_out_dir / f"{name}_sam_index.tif"
-        prob = sam_out_dir / f"{name}_sam_prob.tif"
-        logit = sam_out_dir / f"{name}_logit.tif"
+        idx = proposal_rasters_dir / f"{name}_sam_index.tif"
+        prob = proposal_rasters_dir / f"{name}_sam_prob.tif"
+        logit = proposal_rasters_dir / f"{name}_logit.tif"
         if idx.exists() and prob.exists() and logit.exists():
             done += 1
             continue

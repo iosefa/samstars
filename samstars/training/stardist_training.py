@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Train Keras StarDist2D on per-chip inputs derived from SAM outputs.
+Train Keras StarDist2D on per-chip inputs derived from proposal outputs.
 
 This version restores the *original* StarDist training behavior that worked well:
-- Use canopy index (default: manifest key "index") rather than raw SAM prob
+- Use canopy index (default: record key "index") rather than raw SAM prob
 - Normalize inputs with csbdeep.normalize(x, 1, 99.8) (per-channel if multi-channel)
 - Use the original augmentation (flip/rot + intensity jitter + Gaussian noise)
 
@@ -99,7 +99,7 @@ def _read_u16_mask(path: str | Path) -> np.ndarray:
 
 
 def load_pairs(
-    manifest: Path,
+    records_path: Path,
     *,
     input_key: str = "index",
     use_aux: bool = False,
@@ -108,7 +108,7 @@ def load_pairs(
     do_normalize: bool = True,
 ) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Load pairs."""
-    data = json.load(open(manifest))
+    data = json.load(open(records_path))
     X, Y = [], []
     skipped = 0
 
@@ -167,14 +167,14 @@ def load_pairs(
 
 
 def count_pairs(
-    manifest: Path,
+    records_path: Path,
     *,
     input_key: str = "index",
     use_aux: bool = False,
     chm_key: str = "chm",
 ) -> int:
     """Count pairs."""
-    data = json.load(open(manifest))
+    data = json.load(open(records_path))
     count = 0
     for rec in data:
         fname = rec.get(input_key, "")
@@ -194,18 +194,18 @@ def count_pairs(
 def main() -> None:
     """Run the command-line entry point."""
     pa = argparse.ArgumentParser()
-    pa.add_argument("--train-probs", type=Path, required=True)
-    pa.add_argument("--val-probs", type=Path, required=True)
+    pa.add_argument("--train-records", type=Path, required=True, help="Training proposal-record JSON with masks")
+    pa.add_argument("--val-records", type=Path, required=True, help="Validation proposal-record JSON with masks")
     pa.add_argument("--out-dir", type=Path, required=True)
     pa.add_argument("--epochs", type=int, default=50)
     pa.add_argument("--min-iters", type=int, default=0, help="Minimum iterations (converted to epochs)")
     pa.add_argument("--auto-epochs-ref-size", type=str, default=None, help="Reference size for auto-epochs (e.g., 0100)")
     pa.add_argument("--auto-epochs-ref-epochs", type=float, default=None, help="Reference epochs for auto-epochs")
     pa.add_argument(
-        "--auto-epochs-probs-root",
+        "--auto-epochs-records-root",
         type=Path,
         default=None,
-        help="Root containing <size>/train_probs.json (defaults to train-probs parent)",
+        help="Root containing <size>/train_records.json (defaults to train-records parent)",
     )
 
     # Original-matching knobs
@@ -213,7 +213,7 @@ def main() -> None:
         "--input-key",
         type=str,
         default="index",
-        help="Manifest key to use as StarDist input (default: index). Use file_name for raw SAM prob.",
+        help="Proposal-record key to use as StarDist input (default: index). Use file_name for raw SAM prob.",
     )
     pa.add_argument("--normalize", action="store_true", help="Enable csbdeep percentile normalization")
     pa.add_argument("--no-normalize", action="store_true", help="Disable csbdeep percentile normalization (original had normalization ON).")
@@ -222,7 +222,7 @@ def main() -> None:
     # Aux channels
     pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON for CHM/COST")
     pa.add_argument("--use-aux", action="store_true", help="Use CHM aux channel")
-    pa.add_argument("--chm-key", type=str, default="chm", help="Manifest key for CHM path")
+    pa.add_argument("--chm-key", type=str, default="chm", help="Proposal-record key for CHM path")
     args = pa.parse_args()
 
     scale_stats = load_scale_stats(args.scale_stats) if args.scale_stats else None
@@ -239,7 +239,7 @@ def main() -> None:
         do_normalize = True
 
     Xtr, Ytr = load_pairs(
-        args.train_probs,
+        args.train_records,
         input_key=args.input_key,
         use_aux=args.use_aux,
         scale_stats=scale_stats,
@@ -247,7 +247,7 @@ def main() -> None:
         do_normalize=do_normalize,
     )
     Xval, Yval = load_pairs(
-        args.val_probs,
+        args.val_records,
         input_key=args.input_key,
         use_aux=args.use_aux,
         scale_stats=scale_stats,
@@ -263,14 +263,14 @@ def main() -> None:
 
     iters_per_epoch = max(1, len(Xtr))
     if args.auto_epochs_ref_size and args.auto_epochs_ref_epochs:
-        probs_root = args.auto_epochs_probs_root
-        if probs_root is None:
-            probs_root = args.train_probs.parent.parent
-        ref_manifest = probs_root / args.auto_epochs_ref_size / "train_probs.json"
-        if not ref_manifest.exists():
-            raise FileNotFoundError(f"Missing ref train_probs.json: {ref_manifest}")
+        records_root = args.auto_epochs_records_root
+        if records_root is None:
+            records_root = args.train_records.parent.parent
+        ref_records = records_root / args.auto_epochs_ref_size / "train_records.json"
+        if not ref_records.exists():
+            raise FileNotFoundError(f"Missing ref train_records.json: {ref_records}")
         ref_n = count_pairs(
-            ref_manifest,
+            ref_records,
             input_key=args.input_key,
             use_aux=args.use_aux,
             chm_key=args.chm_key,

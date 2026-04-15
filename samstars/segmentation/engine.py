@@ -10,11 +10,39 @@ import sys
 from pathlib import Path
 
 from samstars.data import (
-    build_inference_manifest_from_tiles,
-    build_pending_manifest,
+    build_pending_tile_records,
     build_single_tile,
-    build_scale_stats_from_probs_manifest,
+    build_scale_stats_from_proposal_records,
+    build_tile_records,
 )
+
+
+def _resolve_sam_ckpt(
+    *,
+    sam_ckpt: Path | None,
+) -> Path:
+    """Resolve the SAM decoder checkpoint path."""
+    if sam_ckpt is None:
+        raise ValueError("Provide sam_ckpt.")
+    ckpt = Path(sam_ckpt)
+    if not ckpt.exists():
+        raise FileNotFoundError(f"Missing SAM checkpoint: {ckpt}")
+    return ckpt
+
+
+def _resolve_stardist_model(
+    *,
+    stardist_model: Path | None,
+) -> tuple[Path, str]:
+    """Resolve the StarDist model basedir and model name."""
+    if stardist_model is None:
+        raise ValueError("Provide stardist_model.")
+    model_path = Path(stardist_model)
+    basedir, name = model_path.parent, model_path.name
+    config_path = basedir / name / "config.json"
+    if not config_path.exists():
+        raise FileNotFoundError(f"Missing StarDist model config: {config_path}")
+    return basedir, name
 
 
 def run_segmentation(
@@ -24,11 +52,10 @@ def run_segmentation(
     chm: Path | None = None,
     den: Path | None = None,
     out_dir: Path,
-    ckpt_root: Path,
+    sam_ckpt: Path,
     device: str = "cpu",
     size_id: str = "0474",
-    stardist_model_dir: Path | None = None,
-    stardist_model_name: str = "stardist",
+    stardist_model: Path | None = None,
     stardist_input_key: str = "index",
     stardist_cpu: bool = False,
     run_sam: bool = True,
@@ -42,7 +69,8 @@ def run_segmentation(
 ) -> dict:
     """Run end-to-end segmentation from prepared tiles or one raw input scene."""
     out_dir = Path(out_dir)
-    ckpt_root = Path(ckpt_root)
+    resolved_sam_ckpt: Path | None = None
+    resolved_stardist_model: Path | None = None
 
     raw_inputs = (img, chm, den)
     if tiles_dir is not None and any(v is not None for v in raw_inputs):
@@ -68,48 +96,41 @@ def run_segmentation(
         )
     tiles_dir = Path(tiles_dir)
 
-    manifests_root = out_dir / "manifests"
-    sam_out_root = out_dir / "sam_probs"
-    stardist_out_dir = out_dir / "stardist_preds"
-    probs_json = sam_out_root / size_id / "train_probs.json"
-    train_probs_dir = sam_out_root / size_id / "train_probs"
-    train_manifest = manifests_root / size_id / "train_manifest.json"
-    pending_manifest = manifests_root / size_id / "train_manifest.pending.json"
-    pending_manifest_root = out_dir / ".pending_manifests"
-
-    recs, _ = build_inference_manifest_from_tiles(
+    records_root = out_dir / "run_records"
+    proposals_root = out_dir / "proposals"
+    crowns_dir = out_dir / "crowns"
+    proposal_records = proposals_root / size_id / "proposal_records.json"
+    proposal_rasters_dir = proposals_root / size_id / "rasters"
+    tile_records = records_root / size_id / "tiles.json"
+    pending_tile_records_path = records_root / size_id / "tiles.pending.json"
+    recs, _ = build_tile_records(
         tiles_dir=tiles_dir,
-        out_root=manifests_root,
+        out_root=records_root,
         size_id=size_id,
-        split="train",
-        write_both=False,
     )
 
     pending_count = len(recs)
-    sam_manifest_root = manifests_root
+    active_tile_records = tile_records
+    resolved_sam_ckpt = _resolve_sam_ckpt(sam_ckpt=sam_ckpt)
     if run_sam and skip_existing_sam:
-        train_probs_dir.mkdir(parents=True, exist_ok=True)
-        _, _, pending_count = build_pending_manifest(
-            manifest_path=train_manifest,
-            sam_out_dir=train_probs_dir,
-            out_path=pending_manifest,
+        proposal_rasters_dir.mkdir(parents=True, exist_ok=True)
+        _, _, pending_count = build_pending_tile_records(
+            records_path=tile_records,
+            proposal_rasters_dir=proposal_rasters_dir,
+            out_path=pending_tile_records_path,
         )
         if pending_count > 0:
-            dst_dir = pending_manifest_root / size_id
-            dst_dir.mkdir(parents=True, exist_ok=True)
-            (dst_dir / "train_manifest.json").write_text(pending_manifest.read_text())
-            sam_manifest_root = pending_manifest_root
+            active_tile_records = pending_tile_records_path
 
     if run_sam and (not skip_existing_sam or pending_count > 0):
-        from samstars.segmentation.proposals import run_manifests
+        from samstars.segmentation.proposals import run_tile_proposals
 
-        run_manifests(
-            sam_manifest_root,
-            ckpt_root,
-            sam_out_root,
+        run_tile_proposals(
+            active_tile_records,
+            proposals_root,
+            resolved_sam_ckpt,
+            size_id=size_id,
             device=device,
-            sizes=[size_id],
-            splits=["train_manifest.json"],
             rgb_lo_hi=None,
             fast=fast,
             fast_batch=fast_batch_size,
@@ -120,23 +141,23 @@ def run_segmentation(
 
     if not run_stardist:
         return {
-            "manifests_root": manifests_root,
-            "sam_out_root": sam_out_root,
-            "stardist_out_dir": stardist_out_dir,
-            "probs_json": probs_json,
+            "records_root": records_root,
+            "proposals_root": proposals_root,
+            "crowns_dir": crowns_dir,
+            "proposal_records": proposal_records,
         }
 
-    if not probs_json.exists() and train_probs_dir.exists():
+    if not proposal_records.exists() and proposal_rasters_dir.exists():
         partial = []
-        for idx in sorted(train_probs_dir.glob("*_sam_index.tif")):
+        for idx in sorted(proposal_rasters_dir.glob("*_sam_index.tif")):
             stem = idx.stem
             if not stem.endswith("_sam_index"):
                 continue
             base = stem[:-10]
-            prob = train_probs_dir / f"{base}_sam_prob.tif"
-            chm = train_probs_dir / f"{base}_chm.tif"
-            cost = train_probs_dir / f"{base}_cost.tif"
-            logit = train_probs_dir / f"{base}_logit.tif"
+            prob = proposal_rasters_dir / f"{base}_sam_prob.tif"
+            chm = proposal_rasters_dir / f"{base}_chm.tif"
+            cost = proposal_rasters_dir / f"{base}_cost.tif"
+            logit = proposal_rasters_dir / f"{base}_logit.tif"
             if prob.exists() and chm.exists() and cost.exists() and logit.exists():
                 partial.append(
                     {
@@ -150,20 +171,19 @@ def run_segmentation(
                     }
                 )
         if partial:
-            probs_json.parent.mkdir(parents=True, exist_ok=True)
-            json.dump(partial, open(probs_json, "w"))
+            proposal_records.parent.mkdir(parents=True, exist_ok=True)
+            json.dump(partial, open(proposal_records, "w"))
 
-    if not probs_json.exists():
-        raise RuntimeError(f"Missing probs manifest: {probs_json}")
+    if not proposal_records.exists():
+        raise RuntimeError(f"Missing proposal records: {proposal_records}")
 
-    if stardist_model_dir is None:
-        stardist_model_dir = Path(__file__).resolve().parents[2] / "models"
-    stardist_model_dir = Path(stardist_model_dir)
+    stardist_model_dir, stardist_model_name = _resolve_stardist_model(stardist_model=stardist_model)
+    resolved_stardist_model = Path(stardist_model_dir) / stardist_model_name
 
-    scale_stats = out_dir / "scale_2_98.json"
+    scale_stats = out_dir / "proposal_scale_stats.json"
     if not scale_stats.exists():
-        build_scale_stats_from_probs_manifest(
-            probs_json=probs_json,
+        build_scale_stats_from_proposal_records(
+            proposal_records=proposal_records,
             out=scale_stats,
             percentiles=(2.0, 98.0),
             chm_key="chm",
@@ -174,21 +194,21 @@ def run_segmentation(
     cmd = [
         sys.executable,
         str(refinement_py),
-        "--probs-json",
-        str(probs_json),
+        "--proposal-records",
+        str(proposal_records),
         "--model-dir",
-        str(stardist_model_dir),
+        str(Path(stardist_model_dir)),
         "--model-name",
         stardist_model_name,
         "--out-dir",
-        str(stardist_out_dir),
+        str(crowns_dir),
         "--input-key",
         stardist_input_key,
         "--use-aux",
         "--scale-stats",
         str(scale_stats),
         "--preds-name",
-        "preds.gpkg",
+        "crowns.gpkg",
         "--write-labels",
     ]
     env = None
@@ -198,9 +218,11 @@ def run_segmentation(
     subprocess.run(cmd, check=True, env=env)
 
     return {
-        "manifests_root": manifests_root,
-        "sam_out_root": sam_out_root,
-        "stardist_out_dir": stardist_out_dir,
-        "probs_json": probs_json,
+        "records_root": records_root,
+        "proposals_root": proposals_root,
+        "crowns_dir": crowns_dir,
+        "proposal_records": proposal_records,
         "scale_stats": scale_stats,
+        "sam_ckpt": resolved_sam_ckpt,
+        "stardist_model": resolved_stardist_model,
     }

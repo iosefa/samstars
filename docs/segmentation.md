@@ -16,6 +16,18 @@ In practice, this means:
 
 Given high-resolution imagery and a point cloud, delineate upper-canopy individual tree crowns as polygons.
 
+## Before you run
+
+You need trained model artifacts in addition to the input rasters.
+The intended workflow is to train these for your own data and store them wherever you want.
+
+At inference time, you provide:
+
+- `sam_ckpt`: the direct path to your trained SAM decoder checkpoint
+- `stardist_model`: the direct path to your trained StarDist model directory
+
+See [Training](training.md) for how to produce both artifact types.
+
 ## Required inputs
 
 ### Source inputs
@@ -28,7 +40,7 @@ Given high-resolution imagery and a point cloud, delineate upper-canopy individu
 
 - CHM raster
 - Density raster
-- prepared tile inputs or tile manifests
+- prepared tile inputs or tile records
 
 These derived inputs are produced automatically for a small scene or during data preparation for large-scene runs.
 
@@ -37,7 +49,8 @@ These derived inputs are produced automatically for a small scene or during data
 ### Stage 1: Tile and prompt-guided proposals
 
 - Build tiles and auto-generate seed prompts from CHM + density + cost surface.
-- Run proposal inference from manifests.
+- Build tile records for the prepared inputs.
+- Run proposal inference from those tile records.
 - Output a continuous crown-likelihood representation per tile/chip.
 
 ### Stage 2: Instance separation and polygons
@@ -52,14 +65,15 @@ This stage decoupling is intentional: detect canopy candidates first, then separ
 
 ```python
 from pathlib import Path
-from samstars.segmentation.engine import run_segmentation
+from samstars.segmentation import run_segmentation
 
 run_segmentation(
     img=Path("/abs/path/image_8band.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/manifest_run"),
-    ckpt_root=Path("/abs/path/ckpt_root"),
+    out_dir=Path("/abs/path/run_dir/segmentation_run"),
+    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
     device="cpu",
 )
 ```
@@ -70,12 +84,13 @@ Use `"cuda"` on supported Linux/NVIDIA systems.
 
 ```python
 from pathlib import Path
-from samstars.segmentation.engine import run_segmentation
+from samstars.segmentation import run_segmentation
 
 run_segmentation(
     tiles_dir=Path("/abs/path/run_dir/tiles"),
-    out_dir=Path("/abs/path/run_dir/manifest_run"),
-    ckpt_root=Path("/abs/path/ckpt_root"),
+    out_dir=Path("/abs/path/run_dir/segmentation_run"),
+    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
     device="cpu",
 )
 ```
@@ -86,14 +101,15 @@ run_segmentation(
 
 ```python
 from pathlib import Path
-from samstars.segmentation.engine import run_segmentation
+from samstars.segmentation import run_segmentation
 
 run_segmentation(
     img=Path("/abs/path/image_8band.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/manifest_run"),
-    ckpt_root=Path("/abs/path/ckpt_root"),
+    out_dir=Path("/abs/path/run_dir/segmentation_run"),
+    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
     device="cpu",
     run_stardist=False,
 )
@@ -103,14 +119,15 @@ run_segmentation(
 
 ```python
 from pathlib import Path
-from samstars.segmentation.engine import run_segmentation
+from samstars.segmentation import run_segmentation
 
 run_segmentation(
     img=Path("/abs/path/image_8band.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/manifest_run"),
-    ckpt_root=Path("/abs/path/ckpt_root"),
+    out_dir=Path("/abs/path/run_dir/segmentation_run"),
+    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
     run_sam=False,
     run_stardist=True,
 )
@@ -120,14 +137,15 @@ run_segmentation(
 
 ```python
 from pathlib import Path
-from samstars.segmentation.engine import run_segmentation
+from samstars.segmentation import run_segmentation
 
 run_segmentation(
     img=Path("/abs/path/image_8band.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/manifest_run"),
-    ckpt_root=Path("/abs/path/ckpt_root"),
+    out_dir=Path("/abs/path/run_dir/segmentation_run"),
+    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
     run_sam=False,
     run_stardist=True,
     stardist_cpu=True,
@@ -140,13 +158,13 @@ Use the prepared-tile path when you already have a tile directory and want to re
 
 ```bash
 PYTHONPATH=$PWD python examples/run_stardist_resumable.py \
-  --probs-json /abs/path/run_dir/manifest_run/sam_probs/0474/train_probs.json \
+  --proposal-records /abs/path/run_dir/segmentation_run/proposals/0474/proposal_records.json \
   --model-dir /abs/path/model_dir \
   --model-name stardist \
-  --out-dir /abs/path/run_dir/manifest_run/stardist_preds \
+  --out-dir /abs/path/run_dir/segmentation_run/crowns \
   --input-key index \
   --use-aux \
-  --scale-stats /abs/path/run_dir/manifest_run/scale_2_98.json \
+  --scale-stats /abs/path/run_dir/segmentation_run/proposal_scale_stats.json \
   --stardist-cpu \
   --skip-existing-labels
 ```
@@ -155,19 +173,21 @@ PYTHONPATH=$PWD python examples/run_stardist_resumable.py \
 
 ### Primary output
 
-- `.../stardist_preds/preds.gpkg`
+- `.../crowns/crowns.gpkg`
 
 ### Intermediate/optional outputs (debug and experimentation)
 
-- `.../sam_probs/0474/train_probs/*_sam_prob.tif`
-- `.../sam_probs/0474/train_probs/*_sam_index.tif`
-- `.../sam_probs/0474/train_probs/*_logit.tif`
-- `.../sam_probs/0474/train_probs.json`
-- `.../stardist_preds/labels/*_labels.tif` (if `--write-labels`)
+- `.../run_records/0474/tiles.json`
+- `.../run_records/0474/tiles.pending.json`
+- `.../proposals/0474/rasters/*_sam_prob.tif`
+- `.../proposals/0474/rasters/*_sam_index.tif`
+- `.../proposals/0474/rasters/*_logit.tif`
+- `.../proposals/0474/proposal_records.json`
+- `.../crowns/labels/*_labels.tif` (if `--write-labels`)
 
 ## Key controls
 
-### Run-level controls (`examples/run_manifest_samstars.sh`)
+### Run-level controls (`examples/run_tiled_segmentation.sh`)
 
 - `--sam-only` / `--stardist-only`
 - `--skip-existing-sam` / `--no-skip-existing-sam`
@@ -177,12 +197,16 @@ PYTHONPATH=$PWD python examples/run_stardist_resumable.py \
 
 ### Proposal module controls (`samstars/segmentation/proposals.py`)
 
+- `--tile-records`
+- `--ckpt-path`
+- `--size-id`
 - `--device`
 - `--fast`
 - `--fast-batch-size`
 - `--scale-stats`
-- `--sizes`
-- `--splits`
+- `--crop-smooth-sigma`
+- `--smooth-sigma`
+- `--post-smooth-sigma`
 
 ### Refinement module controls (`samstars/segmentation/refinement.py`)
 
@@ -201,6 +225,6 @@ PYTHONPATH=$PWD python examples/run_stardist_resumable.py \
 - GPU instability for refinement:
   - run with `--stardist-cpu`
 - Partial completion:
-  - rerun with same output paths; pipeline is resumable for proposal outputs
+  - rerun with same output paths; run records and proposal outputs are resumable
 
 For full function-level details, see [API Levels](reference/api_levels.md) and [API Reference](api/segmentation_proposals.md).

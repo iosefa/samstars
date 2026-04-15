@@ -5,7 +5,7 @@
 - `quickstart.md`: Minimal end-to-end run.
 - `segmentation.md`: Task-focused segmentation docs.
 - `training.md`: Training entrypoints and notes.
-- `data_preparation.md`: Tiling/manifests/scale-stat prep.
+- `data_preparation.md`: Tiling/run-record/scale-stat prep.
 - `examples.md`: Runnable example entrypoints.
 
 ## Install paths

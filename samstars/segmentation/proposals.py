@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run SAM (fine-tuned decoder) on chip manifests using seed prompts and the *original*
+Run SAM (fine-tuned decoder) on tile run records using seed prompts and the *original*
 probability-building logic:
 
 - Use SAM low-res logits upsampled to the crop size
@@ -11,14 +11,14 @@ probability-building logic:
 - Large Gaussian smoothing of the mosaic with valid-mask normalization
 - Build "index" by fusing SAM prob + CHM + COST + ground weighting
 
-For each chip window (train/val manifests), writes:
+For each tile record, writes:
   *_logit.tif     (debug: per-chip mosaic BEFORE global smoothing; this is actually prob-mosaic)
   *_sam_prob.tif  (smoothed SAM probability mosaic, float32 in [0,1])
   *_sam_index.tif (fused index, float32 in [0,1])
   *_chm.tif
   *_cost.tif
 
-And writes <split>_probs.json with file paths + spatial metadata.
+And writes a proposal-records JSON file with file paths + spatial metadata.
 
 Note: this script keeps your global RGB scaling (via --scale-stats) but restores the
 core weighting + smoothing behavior from the original working implementation.
@@ -502,13 +502,13 @@ def process_chip(
     return prob_mosaic_out, prob_s, index, CHM, COST, crs, tfm
 
 
-def run_manifests(
-    manifests_root: Path,
-    ckpt_root: Path,
+def run_tile_proposals(
+    records_json: Path,
     out_root: Path,
+    ckpt_path: Path,
+    *,
+    size_id: str,
     device: str = "cpu",
-    sizes=None,
-    splits=None,
     rgb_lo_hi=None,
     fast: bool = False,
     fast_batch: int = 32,
@@ -516,113 +516,97 @@ def run_manifests(
     smooth_sigma: float = SMOOTH_SIGMA,
     post_smooth_sigma: float = POST_SMOOTH_SIGMA,
 ):
-    """Run manifests."""
-    if sizes:
-        size_dirs = [manifests_root / s for s in sorted(sizes)]
-    else:
-        size_dirs = sorted(p for p in manifests_root.iterdir() if p.is_dir())
+    """Run SAM proposals from one tile-record file."""
+    records_path = Path(records_json)
+    if not records_path.exists():
+        raise FileNotFoundError(f"Missing records file: {records_path}")
 
-    split_files = splits or ["train_manifest.json", "val_manifest.json"]
+    ckpt = Path(ckpt_path)
+    if not ckpt.exists():
+        raise FileNotFoundError(f"Missing SAM checkpoint: {ckpt}")
 
-    for size_dir in size_dirs:
-        ckpt = ckpt_root / size_dir.name / "sam" / "sam_crowns_decoder.pth"
-        if not ckpt.exists():
+    sam = sam_model_registry["vit_l"](checkpoint=str(ckpt))
+    sam.to(device).eval()
+    predictor = SamPredictor(sam)
+
+    out_dir = out_root / size_id / "rasters"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    recs = json.load(open(records_path))
+    proposal_records = []
+
+    for rec in recs:
+        res = process_chip(
+            rec,
+            predictor,
+            device,
+            rgb_lo_hi=rgb_lo_hi,
+            fast=fast,
+            fast_batch=fast_batch,
+            crop_smooth_sigma=crop_smooth_sigma,
+            smooth_sigma=smooth_sigma,
+            post_smooth_sigma=post_smooth_sigma,
+        )
+        if res is None:
             continue
 
-        # Load SAM once per size
-        sam = sam_model_registry["vit_l"](checkpoint=str(ckpt))
-        sam.to(device).eval()
-        predictor = SamPredictor(sam)
+        mosaic_prob, prob_s, index, chm_out, cost_out, crs, tfm = res
+        name = f"{rec['tile']}_{rec['chip_id']}"
 
-        for split in split_files:
-            manifest = size_dir / split
-            if not manifest.exists():
-                continue
+        _check_sam_outputs(prob_s, name)
 
-            out_dir = out_root / size_dir.name / ("train_probs" if "train" in split else "val_probs")
-            out_dir.mkdir(parents=True, exist_ok=True)
+        meta = {
+            "driver": "GTiff",
+            "height": index.shape[0],
+            "width": index.shape[1],
+            "count": 1,
+            "dtype": "float32",
+            "crs": crs,
+            "transform": tfm,
+            "compress": "deflate",
+        }
 
-            recs = json.load(open(manifest))
-            manifest_out = []
+        with rasterio.open(out_dir / f"{name}_logit.tif", "w", **meta) as dst:
+            dst.write(mosaic_prob.astype(np.float32), 1)
+        with rasterio.open(out_dir / f"{name}_sam_prob.tif", "w", **meta) as dst:
+            dst.write(prob_s.astype(np.float32), 1)
+        with rasterio.open(out_dir / f"{name}_sam_index.tif", "w", **meta) as dst:
+            dst.write(index.astype(np.float32), 1)
+        with rasterio.open(out_dir / f"{name}_chm.tif", "w", **meta) as dst:
+            dst.write(chm_out.astype(np.float32), 1)
+        with rasterio.open(out_dir / f"{name}_cost.tif", "w", **meta) as dst:
+            dst.write(cost_out.astype(np.float32), 1)
 
-            for rec in recs:
-                res = process_chip(
-                    rec,
-                    predictor,
-                    device,
-                    rgb_lo_hi=rgb_lo_hi,
-                    fast=fast,
-                    fast_batch=fast_batch,
-                    crop_smooth_sigma=crop_smooth_sigma,
-                    smooth_sigma=smooth_sigma,
-                    post_smooth_sigma=post_smooth_sigma,
-                )
-                if res is None:
-                    continue
+        proposal_records.append(
+            {
+                "file_name": str(out_dir / f"{name}_sam_prob.tif"),
+                "chm": str(out_dir / f"{name}_chm.tif"),
+                "cost": str(out_dir / f"{name}_cost.tif"),
+                "logit": str(out_dir / f"{name}_logit.tif"),
+                "index": str(out_dir / f"{name}_sam_index.tif"),
+                "mask": "",
+                "meta": {
+                    "crs": crs.to_wkt() if crs else None,
+                    "transform": list(tfm) if tfm is not None else None,
+                },
+            }
+        )
 
-                mosaic_prob, prob_s, index, chm_out, cost_out, crs, tfm = res
-                name = f"{rec['tile']}_{rec['chip_id']}"
-
-                _check_sam_outputs(prob_s, name)
-
-                meta = {
-                    "driver": "GTiff",
-                    "height": index.shape[0],
-                    "width": index.shape[1],
-                    "count": 1,
-                    "dtype": "float32",
-                    "crs": crs,
-                    "transform": tfm,
-                    "compress": "deflate",
-                }
-
-                with rasterio.open(out_dir / f"{name}_logit.tif", "w", **meta) as dst:
-                    dst.write(mosaic_prob.astype(np.float32), 1)
-                with rasterio.open(out_dir / f"{name}_sam_prob.tif", "w", **meta) as dst:
-                    dst.write(prob_s.astype(np.float32), 1)
-                with rasterio.open(out_dir / f"{name}_sam_index.tif", "w", **meta) as dst:
-                    dst.write(index.astype(np.float32), 1)
-                with rasterio.open(out_dir / f"{name}_chm.tif", "w", **meta) as dst:
-                    dst.write(chm_out.astype(np.float32), 1)
-                with rasterio.open(out_dir / f"{name}_cost.tif", "w", **meta) as dst:
-                    dst.write(cost_out.astype(np.float32), 1)
-
-                manifest_out.append(
-                    {
-                        "file_name": str(out_dir / f"{name}_sam_prob.tif"),
-                        "chm": str(out_dir / f"{name}_chm.tif"),
-                        "cost": str(out_dir / f"{name}_cost.tif"),
-                        "logit": str(out_dir / f"{name}_logit.tif"),
-                        "index": str(out_dir / f"{name}_sam_index.tif"),
-                        "mask": "",
-                        "meta": {
-                            "crs": crs.to_wkt() if crs else None,
-                            "transform": list(tfm) if tfm is not None else None,
-                        },
-                    }
-                )
-
-            out_json = out_root / size_dir.name / ("train_probs.json" if "train" in split else "val_probs.json")
-            with open(out_json, "w") as f:
-                json.dump(manifest_out, f)
-            print(f"✓ wrote probs for {size_dir.name}/{split} ({len(manifest_out)} records)")
+    out_json = out_root / size_id / "proposal_records.json"
+    with open(out_json, "w") as f:
+        json.dump(proposal_records, f)
+    print(f"✓ wrote proposal outputs for {size_id} ({len(proposal_records)} records)")
 
 
 def main() -> None:
     """Run the command-line entry point."""
-    pa = argparse.ArgumentParser(description="Run SAM on manifests with seeds and write smoothed probs/index.")
-    pa.add_argument("--manifests-root", type=Path, required=True)
-    pa.add_argument("--ckpt-root", type=Path, required=True)
+    pa = argparse.ArgumentParser(description="Run SAM proposals on tile records and write proposal rasters.")
+    pa.add_argument("--tile-records", type=Path, required=True, help="Path to a tile-record JSON file")
+    pa.add_argument("--ckpt-path", type=Path, required=True, help="Direct path to a SAM decoder checkpoint")
     pa.add_argument("--out-root", type=Path, required=True)
+    pa.add_argument("--size-id", type=str, required=True, help="Size identifier for the proposal output folder")
     pa.add_argument("--device", default="cpu")
-    pa.add_argument("--sizes", type=str, default=None, help="Comma-separated sizes to process")
     pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON")
-    pa.add_argument(
-        "--splits",
-        type=str,
-        default=None,
-        help="Comma-separated split list (train,val). Default runs both.",
-    )
     pa.add_argument(
         "--fast",
         action="store_true",
@@ -649,30 +633,18 @@ def main() -> None:
     )
     args = pa.parse_args()
 
-    sizes = [s.strip() for s in args.sizes.split(",") if s.strip()] if args.sizes else None
-
-    splits = None
-    if args.splits:
-        splits = []
-        for s in args.splits.split(","):
-            s = s.strip().lower()
-            if not s:
-                continue
-            splits.append("train_manifest.json" if s.startswith("train") else "val_manifest.json")
-
     rgb_lo_hi = None
     if args.scale_stats:
         stats = load_scale_stats(args.scale_stats)
         per_channel = stats.get("sam_rgb_u8", {}).get("per_channel", [])
         rgb_lo_hi = [(float(c["lo"]), float(c["hi"])) for c in per_channel]
 
-    run_manifests(
-        args.manifests_root,
-        args.ckpt_root,
+    run_tile_proposals(
+        args.tile_records,
         args.out_root,
+        args.ckpt_path,
+        size_id=args.size_id,
         device=args.device,
-        sizes=sizes,
-        splits=splits,
         rgb_lo_hi=rgb_lo_hi,
         fast=args.fast,
         fast_batch=args.fast_batch_size,

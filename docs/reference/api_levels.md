@@ -14,7 +14,7 @@ These provide end-to-end operations with sensible defaults.
 
 In practice:
 
-- `samstars.data` exposes tiling, manifest, and scaling helpers
+- `samstars.data` exposes tiling, run-record, and scaling helpers
 - `samstars.segmentation` exposes `run_segmentation(...)`
 - `samstars.training` exposes the `sam_training` and `stardist_training` entrypoint modules
 

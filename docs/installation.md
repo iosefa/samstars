@@ -19,6 +19,10 @@ pip install samstars
 
 This installs the full segmentation stack, including the SAM proposal runtime and the StarDist refinement runtime.
 
+It does not bundle trained model checkpoints or StarDist model weights.
+The expected workflow is to train your own models for your data and then supply those model paths at run time.
+See [Training](training.md) and [Segmentation](segmentation.md).
+
 On Apple Silicon, the TensorFlow package selection is handled automatically by platform markers.
 On Linux/NVIDIA, pip will typically install CPU PyTorch wheels by default; if you want a CUDA-specific stack, the Conda environment remains the simpler path.
 

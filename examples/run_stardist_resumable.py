@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Robust per-record StarDist runner")
     p.add_argument("--python", default="python", help="Python executable")
     p.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    p.add_argument("--probs-json", type=Path, required=True)
+    p.add_argument("--proposal-records", type=Path, required=True)
     p.add_argument("--model-dir", type=Path, required=True)
     p.add_argument("--model-name", default="stardist")
     p.add_argument("--out-dir", type=Path, required=True)
@@ -39,9 +39,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    recs = json.load(open(args.probs_json))
+    recs = json.load(open(args.proposal_records))
     if not isinstance(recs, list):
-        raise SystemExit(f"{args.probs_json} must be a list")
+        raise SystemExit(f"{args.proposal_records} must be a list")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     labels_dir = args.out_dir / "labels"
@@ -67,14 +67,14 @@ def main() -> None:
 
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
             json.dump([rec], tf)
-            one_manifest = Path(tf.name)
+            one_records_path = Path(tf.name)
 
         preds_name = f"preds_{source}.gpkg"
         cmd = [
             args.python,
             str(args.repo_root / "samstars/segmentation/refinement.py"),
-            "--probs-json",
-            str(one_manifest),
+            "--proposal-records",
+            str(one_records_path),
             "--model-dir",
             str(args.model_dir),
             "--model-name",
@@ -105,7 +105,7 @@ def main() -> None:
 
         proc = subprocess.run(cmd, env=env)
         try:
-            one_manifest.unlink(missing_ok=True)
+            one_records_path.unlink(missing_ok=True)
         except Exception:
             pass
 

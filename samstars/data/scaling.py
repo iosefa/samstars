@@ -45,19 +45,19 @@ def scale_to_01(arr: np.ndarray, lo: float, hi: float) -> np.ndarray:
     return np.clip(data, 0.0, 1.0).astype(np.float32)
 
 
-def build_scale_stats_from_probs_manifest(
+def build_scale_stats_from_proposal_records(
     *,
-    probs_json: Path,
+    proposal_records: Path,
     out: Path,
     percentiles: tuple[float, float] = (2.0, 98.0),
     chm_key: str = "chm",
     nodata_values: tuple[float, ...] = (-9999.0, -32768.0),
 ) -> dict:
-    """Build StarDist CHM scale stats from a SAM probs manifest."""
+    """Build StarDist CHM scale stats from proposal records."""
     p_lo, p_hi = percentiles
-    recs = json.load(open(probs_json))
+    recs = json.load(open(proposal_records))
     if not isinstance(recs, list):
-        raise RuntimeError(f"Manifest must be a list: {probs_json}")
+        raise RuntimeError(f"Proposal records must be a list: {proposal_records}")
 
     parts: list[np.ndarray] = []
     missing = 0
@@ -81,14 +81,14 @@ def build_scale_stats_from_probs_manifest(
             parts.append(arr)
 
     if not parts:
-        raise RuntimeError(f"No finite CHM values found in {probs_json}")
+        raise RuntimeError(f"No finite CHM values found in {proposal_records}")
 
     vals = np.concatenate(parts)
     lo, hi = np.nanpercentile(vals, [p_lo, p_hi])
     out_data = {
         "percentiles": [p_lo, p_hi],
         "chm_01": {"lo": float(lo), "hi": float(hi)},
-        "source_probs_json": str(probs_json.resolve()),
+        "source_proposal_records": str(proposal_records.resolve()),
         "records_total": int(len(recs)),
         "records_missing_or_unreadable_chm": int(missing),
     }

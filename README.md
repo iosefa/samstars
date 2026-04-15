@@ -27,3 +27,6 @@ reproducible setup, use the platform Conda environment files documented in
 - `pip install -e .` installs the current checkout in editable mode.
 - Linux/NVIDIA users who want CUDA-enabled PyTorch may still prefer the Conda environment files.
 - Apple Silicon TensorFlow packages are selected automatically by dependency markers.
+- Segmentation runs also require trained model artifacts.
+- The intended workflow is to train your own models and then use those artifacts for inference.
+- See [`docs/training.md`](docs/training.md) and [`docs/segmentation.md`](docs/segmentation.md) for the library-facing usage contract.

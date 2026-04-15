@@ -27,19 +27,23 @@ The project was developed with WorldView + lidar data and is designed to general
 ```python
 from pathlib import Path
 
-from samstars.segmentation.engine import run_segmentation
+from samstars.segmentation import run_segmentation
 
 run_segmentation(
     img=Path("/abs/path/image_8band.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/manifest_run"),
-    ckpt_root=Path("/abs/path/checkpoints"),
+    out_dir=Path("/abs/path/run_dir/segmentation_run"),
+    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
     device="cpu",
 )
 ```
 
 Use `"cuda"` on supported Linux/NVIDIA systems.
+
+This run also requires trained model artifacts for SAM proposals and StarDist refinement.
+The intended workflow is to train those models for your own data and then supply their paths to the library.
 
 See [Installation](installation.md) to set up the environment.
 For a minimal run path, see [Quick Start](quickstart.md).
