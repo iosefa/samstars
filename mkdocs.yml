@@ -1,0 +1,68 @@
+site_name: samstars
+site_description: Multimodal instance segmentation of individual trees
+repo_url: https://github.com/iosefa/sam
+docs_dir: docs
+
+theme:
+    name: material
+    palette:
+        primary: green
+        accent: deep-orange
+    icon:
+        repo: fontawesome/brands/github
+    features:
+        - navigation.instant
+        - search.highlight
+    custom_dir: overrides
+
+plugins:
+    - search
+    - mkdocs-jupyter
+    - mkdocstrings:
+        handlers:
+            python:
+                paths:
+                    - .
+                options:
+                    show_root_heading: true
+                    show_source: false
+
+markdown_extensions:
+    - attr_list
+    - pymdownx.superfences
+    - pymdownx.highlight:
+          linenums: true
+    - toc:
+          permalink: true
+
+nav:
+    - Home: index.md
+    - Installation: installation.md
+    - Quick Start: quickstart.md
+    - Segmentation: segmentation.md
+    - Training: training.md
+    - Data Preparation: data_preparation.md
+    - Large Raster Runs: large_raster_runs.md
+    - Examples:
+        - Overview: examples.md
+        - Train and Segment One Area: train_and_segment_one_area.ipynb
+    - Reference:
+        - CLI Scripts: reference/cli.md
+        - API Levels: reference/api_levels.md
+    - API Reference:
+        - samstars.features.cost_surface: api/features_cost_surface.md
+        - samstars.features.seed_generation: api/features_seed_generation.md
+        - samstars.data.scaling: api/data_scaling.md
+        - samstars.data.tiling: api/data_tiling.md
+        - samstars.segmentation.engine: api/segmentation_engine.md
+        - samstars.segmentation.proposals: api/segmentation_proposals.md
+        - samstars.segmentation.refinement: api/segmentation_refinement.md
+        - samstars.training.chips: api/training_chips.md
+        - samstars.training.records: api/training_records.md
+        - samstars.training.sam_training: api/training_sam.md
+        - samstars.training.stardist_training: api/training_stardist.md
+        - samstars.utils: api/utils.md
+    - Report Issues: https://github.com/iosefa/sam/issues
+
+extra_css:
+    - overrides/custom.css

@@ -1,0 +1,34 @@
+name: samstars
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=1.26.*
+  - scipy
+  - scikit-image
+  - rasterio
+  - geopandas
+  - fiona
+  - shapely
+  - pandas
+  - matplotlib
+  - opencv
+  - tqdm
+  - mkdocs
+  - mkdocs-material
+  - mkdocstrings
+  - mkdocstrings-python
+  - pymdown-extensions
+  - "setuptools<81"
+  - wheel
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu128
+      - torch==2.10.0+cu128
+      - torchvision==0.25.0+cu128
+      - torchaudio==2.10.0+cu128
+      - segment-anything==1.0
+      - pycocotools
+      - csbdeep==0.8.1
+      - stardist==0.9.1
+      - "tensorflow>=2.15,<2.19"
