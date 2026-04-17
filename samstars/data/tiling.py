@@ -5,7 +5,7 @@ make_tiles.py – split IMG / CHM / COST / SEEDS into 500 m tiles (+20 m ove
 """
 
 from __future__ import annotations
-import sys, argparse, tempfile
+import sys, argparse, tempfile, shutil
 from pathlib import Path
 import numpy as np
 import rasterio
@@ -283,6 +283,7 @@ def build_single_tile(*,
                       img: Path,
                       chm: Path,
                       den: Path,
+                      crowns: Path | None = None,
                       slic: Path | None = None,
                       out: Path = Path("tiles"),
                       tile_name: str = "tile_000_000",
@@ -357,6 +358,13 @@ def build_single_tile(*,
 
     if not written:
         raise RuntimeError("No valid tile outputs generated from the provided inputs.")
+
+    tile_dir = out / tile_name
+    if crowns is not None:
+        crowns = Path(crowns)
+        if not crowns.exists():
+            raise FileNotFoundError(f"Missing crowns file: {crowns}")
+        shutil.copy2(crowns, tile_dir / "crowns.gpkg")
 
     print("✓ Single-tile inputs written to", out.resolve())
     return out

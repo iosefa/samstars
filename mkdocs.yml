@@ -17,6 +17,7 @@ theme:
 
 plugins:
     - search
+    - mkdocs-jupyter
     - mkdocstrings:
         handlers:
             python:
@@ -41,7 +42,10 @@ nav:
     - Segmentation: segmentation.md
     - Training: training.md
     - Data Preparation: data_preparation.md
-    - Examples: examples.md
+    - Large Raster Runs: large_raster_runs.md
+    - Examples:
+        - Overview: examples.md
+        - Train and Segment One Area: train_and_segment_one_area.ipynb
     - Reference:
         - CLI Scripts: reference/cli.md
         - API Levels: reference/api_levels.md
@@ -53,6 +57,8 @@ nav:
         - samstars.segmentation.engine: api/segmentation_engine.md
         - samstars.segmentation.proposals: api/segmentation_proposals.md
         - samstars.segmentation.refinement: api/segmentation_refinement.md
+        - samstars.training.chips: api/training_chips.md
+        - samstars.training.records: api/training_records.md
         - samstars.training.sam_training: api/training_sam.md
         - samstars.training.stardist_training: api/training_stardist.md
         - samstars.utils: api/utils.md

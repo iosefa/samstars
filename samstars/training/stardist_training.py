@@ -191,22 +191,80 @@ def count_pairs(
     return count
 
 
+def train_stardist_model(
+    *,
+    train_records: Path,
+    val_records: Path,
+    out_dir: Path,
+    epochs: int = 50,
+    min_iters: int = 0,
+    input_key: str = "index",
+    use_aux: bool = False,
+    scale_stats_path: Path | None = None,
+    chm_key: str = "chm",
+    normalize_inputs: bool = True,
+    augment: bool = True,
+) -> None:
+    """Train a StarDist model from train/val proposal-record files."""
+    scale_stats = load_scale_stats(scale_stats_path) if scale_stats_path else None
+    if use_aux and scale_stats is None:
+        raise ValueError("Provide scale_stats_path when use_aux=True.")
+
+    Xtr, Ytr = load_pairs(
+        train_records,
+        input_key=input_key,
+        use_aux=use_aux,
+        scale_stats=scale_stats,
+        chm_key=chm_key,
+        do_normalize=normalize_inputs,
+    )
+    Xval, Yval = load_pairs(
+        val_records,
+        input_key=input_key,
+        use_aux=use_aux,
+        scale_stats=scale_stats,
+        chm_key=chm_key,
+        do_normalize=normalize_inputs,
+    )
+
+    Ytr = [fill_label_holes(y) for y in Ytr]
+    Yval = [fill_label_holes(y) for y in Yval]
+
+    if not Xtr or not Ytr:
+        raise RuntimeError("No training data with masks found.")
+
+    iters_per_epoch = max(1, len(Xtr))
+    if min_iters > 0:
+        min_epochs = int((min_iters + iters_per_epoch - 1) // iters_per_epoch)
+        epochs = max(epochs, min_epochs)
+    print(f"epochs={epochs} (iters/epoch={iters_per_epoch})")
+
+    n_channels = Xtr[0].shape[-1]
+    conf = Config2D(n_rays=32, grid=(2, 2), use_gpu=False, n_channel_in=n_channels)
+    model = StarDist2D(conf, name="stardist", basedir=str(out_dir))
+
+    val_data = (Xval, Yval) if (len(Xval) > 0 and len(Yval) > 0) else None
+    aug = augmenter if augment else None
+    model.train(Xtr, Ytr, validation_data=val_data, epochs=epochs, augmenter=aug)
+
+    if val_data is not None:
+        try:
+            opt = model.optimize_thresholds(Xval, Yval)
+            print(f"✓ optimized thresholds: prob={opt.get('prob'):.3f}, nms={opt.get('nms'):.3f}")
+        except Exception as exc:
+            print(f"[warn] threshold optimization failed: {exc}")
+
+    print(f"✓ trained StarDist -> {out_dir}")
+
+
 def main() -> None:
     """Run the command-line entry point."""
-    pa = argparse.ArgumentParser()
+    pa = argparse.ArgumentParser(description="Train a StarDist refinement model from proposal-record files.")
     pa.add_argument("--train-records", type=Path, required=True, help="Training proposal-record JSON with masks")
     pa.add_argument("--val-records", type=Path, required=True, help="Validation proposal-record JSON with masks")
-    pa.add_argument("--out-dir", type=Path, required=True)
-    pa.add_argument("--epochs", type=int, default=50)
-    pa.add_argument("--min-iters", type=int, default=0, help="Minimum iterations (converted to epochs)")
-    pa.add_argument("--auto-epochs-ref-size", type=str, default=None, help="Reference size for auto-epochs (e.g., 0100)")
-    pa.add_argument("--auto-epochs-ref-epochs", type=float, default=None, help="Reference epochs for auto-epochs")
-    pa.add_argument(
-        "--auto-epochs-records-root",
-        type=Path,
-        default=None,
-        help="Root containing <size>/train_records.json (defaults to train-records parent)",
-    )
+    pa.add_argument("--out-dir", type=Path, required=True, help="Output directory for the trained StarDist model")
+    pa.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
+    pa.add_argument("--min-iters", type=int, default=0, help="Minimum training iterations (converted to epochs)")
 
     # Original-matching knobs
     pa.add_argument(
@@ -216,18 +274,14 @@ def main() -> None:
         help="Proposal-record key to use as StarDist input (default: index). Use file_name for raw SAM prob.",
     )
     pa.add_argument("--normalize", action="store_true", help="Enable csbdeep percentile normalization")
-    pa.add_argument("--no-normalize", action="store_true", help="Disable csbdeep percentile normalization (original had normalization ON).")
+    pa.add_argument("--no-normalize", action="store_true", help="Disable csbdeep percentile normalization")
     pa.add_argument("--no-augment", action="store_true", help="Disable augmentation (original had augmentation ON).")
 
     # Aux channels
-    pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON for CHM/COST")
-    pa.add_argument("--use-aux", action="store_true", help="Use CHM aux channel")
+    pa.add_argument("--scale-stats", type=Path, default=None, help="CHM scaling stats JSON; required with --use-aux")
+    pa.add_argument("--use-aux", action="store_true", help="Add CHM as an auxiliary input channel")
     pa.add_argument("--chm-key", type=str, default="chm", help="Proposal-record key for CHM path")
     args = pa.parse_args()
-
-    scale_stats = load_scale_stats(args.scale_stats) if args.scale_stats else None
-    if args.use_aux and scale_stats is None:
-        raise SystemExit("--scale-stats is required when --use-aux is set")
 
     if args.normalize and args.no_normalize:
         raise SystemExit("Use only one of --normalize or --no-normalize.")
@@ -238,71 +292,19 @@ def main() -> None:
     else:
         do_normalize = True
 
-    Xtr, Ytr = load_pairs(
-        args.train_records,
+    train_stardist_model(
+        train_records=args.train_records,
+        val_records=args.val_records,
+        out_dir=args.out_dir,
+        epochs=args.epochs,
+        min_iters=args.min_iters,
         input_key=args.input_key,
         use_aux=args.use_aux,
-        scale_stats=scale_stats,
+        scale_stats_path=args.scale_stats,
         chm_key=args.chm_key,
-        do_normalize=do_normalize,
+        normalize_inputs=do_normalize,
+        augment=not args.no_augment,
     )
-    Xval, Yval = load_pairs(
-        args.val_records,
-        input_key=args.input_key,
-        use_aux=args.use_aux,
-        scale_stats=scale_stats,
-        chm_key=args.chm_key,
-        do_normalize=do_normalize,
-    )
-
-    Ytr = [fill_label_holes(y) for y in Ytr]
-    Yval = [fill_label_holes(y) for y in Yval]
-
-    if not Xtr or not Ytr:
-        raise RuntimeError("No training data with masks found.")
-
-    iters_per_epoch = max(1, len(Xtr))
-    if args.auto_epochs_ref_size and args.auto_epochs_ref_epochs:
-        records_root = args.auto_epochs_records_root
-        if records_root is None:
-            records_root = args.train_records.parent.parent
-        ref_records = records_root / args.auto_epochs_ref_size / "train_records.json"
-        if not ref_records.exists():
-            raise FileNotFoundError(f"Missing ref train_records.json: {ref_records}")
-        ref_n = count_pairs(
-            ref_records,
-            input_key=args.input_key,
-            use_aux=args.use_aux,
-            chm_key=args.chm_key,
-        )
-        cur_n = len(Xtr)
-        if ref_n <= 0 or cur_n <= 0:
-            raise RuntimeError("Auto-epochs requires non-zero training sample counts.")
-        target_steps = ref_n * float(args.auto_epochs_ref_epochs)
-        auto_epochs = int(np.ceil(target_steps / max(cur_n, 1)))
-        args.epochs = max(args.epochs, auto_epochs)
-        print(f"auto-epochs -> {auto_epochs} (ref_n={ref_n}, cur_n={cur_n})")
-    if args.min_iters > 0:
-        min_epochs = int((args.min_iters + iters_per_epoch - 1) // iters_per_epoch)
-        args.epochs = max(args.epochs, min_epochs)
-    print(f"epochs={args.epochs} (iters/epoch={iters_per_epoch})")
-
-    n_channels = Xtr[0].shape[-1]
-    conf = Config2D(n_rays=32, grid=(2, 2), use_gpu=False, n_channel_in=n_channels)
-    model = StarDist2D(conf, name="stardist", basedir=str(args.out_dir))
-
-    val_data = (Xval, Yval) if (len(Xval) > 0 and len(Yval) > 0) else None
-    aug = None if args.no_augment else augmenter
-    model.train(Xtr, Ytr, validation_data=val_data, epochs=args.epochs, augmenter=aug)
-
-    if val_data is not None:
-        try:
-            opt = model.optimize_thresholds(Xval, Yval)
-            print(f"✓ optimized thresholds: prob={opt.get('prob'):.3f}, nms={opt.get('nms'):.3f}")
-        except Exception as exc:
-            print(f"[warn] threshold optimization failed: {exc}")
-
-    print(f"✓ trained StarDist -> {args.out_dir}")
 
 
 if __name__ == "__main__":

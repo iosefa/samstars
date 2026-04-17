@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train SAM ViT-L mask decoder per size using prepared training chips.
+Train a SAM ViT-L mask decoder from prepared training chips.
 
 Upgrade: align training prompts with inference:
 - Use box prompts (json["box"] if present, else derived from mask bbox)
@@ -199,7 +199,7 @@ class Chips(Dataset):
     ):
         """Initialize the instance."""
         self.chip_dir = chip_dir
-        self.ids = sorted((self.chip_dir / "img").glob("*.npy"))
+        self.ids = sorted((self.chip_dir / "images").glob("*.npy"))
         if not self.ids:
             raise FileNotFoundError(f"No chips in {self.chip_dir}")
 
@@ -226,7 +226,7 @@ class Chips(Dataset):
         name = self.ids[i].stem
 
         # --- load RGB chip (C,H,W) ---
-        img = np.load(self.chip_dir / "img" / f"{name}.npy")
+        img = np.load(self.chip_dir / "images" / f"{name}.npy")
         if img.ndim != 3:
             raise ValueError(f"{name}: expected img CHW, got {img.shape}")
         C, H, W = img.shape
@@ -247,7 +247,7 @@ class Chips(Dataset):
         img_t = img_u8.transpose(2, 0, 1).astype(np.float32)  # CHW float, 0..255
 
         # --- load mask (H,W) ---
-        msk = np.load(self.chip_dir / "msk" / f"{name}.npy")
+        msk = np.load(self.chip_dir / "masks" / f"{name}.npy")
         msk = (msk > 0).astype(np.float32)
 
         # --- load CHM (H,W) for prompt sampling ---
@@ -257,7 +257,7 @@ class Chips(Dataset):
         chm = np.load(chm_path).astype(np.float32)
 
         # --- load json (point + optional box) ---
-        jpath = self.chip_dir / "json" / f"{name}.json"
+        jpath = self.chip_dir / "prompts" / f"{name}.json"
         j = json.load(open(jpath))
         pt = j.get("point", None)
 
@@ -358,7 +358,7 @@ def train_decoder(
         min_epochs = int((min_iters + iters_per_epoch - 1) // iters_per_epoch)
         epochs = max(epochs, min_epochs)
 
-    print(f"{chip_dir.parent.name}: epochs={epochs} (iters/epoch={iters_per_epoch})")
+    print(f"{chip_dir.name}: epochs={epochs} (iters/epoch={iters_per_epoch})")
 
     sam = sam_model_registry["vit_l"](checkpoint=str(ckpt)).to(device)
     sam.image_encoder.requires_grad_(False)
@@ -410,7 +410,7 @@ def train_decoder(
 
             tot += float(loss.item())
 
-        print(f"{chip_dir.parent.name} epoch {ep}/{epochs} loss={tot/len(loader):.4f}")
+        print(f"{chip_dir.name} epoch {ep}/{epochs} loss={tot/len(loader):.4f}")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(sam.state_dict(), out_path)
@@ -419,22 +419,25 @@ def train_decoder(
 
 def main():
     """Run the command-line entry point."""
-    pa = argparse.ArgumentParser(description="Train the SAM decoder per size from prepared training chips.")
-    pa.add_argument("--chips-root", type=Path, required=True, help="Root containing per-size/chips_train dirs")
-    pa.add_argument("--ckpt", type=Path, required=True, help="SAM ViT-L checkpoint")
-    pa.add_argument("--epochs", type=int, default=15)
-    pa.add_argument("--min-iters", type=int, default=0, help="Minimum iterations (converted to epochs)")
-    pa.add_argument("--auto-epochs-ref-size", type=str, default=None, help="Reference size (e.g., 0100) for auto-epochs")
-    pa.add_argument("--auto-epochs-ref-epochs", type=float, default=None, help="Reference epochs for auto-epochs")
-    pa.add_argument("--device", default="cpu")
-    pa.add_argument("--sizes", type=str, default=None, help="Comma-separated sizes to process")
-    pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON")
+    pa = argparse.ArgumentParser(description="Train the SAM decoder from a prepared training-chip directory.")
+    pa.add_argument(
+        "--training-chips-dir",
+        type=Path,
+        required=True,
+        help="Training-chip directory containing images/, masks/, chm/, and prompts/ subdirectories",
+    )
+    pa.add_argument("--out-path", type=Path, required=True, help="Path to write the trained decoder checkpoint")
+    pa.add_argument("--ckpt", type=Path, required=True, help="Base SAM ViT-L checkpoint")
+    pa.add_argument("--epochs", type=int, default=15, help="Number of training epochs")
+    pa.add_argument("--min-iters", type=int, default=0, help="Minimum training iterations (converted to epochs)")
+    pa.add_argument("--device", default="cpu", help="Training device")
+    pa.add_argument("--scale-stats", type=Path, default=None, help="Optional global imagery scaling stats JSON")
 
     # New knobs (optional)
-    pa.add_argument("--fg-extra", type=int, default=FG_EXTRA_DEFAULT)
-    pa.add_argument("--neg-max-gnd", type=int, default=NEG_MAX_GND_DEFAULT)
-    pa.add_argument("--neg-max-can", type=int, default=NEG_MAX_CAN_DEFAULT)
-    pa.add_argument("--chm-ground", type=float, default=CHM_GROUND_DEFAULT)
+    pa.add_argument("--fg-extra", type=int, default=FG_EXTRA_DEFAULT, help="Additional positive prompt points sampled from CHM")
+    pa.add_argument("--neg-max-gnd", type=int, default=NEG_MAX_GND_DEFAULT, help="Maximum negative ground prompt points")
+    pa.add_argument("--neg-max-can", type=int, default=NEG_MAX_CAN_DEFAULT, help="Maximum negative canopy prompt points")
+    pa.add_argument("--chm-ground", type=float, default=CHM_GROUND_DEFAULT, help="CHM threshold used when sampling prompts")
     pa.add_argument("--box-expand", type=float, default=1.0, help="Expand bbox about its center (1.0 = no expand)")
 
     args = pa.parse_args()
@@ -445,49 +448,24 @@ def main():
         per_channel = stats.get("sam_rgb_u8", {}).get("per_channel", [])
         rgb_lo_hi = [(float(c["lo"]), float(c["hi"])) for c in per_channel]
 
-    if args.sizes:
-        sizes = {s.strip() for s in args.sizes.split(",") if s.strip()}
-        size_dirs = [args.chips_root / s for s in sorted(sizes)]
-    else:
-        size_dirs = sorted(p for p in args.chips_root.iterdir() if p.is_dir())
+    chip_dir = args.training_chips_dir
+    if not chip_dir.exists():
+        raise FileNotFoundError(f"Missing chips dir: {chip_dir}")
 
-    for size_dir in size_dirs:
-        chip_dir = size_dir / "chips_train"
-        if not chip_dir.exists():
-            continue
-
-        out_path = size_dir / "sam" / "sam_crowns_decoder.pth"
-
-        # Scale epochs by training-chip count relative to a reference size.
-        epochs = args.epochs
-        if args.auto_epochs_ref_size and args.auto_epochs_ref_epochs:
-            ref_chip_dir = args.chips_root / args.auto_epochs_ref_size / "chips_train" / "img"
-            cur_chip_dir = chip_dir / "img"
-            if not ref_chip_dir.exists() or not cur_chip_dir.exists():
-                raise FileNotFoundError("Auto-epochs requires chips_train/img for the reference and current size.")
-
-            ref_chips = len(list(ref_chip_dir.glob("*.npy")))
-            cur_chips = len(list(cur_chip_dir.glob("*.npy")))
-            if ref_chips <= 0 or cur_chips <= 0:
-                raise RuntimeError("Auto-epochs requires non-zero training chip counts.")
-            updates_per_chip = float(args.auto_epochs_ref_epochs)
-            epochs = int(np.ceil(updates_per_chip * cur_chips / ref_chips))
-            print(f"{size_dir.name}: auto-epochs -> {epochs}")
-
-        train_decoder(
-            chip_dir,
-            args.ckpt,
-            out_path,
-            epochs=epochs,
-            min_iters=args.min_iters,
-            device=args.device,
-            rgb_lo_hi=rgb_lo_hi,
-            fg_extra=args.fg_extra,
-            neg_max_gnd=args.neg_max_gnd,
-            neg_max_can=args.neg_max_can,
-            chm_ground=args.chm_ground,
-            box_expand=args.box_expand,
-        )
+    train_decoder(
+        chip_dir,
+        args.ckpt,
+        args.out_path,
+        epochs=args.epochs,
+        min_iters=args.min_iters,
+        device=args.device,
+        rgb_lo_hi=rgb_lo_hi,
+        fg_extra=args.fg_extra,
+        neg_max_gnd=args.neg_max_gnd,
+        neg_max_can=args.neg_max_can,
+        chm_ground=args.chm_ground,
+        box_expand=args.box_expand,
+    )
 
 
 if __name__ == "__main__":

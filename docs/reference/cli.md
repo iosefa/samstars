@@ -22,6 +22,8 @@ They are not installed as console commands by `pip install samstars`.
 
 ## Training
 
+- `samstars/training/chips.py`
+- `samstars/training/records.py`
 - `samstars/training/sam_training.py`
 - `samstars/training/stardist_training.py`
 

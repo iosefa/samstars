@@ -29,7 +29,6 @@ Optional:
   --stardist-input-key KEY    StarDist input key: index|file_name|logit (default: index)
   --crowns-name NAME          Output GeoPackage filename under crowns/ (default: crowns.gpkg)
   --scale-stats PATH          Scale stats for CHM aux (default: build under out-dir if missing)
-  --stardist-cpu              Force StarDist to CPU (sets CUDA_VISIBLE_DEVICES="")
   --sam-only                  Run SAM only
   --stardist-only             Run StarDist only (assumes proposal records already exist)
 EOF
@@ -51,7 +50,6 @@ SCALE_STATS=""
 SAM_ONLY="false"
 STARDIST_ONLY="false"
 SKIP_EXISTING_SAM="true"
-STARDIST_CPU="false"
 CROP_SMOOTH_SIGMA="2"
 SMOOTH_SIGMA="4.0"
 POST_SMOOTH_SIGMA="0.0"
@@ -73,7 +71,6 @@ while [[ $# -gt 0 ]]; do
     --crop-smooth-sigma) CROP_SMOOTH_SIGMA="$2"; shift 2 ;;
     --smooth-sigma) SMOOTH_SIGMA="$2"; shift 2 ;;
     --post-smooth-sigma) POST_SMOOTH_SIGMA="$2"; shift 2 ;;
-    --stardist-cpu) STARDIST_CPU="true"; shift ;;
     --sam-only) SAM_ONLY="true"; shift ;;
     --stardist-only) STARDIST_ONLY="true"; shift ;;
     -h|--help) usage; exit 0 ;;
@@ -226,11 +223,7 @@ STARDIST_CMD=(
   --preds-name "$CROWNS_NAME"
   --write-labels
 )
-if [[ "$STARDIST_CPU" == "true" ]]; then
-  CUDA_VISIBLE_DEVICES="" "${STARDIST_CMD[@]}"
-else
-  "${STARDIST_CMD[@]}"
-fi
+"${STARDIST_CMD[@]}"
 
 echo "Done."
 echo "  Tile records:      $TILE_RECORDS"

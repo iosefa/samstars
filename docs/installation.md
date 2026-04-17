@@ -4,12 +4,13 @@
 
 Use one of these:
 
-1. **PyPI install**: install the library and segmentation stack with pip.
+1. **PyPI install**: install the library with pip.
 2. **GitHub/source install**: install from this repository.
 3. **Developer/reproducible setup**: use the pinned conda environment files.
 
 `samstars` uses geospatial and ML dependencies.
-Many of them have pip wheels on common platforms, but Conda is still the smoothest path when you need a fully reproducible environment or platform-specific GPU stacks.
+Depending on your platform, some of these may need to be installed separately.
+If you want the most predictable setup, use the Conda environment files.
 
 ## Option 1: pip install the library
 
@@ -17,14 +18,12 @@ Many of them have pip wheels on common platforms, but Conda is still the smoothe
 pip install samstars
 ```
 
-This installs the full segmentation stack, including the SAM proposal runtime and the StarDist refinement runtime.
+Use this when your Python environment can resolve the required dependencies cleanly.
 
-It does not bundle trained model checkpoints or StarDist model weights.
-The expected workflow is to train your own models for your data and then supply those model paths at run time.
+If some native or platform-specific dependencies do not install with pip on your system, install those separately or use the Conda environment files instead.
+
+`samstars` does not bundle trained model files.
 See [Training](training.md) and [Segmentation](segmentation.md).
-
-On Apple Silicon, the TensorFlow package selection is handled automatically by platform markers.
-On Linux/NVIDIA, pip will typically install CPU PyTorch wheels by default; if you want a CUDA-specific stack, the Conda environment remains the simpler path.
 
 ## Option 2: install from GitHub or from a local clone
 
@@ -42,12 +41,6 @@ cd sam
 pip install -e .
 ```
 
-Editable development install with docs tooling:
-
-```bash
-pip install -e ".[docs]"
-```
-
 Verify:
 
 ```bash
@@ -57,9 +50,9 @@ pip show samstars
 
 ## Option 3 (Developer/Reproducible): pinned conda environment files
 
-Use these when you want the exact repo development environment.
+Use these when you want the repo development environment with the project dependencies pinned.
 
-### Ubuntu (CUDA + SAM + StarDist)
+### Ubuntu
 
 ```bash
 mamba env create -f environment.ubuntu.samstars.yml
@@ -82,9 +75,8 @@ mamba env update -n samstars -f environment.ubuntu.samstars.yml
 ## CUDA and GPU notes
 
 - For NVIDIA acceleration on Ubuntu/Linux, you need a working NVIDIA driver on the host.
-- Some environments run fully on GPU, while some steps may need CPU fallback depending on card/runtime compatibility.
-- The provided Ubuntu environment file includes CUDA-enabled packages used by this project.
-- The pip install does not try to select CUDA-specific PyTorch wheels automatically.
+- The provided Ubuntu environment file includes the CUDA-enabled packages used by this project.
+- A pip install may still require additional platform-specific setup for GPU use.
 
 Check CUDA availability:
 
@@ -111,14 +103,3 @@ print("built with cuda:", tf.test.is_built_with_cuda())
 print("visible GPUs:", tf.config.list_physical_devices("GPU"))
 PY
 ```
-
-## Serve documentation
-
-From repo root:
-
-```bash
-conda activate samstars
-mkdocs serve
-```
-
-Open `http://127.0.0.1:8000`.

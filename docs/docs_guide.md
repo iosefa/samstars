@@ -10,7 +10,7 @@
 
 ## Install paths
 
-- `pip install samstars`: full library install, including the SAM and StarDist runtime stack.
+- `pip install samstars`: full library install.
 - `pip install -e .`: editable source install from a local clone.
 - `pip install -e ".[docs]"`: editable install plus docs tooling.
 - Conda environments: `environment.ubuntu.samstars.yml` and `environment.macos.samstars.yml`.
@@ -25,15 +25,18 @@
 From repo root:
 
 ```bash
-mamba env update -n samstars -f environment.ubuntu.samstars.yml
-conda activate samstars
+pip install -e ".[docs]"
 mkdocs serve
 ```
 
-On macOS, use:
+Notebook pages in the docs use `mkdocs-jupyter`.
+If you add or update `.ipynb` files under `docs/`, make sure the docs extras are installed before building.
+
+Or from the pinned project environment:
 
 ```bash
-mamba env update -n samstars -f environment.macos.samstars.yml
 conda activate samstars
 mkdocs serve
 ```
+
+Open `http://127.0.0.1:8000`.

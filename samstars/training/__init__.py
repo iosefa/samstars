@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from importlib import import_module
 
-__all__ = ["sam_training", "stardist_training"]
+__all__ = ["chips", "records", "sam_training", "stardist_training"]
 
 
 def __getattr__(name: str):

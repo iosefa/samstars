@@ -23,10 +23,9 @@ reproducible setup, use the platform Conda environment files documented in
 
 ## Notes
 
-- `pip install samstars` installs the full segmentation stack, including SAM and StarDist runtime dependencies.
+- `pip install samstars` is the simplest install path when your platform resolves the dependencies cleanly.
 - `pip install -e .` installs the current checkout in editable mode.
-- Linux/NVIDIA users who want CUDA-enabled PyTorch may still prefer the Conda environment files.
-- Apple Silicon TensorFlow packages are selected automatically by dependency markers.
+- If some dependencies do not install cleanly with pip on your system, use the Conda environment files instead.
 - Segmentation runs also require trained model artifacts.
 - The intended workflow is to train your own models and then use those artifacts for inference.
 - See [`docs/training.md`](docs/training.md) and [`docs/segmentation.md`](docs/segmentation.md) for the library-facing usage contract.

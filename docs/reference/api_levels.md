@@ -16,7 +16,7 @@ In practice:
 
 - `samstars.data` exposes tiling, run-record, and scaling helpers
 - `samstars.segmentation` exposes `run_segmentation(...)`
-- `samstars.training` exposes the `sam_training` and `stardist_training` entrypoint modules
+- `samstars.training` exposes training-chip preparation, StarDist record preparation, and the `sam_training` / `stardist_training` entrypoint modules
 
 ## Low-level API (advanced)
 

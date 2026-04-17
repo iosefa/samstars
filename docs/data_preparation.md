@@ -8,6 +8,7 @@ This page covers data steps before segmentation/training.
 2. Build tile records for tiled runs.
 3. Build pending tile records for resumable proposal runs.
 4. Build CHM scale stats for auxiliary normalization.
+5. Build training chips for SAM training.
 
 ## Entry points
 
@@ -15,6 +16,7 @@ This page covers data steps before segmentation/training.
 - `examples/build_tile_records.py`
 - `examples/build_pending_tile_records.py`
 - `examples/build_scale_stats_from_proposal_records.py`
+- `samstars/training/chips.py`
 
 ## Why run records exist
 
