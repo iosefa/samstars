@@ -12,11 +12,10 @@ def build_tile_records(
     *,
     tiles_dir: Path,
     out_root: Path,
-    size_id: str = "0474",
+    filename: str = "tiles.json",
 ) -> tuple[list[dict], Path]:
     """Build tile-level run records from a prepared tile directory."""
-    size_dir = out_root / size_id
-    size_dir.mkdir(parents=True, exist_ok=True)
+    out_root.mkdir(parents=True, exist_ok=True)
 
     recs: list[dict] = []
     tile_dirs = sorted(p for p in tiles_dir.iterdir() if p.is_dir() and p.name.startswith("tile_"))
@@ -42,7 +41,7 @@ def build_tile_records(
     if not recs:
         raise RuntimeError(f"No valid tiles found in {tiles_dir}")
 
-    out_path = size_dir / "tiles.json"
+    out_path = out_root / filename
     json.dump(recs, open(out_path, "w"))
     return recs, out_path
 

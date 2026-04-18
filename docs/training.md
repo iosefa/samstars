@@ -48,6 +48,7 @@ Each input tile should contain:
 - `crowns.gpkg`: crown polygons for supervision
 
 Use `samstars.data.build_tiles(...)` when you need to create the tile layout first.
+If you are preparing tiles from a multiband raster, choose the three image bands you want to use at tile-building time and keep that choice consistent through training and segmentation.
 
 The output directory contains:
 
@@ -97,7 +98,7 @@ Example:
 
 ```bash
 python -m samstars.training.records \
-  --proposal-records /abs/path/training_run/proposals/0474/proposal_records.json \
+  --proposal-records /abs/path/training_run/proposals/proposal_records.json \
   --tiles-dir /abs/path/training_tiles \
   --out-dir /abs/path/training_records
 ```

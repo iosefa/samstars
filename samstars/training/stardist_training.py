@@ -245,7 +245,17 @@ def train_stardist_model(
 
     val_data = (Xval, Yval) if (len(Xval) > 0 and len(Yval) > 0) else None
     aug = augmenter if augment else None
-    model.train(Xtr, Ytr, validation_data=val_data, epochs=epochs, augmenter=aug)
+    if val_data is None:
+        print("no validation records found; reusing training data as validation_data")
+        val_data = (Xtr, Ytr)
+
+    model.train(
+        Xtr,
+        Ytr,
+        validation_data=val_data,
+        epochs=epochs,
+        augmenter=aug,
+    )
 
     if val_data is not None:
         try:

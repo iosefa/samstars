@@ -45,16 +45,45 @@ def _resolve_stardist_model(
     return basedir, name
 
 
+def _normalize_record_paths(records_json: Path) -> None:
+    """Rewrite known raster paths in a records JSON file to absolute paths."""
+    if not records_json.exists():
+        return
+    recs = json.load(open(records_json))
+    if not isinstance(recs, list):
+        return
+
+    changed = False
+    base = records_json.parent
+    for rec in recs:
+        if not isinstance(rec, dict):
+            continue
+        for key in ("file_name", "chm", "cost", "logit", "index", "mask"):
+            value = rec.get(key)
+            if not value:
+                continue
+            path = Path(value)
+            if path.is_absolute():
+                continue
+            candidate = (base / path).resolve()
+            if candidate.exists():
+                rec[key] = str(candidate)
+                changed = True
+
+    if changed:
+        json.dump(recs, open(records_json, "w"))
+
+
 def run_segmentation(
     *,
     tiles_dir: Path | None = None,
     img: Path | None = None,
     chm: Path | None = None,
     den: Path | None = None,
+    rgb_bands: tuple[int, int, int] | None = None,
     out_dir: Path,
     sam_ckpt: Path,
     device: str = "cpu",
-    size_id: str = "0474",
     stardist_model: Path | None = None,
     stardist_input_key: str = "index",
     stardist_cpu: bool = False,
@@ -91,6 +120,7 @@ def run_segmentation(
             img=Path(img),
             chm=Path(chm),
             den=Path(den),
+            rgb_bands=rgb_bands,
             out=prepared_root,
             skip_existing=True,
         )
@@ -99,14 +129,13 @@ def run_segmentation(
     records_root = out_dir / "run_records"
     proposals_root = out_dir / "proposals"
     crowns_dir = out_dir / "crowns"
-    proposal_records = proposals_root / size_id / "proposal_records.json"
-    proposal_rasters_dir = proposals_root / size_id / "rasters"
-    tile_records = records_root / size_id / "tiles.json"
-    pending_tile_records_path = records_root / size_id / "tiles.pending.json"
+    proposal_records = proposals_root / "proposal_records.json"
+    proposal_rasters_dir = proposals_root / "rasters"
+    tile_records = records_root / "tiles.json"
+    pending_tile_records_path = records_root / "tiles.pending.json"
     recs, _ = build_tile_records(
         tiles_dir=tiles_dir,
         out_root=records_root,
-        size_id=size_id,
     )
 
     pending_count = len(recs)
@@ -129,7 +158,6 @@ def run_segmentation(
             active_tile_records,
             proposals_root,
             resolved_sam_ckpt,
-            size_id=size_id,
             device=device,
             rgb_lo_hi=None,
             fast=fast,
@@ -138,6 +166,8 @@ def run_segmentation(
             smooth_sigma=smooth_sigma,
             post_smooth_sigma=post_smooth_sigma,
         )
+
+    _normalize_record_paths(proposal_records)
 
     if not run_stardist:
         return {
@@ -161,11 +191,11 @@ def run_segmentation(
             if prob.exists() and chm.exists() and cost.exists() and logit.exists():
                 partial.append(
                     {
-                        "file_name": str(prob),
-                        "chm": str(chm),
-                        "cost": str(cost),
-                        "logit": str(logit),
-                        "index": str(idx),
+                        "file_name": str(prob.resolve()),
+                        "chm": str(chm.resolve()),
+                        "cost": str(cost.resolve()),
+                        "logit": str(logit.resolve()),
+                        "index": str(idx.resolve()),
                         "mask": "",
                         "meta": {},
                     }
@@ -173,6 +203,7 @@ def run_segmentation(
         if partial:
             proposal_records.parent.mkdir(parents=True, exist_ok=True)
             json.dump(partial, open(proposal_records, "w"))
+            _normalize_record_paths(proposal_records)
 
     if not proposal_records.exists():
         raise RuntimeError(f"Missing proposal records: {proposal_records}")

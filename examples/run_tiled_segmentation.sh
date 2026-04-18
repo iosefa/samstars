@@ -19,7 +19,6 @@ Required:
 
 Optional:
   --python BIN                Python executable (default: python3)
-  --size-id ID                Size id folder (default: 0474)
   --device DEV                SAM device (default: mps)
   --skip-existing-sam         Run SAM only on chips without existing proposal rasters (default)
   --no-skip-existing-sam      Recompute SAM for every tile record
@@ -40,7 +39,6 @@ export PYTHONPATH="${ROOT_DIR}:${PYTHONPATH:-}"
 PYTHON_BIN="python3"
 TILES_DIR=""
 OUT_DIR=""
-SIZE_ID="0474"
 DEVICE="mps"
 SAM_CKPT=""
 STARDIST_MODEL=""
@@ -59,7 +57,6 @@ while [[ $# -gt 0 ]]; do
     --tiles-dir) TILES_DIR="$2"; shift 2 ;;
     --out-dir) OUT_DIR="$2"; shift 2 ;;
     --python) PYTHON_BIN="$2"; shift 2 ;;
-    --size-id) SIZE_ID="$2"; shift 2 ;;
     --device) DEVICE="$2"; shift 2 ;;
     --sam-ckpt) SAM_CKPT="$2"; shift 2 ;;
     --stardist-model) STARDIST_MODEL="$2"; shift 2 ;;
@@ -90,10 +87,10 @@ fi
 RECORDS_ROOT="$OUT_DIR/run_records"
 PROPOSALS_ROOT="$OUT_DIR/proposals"
 CROWNS_DIR="$OUT_DIR/crowns"
-PROPOSAL_RECORDS="$PROPOSALS_ROOT/$SIZE_ID/proposal_records.json"
-PROPOSAL_RASTERS_DIR="$PROPOSALS_ROOT/$SIZE_ID/rasters"
-TILE_RECORDS="$RECORDS_ROOT/$SIZE_ID/tiles.json"
-PENDING_RECORDS="$RECORDS_ROOT/$SIZE_ID/tiles.pending.json"
+PROPOSAL_RECORDS="$PROPOSALS_ROOT/proposal_records.json"
+PROPOSAL_RASTERS_DIR="$PROPOSALS_ROOT/rasters"
+TILE_RECORDS="$RECORDS_ROOT/tiles.json"
+PENDING_RECORDS="$RECORDS_ROOT/tiles.pending.json"
 ACTIVE_TILE_RECORDS="$TILE_RECORDS"
 PENDING_COUNT=0
 
@@ -101,8 +98,7 @@ if [[ "$STARDIST_ONLY" != "true" ]]; then
   echo "==> Build tile records"
   "$PYTHON_BIN" "$ROOT_DIR/examples/build_tile_records.py" \
     --tiles-dir "$TILES_DIR" \
-    --out-root "$RECORDS_ROOT" \
-    --size-id "$SIZE_ID"
+    --out-root "$RECORDS_ROOT"
 
   if [[ "$SKIP_EXISTING_SAM" == "true" ]]; then
     mkdir -p "$PROPOSAL_RASTERS_DIR"
@@ -120,7 +116,7 @@ PY
 )"
 
     if [[ "$PENDING_COUNT" == "0" ]]; then
-      echo "==> Proposal rasters are up to date for size $SIZE_ID."
+      echo "==> Proposal rasters are up to date."
     else
       ACTIVE_TILE_RECORDS="$PENDING_RECORDS"
       echo "==> Pending tiles: $PENDING_COUNT"
@@ -133,7 +129,6 @@ PY
       --tile-records "$ACTIVE_TILE_RECORDS" \
       --ckpt-path "$SAM_CKPT" \
       --out-root "$PROPOSALS_ROOT" \
-      --size-id "$SIZE_ID" \
       --device "$DEVICE" \
       --fast \
       --crop-smooth-sigma "$CROP_SMOOTH_SIGMA" \

@@ -14,6 +14,17 @@ import rasterio
 from rasterio.features import rasterize
 
 
+def _resolve_record_path(value: str, proposal_records_path: Path) -> Path:
+    """Resolve a record path against the proposal-record file when needed."""
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    candidate = (proposal_records_path.parent / path).resolve()
+    if candidate.exists():
+        return candidate
+    return path.resolve()
+
+
 def _proposal_stem(rec: dict) -> str:
     """Return the proposal-record stem without the raster suffix."""
     for key in ("index", "file_name", "logit"):
@@ -97,7 +108,8 @@ def build_stardist_training_records(
         if not crowns_path.exists():
             continue
 
-        reference = Path(rec.get("index") or rec.get("file_name") or rec.get("logit") or "")
+        reference_value = rec.get("index") or rec.get("file_name") or rec.get("logit") or ""
+        reference = _resolve_record_path(reference_value, proposal_records)
         if not reference.exists():
             continue
 
@@ -108,7 +120,10 @@ def build_stardist_training_records(
                 continue
 
         out_rec = dict(rec)
-        out_rec["mask"] = str(mask_path)
+        for key in ("file_name", "chm", "cost", "logit", "index"):
+            if out_rec.get(key):
+                out_rec[key] = str(_resolve_record_path(out_rec[key], proposal_records).resolve())
+        out_rec["mask"] = str(mask_path.resolve())
         records.append(out_rec)
 
     rng = random.Random(seed)

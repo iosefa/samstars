@@ -41,6 +41,22 @@ The final output path is:
 
 - `/abs/path/run_dir/segmentation_run/crowns/crowns.gpkg`
 
+## Tiled tutorial
+
+Use this when you want to exercise the tiled large-raster workflow on one raster stack:
+
+1. build tiles from the source rasters
+2. attach training crowns to the intersecting tiles
+3. build SAM training chips
+4. train the models
+5. inspect SAM proposal outputs
+6. run segmentation across all prepared tiles
+
+This is still a tutorial example, not a recommended evaluation setup.
+For real model assessment, keep separate training and held-out areas.
+
+See [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb) for the rendered notebook walkthrough.
+
 ## Utility wrappers
 
 - `examples/build_tile_records.py`
@@ -49,7 +65,8 @@ The final output path is:
 
 ## Suggested sequence
 
-1. Use [Train and Segment One Area](train_and_segment_one_area.ipynb) when you want one labeled area to exercise the full pipeline end to end.
-2. Run [Quick Start](quickstart.md) for the shorter inference-only path.
-3. Use [Segmentation](segmentation.md) variants when you already have trained models.
-4. Use API-level functions when you need lower-level control.
+1. Use [Train and Segment One Area](train_and_segment_one_area.ipynb) when you want one labeled area to exercise the full pipeline end to end without tiling.
+2. Use [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb) when you want the same kind of walkthrough using prepared tiles.
+3. Run [Quick Start](quickstart.md) for the shorter inference-only path.
+4. Use [Segmentation](segmentation.md) variants when you already have trained models.
+5. Use API-level functions when you need lower-level control.

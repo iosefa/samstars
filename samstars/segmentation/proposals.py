@@ -507,7 +507,6 @@ def run_tile_proposals(
     out_root: Path,
     ckpt_path: Path,
     *,
-    size_id: str,
     device: str = "cpu",
     rgb_lo_hi=None,
     fast: bool = False,
@@ -529,7 +528,7 @@ def run_tile_proposals(
     sam.to(device).eval()
     predictor = SamPredictor(sam)
 
-    out_dir = out_root / size_id / "rasters"
+    out_dir = out_root / "rasters"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     recs = json.load(open(records_path))
@@ -579,11 +578,11 @@ def run_tile_proposals(
 
         proposal_records.append(
             {
-                "file_name": str(out_dir / f"{name}_sam_prob.tif"),
-                "chm": str(out_dir / f"{name}_chm.tif"),
-                "cost": str(out_dir / f"{name}_cost.tif"),
-                "logit": str(out_dir / f"{name}_logit.tif"),
-                "index": str(out_dir / f"{name}_sam_index.tif"),
+                "file_name": str((out_dir / f"{name}_sam_prob.tif").resolve()),
+                "chm": str((out_dir / f"{name}_chm.tif").resolve()),
+                "cost": str((out_dir / f"{name}_cost.tif").resolve()),
+                "logit": str((out_dir / f"{name}_logit.tif").resolve()),
+                "index": str((out_dir / f"{name}_sam_index.tif").resolve()),
                 "mask": "",
                 "meta": {
                     "crs": crs.to_wkt() if crs else None,
@@ -592,10 +591,10 @@ def run_tile_proposals(
             }
         )
 
-    out_json = out_root / size_id / "proposal_records.json"
+    out_json = out_root / "proposal_records.json"
     with open(out_json, "w") as f:
         json.dump(proposal_records, f)
-    print(f"✓ wrote proposal outputs for {size_id} ({len(proposal_records)} records)")
+    print(f"✓ wrote proposal outputs ({len(proposal_records)} records)")
 
 
 def main() -> None:
@@ -604,7 +603,6 @@ def main() -> None:
     pa.add_argument("--tile-records", type=Path, required=True, help="Path to a tile-record JSON file")
     pa.add_argument("--ckpt-path", type=Path, required=True, help="Direct path to a SAM decoder checkpoint")
     pa.add_argument("--out-root", type=Path, required=True)
-    pa.add_argument("--size-id", type=str, required=True, help="Size identifier for the proposal output folder")
     pa.add_argument("--device", default="cpu")
     pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON")
     pa.add_argument(
@@ -643,7 +641,6 @@ def main() -> None:
         args.tile_records,
         args.out_root,
         args.ckpt_path,
-        size_id=args.size_id,
         device=args.device,
         rgb_lo_hi=rgb_lo_hi,
         fast=args.fast,
