@@ -46,6 +46,7 @@ nav:
     - Examples:
         - Overview: examples.md
         - Train and Segment One Area: train_and_segment_one_area.ipynb
+        - Retrain StarDist for One Area: retrain_stardist_one_area.ipynb
         - Train and Segment a Tiled Area: train_and_segment_tiled_area.ipynb
     - Reference:
         - CLI Scripts: reference/cli.md

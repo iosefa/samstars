@@ -118,6 +118,7 @@ python -m samstars.training.stardist_training \
   --train-records /abs/path/training_records/train_records.json \
   --val-records /abs/path/training_records/val_records.json \
   --out-dir /abs/path/stardist_models \
+  --model-name stardist \
   --use-aux \
   --scale-stats /abs/path/scale_2_98.json
 ```
@@ -135,6 +136,7 @@ Key arguments:
 - `--train-records`: training proposal-record JSON
 - `--val-records`: validation proposal-record JSON
 - `--out-dir`: output directory for the trained StarDist model
+- `--model-name`: model subdirectory name created under `--out-dir`
 - `--use-aux`: include CHM as an auxiliary input channel
 - `--scale-stats`: required with `--use-aux`; used to scale the CHM input
 - `--input-key`: choose which raster field to use as the primary model input; the default is `index`

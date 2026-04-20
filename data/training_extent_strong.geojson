@@ -1,0 +1,54 @@
+{
+  "type": "FeatureCollection",
+  "name": "training_extent_strong",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:EPSG::6635"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "MINX": 192424.046875,
+        "MINY": 2188532.75,
+        "MAXX": 192574.046875,
+        "MAXY": 2188682.75,
+        "CNTX": 192499.046875,
+        "CNTY": 2188607.75,
+        "AREA": 22500.0,
+        "PERIM": 600.0,
+        "HEIGHT": 150.0,
+        "WIDTH": 150.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              192424.046875,
+              2188532.75
+            ],
+            [
+              192574.046875,
+              2188532.75
+            ],
+            [
+              192574.046875,
+              2188682.75
+            ],
+            [
+              192424.046875,
+              2188682.75
+            ],
+            [
+              192424.046875,
+              2188532.75
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

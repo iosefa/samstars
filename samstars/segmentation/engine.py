@@ -86,6 +86,11 @@ def run_segmentation(
     device: str = "cpu",
     stardist_model: Path | None = None,
     stardist_input_key: str = "index",
+    stardist_prob_thr: float | None = None,
+    stardist_nms_thr: float | None = None,
+    stardist_window_size_m: float | None = None,
+    stardist_window_overlap_m: float = 0.0,
+    stardist_dedup_iou_thr: float = 0.0,
     stardist_cpu: bool = False,
     run_sam: bool = True,
     run_stardist: bool = True,
@@ -242,6 +247,44 @@ def run_segmentation(
         "crowns.gpkg",
         "--write-labels",
     ]
+    if (stardist_prob_thr is None) ^ (stardist_nms_thr is None):
+        raise ValueError("Provide both stardist_prob_thr and stardist_nms_thr, or neither.")
+    if stardist_window_size_m is not None and stardist_window_size_m <= 0:
+        raise ValueError("stardist_window_size_m must be > 0.")
+    if stardist_window_overlap_m < 0:
+        raise ValueError("stardist_window_overlap_m must be >= 0.")
+    if (
+        stardist_window_size_m is not None
+        and stardist_window_overlap_m >= stardist_window_size_m
+    ):
+        raise ValueError("stardist_window_overlap_m must be smaller than stardist_window_size_m.")
+    if not (0.0 <= stardist_dedup_iou_thr < 1.0):
+        raise ValueError("stardist_dedup_iou_thr must be in [0, 1).")
+    if stardist_prob_thr is not None and stardist_nms_thr is not None:
+        cmd.extend(
+            [
+                "--prob-thr",
+                str(stardist_prob_thr),
+                "--nms-thr",
+                str(stardist_nms_thr),
+            ]
+        )
+    if stardist_window_size_m is not None:
+        cmd.extend(
+            [
+                "--window-size-m",
+                str(stardist_window_size_m),
+                "--window-overlap-m",
+                str(stardist_window_overlap_m),
+            ]
+        )
+    if stardist_dedup_iou_thr > 0:
+        cmd.extend(
+            [
+                "--dedup-iou-thr",
+                str(stardist_dedup_iou_thr),
+            ]
+        )
     env = None
     if stardist_cpu:
         env = dict(**os.environ)

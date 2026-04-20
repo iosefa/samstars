@@ -41,6 +41,16 @@ The final output path is:
 
 - `/abs/path/run_dir/segmentation_run/crowns/crowns.gpkg`
 
+## StarDist-only rerun
+
+Use this when the SAM proposals from a one-area run already look good and you only want to:
+
+1. rebuild StarDist training records with a different crown layer
+2. train a new StarDist model in a separate folder
+3. write new crowns without rerunning SAM
+
+See [Retrain StarDist for One Area](retrain_stardist_one_area.ipynb) for the rendered notebook walkthrough.
+
 ## Tiled tutorial
 
 Use this when you want to exercise the tiled large-raster workflow on one raster stack:
@@ -66,7 +76,8 @@ See [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb) for the
 ## Suggested sequence
 
 1. Use [Train and Segment One Area](train_and_segment_one_area.ipynb) when you want one labeled area to exercise the full pipeline end to end without tiling.
-2. Use [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb) when you want the same kind of walkthrough using prepared tiles.
-3. Run [Quick Start](quickstart.md) for the shorter inference-only path.
-4. Use [Segmentation](segmentation.md) variants when you already have trained models.
-5. Use API-level functions when you need lower-level control.
+2. Use [Retrain StarDist for One Area](retrain_stardist_one_area.ipynb) when you want to keep the saved SAM proposals and only rerun StarDist with a different crown layer.
+3. Use [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb) when you want the same kind of walkthrough using prepared tiles.
+4. Run [Quick Start](quickstart.md) for the shorter inference-only path.
+5. Use [Segmentation](segmentation.md) variants when you already have trained models.
+6. Use API-level functions when you need lower-level control.

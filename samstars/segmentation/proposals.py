@@ -155,7 +155,6 @@ def process_chip(
     seeds_path = img_path.parent / "seeds.gpkg"
 
     x0, y0, x1, y1 = rec["window"]
-    chip_size = int(rec.get("size") or (x1 - x0))
     win = Window(x0, y0, x1 - x0, y1 - y0)
 
     # --- Read imagery + aux rasters for this chip window ---
@@ -484,17 +483,6 @@ def process_chip(
             NODATA_VAL,
             ((index - idx_min) / (denom + 1e-6)).astype(np.float32),
         )
-
-    # Pad outputs to full chip size (only needed at borders)
-    if chip_size and (H < chip_size or W < chip_size):
-        pad_h = max(0, chip_size - H)
-        pad_w = max(0, chip_size - W)
-        prob_mosaic_out = np.pad(prob_mosaic_out, ((0, pad_h), (0, pad_w)), constant_values=0)
-        prob_s = np.pad(prob_s, ((0, pad_h), (0, pad_w)), constant_values=0)
-        index = np.pad(index, ((0, pad_h), (0, pad_w)), constant_values=0)
-        CHM = np.pad(CHM, ((0, pad_h), (0, pad_w)), constant_values=0)
-        COST = np.pad(COST, ((0, pad_h), (0, pad_w)), constant_values=0)
-        H, W = prob_mosaic_out.shape
 
     if CHM.shape != prob_s.shape or COST.shape != prob_s.shape:
         raise ValueError("CHM/COST shapes do not match SAM prob shape")
