@@ -58,6 +58,81 @@ def _bundle_manifest_path(model: Path) -> Path:
     return model
 
 
+def _resolve_training_tiles(
+    *,
+    tiles_dir: Path | None,
+    img: Path | None,
+    chm: Path | None,
+    den: Path | None,
+    crowns: Path | None,
+    rgb_bands: tuple[int, int, int] | None,
+    prep_root: Path,
+    thin_seeds: bool,
+    thin_dist: float,
+    seed_d_min: float,
+    seed_min_dist_px: int,
+    seed_gauss_sigma: int,
+    seed_min_samples: int,
+    seed_merge_radius: float,
+    seed_min_canopy_height: float,
+) -> Path:
+    """Resolve the training tiles from either prepared tiles or one raw labeled area."""
+    raw_inputs = (img, chm, den, crowns)
+    if tiles_dir is not None and any(v is not None for v in raw_inputs):
+        raise ValueError("Provide either tiles_dir or img/chm/den/crowns, not both.")
+    if tiles_dir is None:
+        if any(v is None for v in raw_inputs):
+            raise ValueError("Provide either tiles_dir or all of img/chm/den/crowns.")
+        from samstars.data import build_single_tile
+
+        return Path(
+            build_single_tile(
+                img=Path(img),
+                chm=Path(chm),
+                den=Path(den),
+                crowns=Path(crowns),
+                rgb_bands=rgb_bands,
+                out=prep_root,
+                thin_seeds=thin_seeds,
+                thin_dist=thin_dist,
+                seed_d_min=seed_d_min,
+                seed_min_dist_px=seed_min_dist_px,
+                seed_gauss_sigma=seed_gauss_sigma,
+                seed_min_samples=seed_min_samples,
+                seed_merge_radius=seed_merge_radius,
+                seed_min_canopy_height=seed_min_canopy_height,
+                skip_existing=False,
+            )
+        )
+
+    tiles_dir = Path(tiles_dir)
+    if not tiles_dir.exists():
+        raise FileNotFoundError(f"Missing training tiles directory: {tiles_dir}")
+    if not tiles_dir.is_dir():
+        raise NotADirectoryError(f"Training tiles path is not a directory: {tiles_dir}")
+
+    tile_dirs = sorted(p for p in tiles_dir.iterdir() if p.is_dir())
+    if not tile_dirs:
+        raise ValueError(f"No tile directories found under {tiles_dir}")
+
+    required = ("img.tif", "chm.tif", "cost.tif", "seeds.gpkg", "crowns.gpkg")
+    usable = []
+    missing_examples: list[str] = []
+    for tile_dir in tile_dirs:
+        missing = [name for name in required if not (tile_dir / name).exists()]
+        if not missing:
+            usable.append(tile_dir)
+            continue
+        if len(missing_examples) < 3:
+            missing_examples.append(f"{tile_dir.name}: missing {', '.join(missing)}")
+
+    if not usable:
+        detail = "; ".join(missing_examples) if missing_examples else "no usable labeled tiles found"
+        raise ValueError(f"Prepared training tiles must contain {required}: {detail}")
+
+    return tiles_dir
+
+
 @dataclass(slots=True)
 class SamStarsResult:
     """Stable user-facing result object for segmentation runs."""
@@ -223,10 +298,11 @@ class SamStars:
     def train(
         cls,
         *,
-        img: Path,
-        chm: Path,
-        den: Path,
-        crowns: Path,
+        tiles_dir: Path | None = None,
+        img: Path | None = None,
+        chm: Path | None = None,
+        den: Path | None = None,
+        crowns: Path | None = None,
         sam_base_ckpt: Path,
         out: Path,
         storage: str,
@@ -260,8 +336,8 @@ class SamStars:
         stardist_dedup_iou_thr: float = 0.0,
         fast: bool = False,
     ) -> SamStars:
-        """Train a flat samstars model bundle from one labeled area."""
-        from samstars.data import build_scale_stats_from_proposal_records, build_single_tile
+        """Train a flat samstars model bundle from one labeled area or prepared labeled tiles."""
+        from samstars.data import build_scale_stats_from_proposal_records
         from samstars.segmentation.engine import run_segmentation
         from samstars.training.chips import build_training_chips
         from samstars.training.records import build_stardist_training_records
@@ -291,14 +367,14 @@ class SamStars:
             stardist_train_root = training_root / "_stardist_model"
 
             decoder_path = out / "decoder.pth"
-
-            build_single_tile(
-                img=Path(img),
-                chm=Path(chm),
-                den=Path(den),
-                crowns=Path(crowns),
+            training_tiles_dir = _resolve_training_tiles(
+                tiles_dir=tiles_dir,
+                img=img,
+                chm=chm,
+                den=den,
+                crowns=crowns,
                 rgb_bands=rgb_bands,
-                out=prep_root,
+                prep_root=prep_root,
                 thin_seeds=thin_seeds,
                 thin_dist=thin_dist,
                 seed_d_min=seed_d_min,
@@ -307,11 +383,10 @@ class SamStars:
                 seed_min_samples=seed_min_samples,
                 seed_merge_radius=seed_merge_radius,
                 seed_min_canopy_height=seed_min_canopy_height,
-                skip_existing=False,
             )
 
             build_training_chips(
-                tiles_dir=prep_root,
+                tiles_dir=training_tiles_dir,
                 out_dir=training_chips_dir,
                 chip_size=chip_size,
                 stride=chip_stride,
@@ -328,7 +403,7 @@ class SamStars:
             )
 
             proposal_result = run_segmentation(
-                tiles_dir=prep_root,
+                tiles_dir=training_tiles_dir,
                 out_dir=training_run_dir,
                 sam_ckpt=decoder_path,
                 device=device,
@@ -342,7 +417,7 @@ class SamStars:
 
             train_records, val_records = build_stardist_training_records(
                 proposal_records=proposal_result["proposal_records"],
-                tiles_dir=prep_root,
+                tiles_dir=training_tiles_dir,
                 out_dir=records_dir,
                 val_fraction=val_fraction,
             )
@@ -532,10 +607,11 @@ class SamStars:
 
 def train(
     *,
-    img: Path,
-    chm: Path,
-    den: Path,
-    crowns: Path,
+    tiles_dir: Path | None = None,
+    img: Path | None = None,
+    chm: Path | None = None,
+    den: Path | None = None,
+    crowns: Path | None = None,
     sam_base_ckpt: Path,
     out: Path,
     storage: str,
@@ -571,6 +647,7 @@ def train(
 ) -> SamStars:
     """Train a flat samstars model bundle and return its runtime wrapper."""
     return SamStars.train(
+        tiles_dir=tiles_dir,
         img=img,
         chm=chm,
         den=den,

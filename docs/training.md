@@ -14,7 +14,12 @@ It writes a single flat model bundle directory containing:
 - `weights.h5`
 - a bundle manifest used later by `samstars.segment(...)`
 
-Example:
+You can train from either:
+
+- one raw labeled area via `img`, `chm`, `den`, and `crowns`
+- or a prepared labeled `tiles_dir`
+
+Example from one labeled area:
 
 ```python
 from pathlib import Path
@@ -32,6 +37,31 @@ model = train(
     device="cpu",
 )
 ```
+
+Example from prepared labeled tiles:
+
+```python
+from pathlib import Path
+
+from samstars import train
+
+model = train(
+    tiles_dir=Path("/abs/path/training_tiles"),
+    sam_base_ckpt=Path("/abs/path/sam_vit_l_0b3195.pth"),
+    out=Path("/abs/path/model_bundle"),
+    storage="persistent",
+    device="cpu",
+)
+```
+
+When you pass `tiles_dir`, the tiles are expected to already be prepared and labeled.
+Each usable training tile should contain:
+
+- `img.tif`
+- `chm.tif`
+- `cost.tif`
+- `seeds.gpkg`
+- `crowns.gpkg`
 
 The lower-level modules documented below remain available when you need finer control.
 
