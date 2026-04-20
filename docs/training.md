@@ -3,6 +3,38 @@
 This page covers the model-training path for samstars.
 The intended workflow is to train your own SAM and StarDist artifacts for your data and then pass those outputs into the segmentation pipeline.
 
+## Recommended entry point
+
+For the simplest public API, use `samstars.train(...)`.
+It writes a single flat model bundle directory containing:
+
+- `decoder.pth`
+- `config.json`
+- `thresholds.json`
+- `weights.h5`
+- a bundle manifest used later by `samstars.segment(...)`
+
+Example:
+
+```python
+from pathlib import Path
+
+from samstars import train
+
+model = train(
+    img=Path("/abs/path/training_img.tif"),
+    chm=Path("/abs/path/training_chm.tif"),
+    den=Path("/abs/path/training_den.tif"),
+    crowns=Path("/abs/path/training_crowns.gpkg"),
+    sam_base_ckpt=Path("/abs/path/sam_vit_l_0b3195.pth"),
+    out=Path("/abs/path/model_bundle"),
+    storage="persistent",
+    device="cpu",
+)
+```
+
+The lower-level modules documented below remain available when you need finer control.
+
 ## Available training modules
 
 - `samstars/training/chips.py`

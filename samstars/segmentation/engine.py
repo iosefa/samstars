@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import hashlib
 import os
 import subprocess
 import sys
@@ -86,6 +85,7 @@ def run_segmentation(
     device: str = "cpu",
     stardist_model: Path | None = None,
     stardist_input_key: str = "index",
+    stardist_use_aux: bool = True,
     stardist_prob_thr: float | None = None,
     stardist_nms_thr: float | None = None,
     stardist_window_size_m: float | None = None,
@@ -112,15 +112,7 @@ def run_segmentation(
     if tiles_dir is None:
         if any(v is None for v in raw_inputs):
             raise ValueError("Provide either tiles_dir or all of img/chm/den.")
-        source_key = json.dumps(
-            {
-                "img": str(Path(img).resolve()),
-                "chm": str(Path(chm).resolve()),
-                "den": str(Path(den).resolve()),
-            },
-            sort_keys=True,
-        )
-        prepared_root = out_dir / ".prepared_tiles" / hashlib.sha1(source_key.encode("utf-8")).hexdigest()[:12]
+        prepared_root = out_dir / "prep" / "scene"
         tiles_dir = build_single_tile(
             img=Path(img),
             chm=Path(chm),
@@ -240,13 +232,18 @@ def run_segmentation(
         str(crowns_dir),
         "--input-key",
         stardist_input_key,
-        "--use-aux",
-        "--scale-stats",
-        str(scale_stats),
         "--preds-name",
         "crowns.gpkg",
         "--write-labels",
     ]
+    if stardist_use_aux:
+        cmd.extend(
+            [
+                "--use-aux",
+                "--scale-stats",
+                str(scale_stats),
+            ]
+        )
     if (stardist_prob_thr is None) ^ (stardist_nms_thr is None):
         raise ValueError("Provide both stardist_prob_thr and stardist_nms_thr, or neither.")
     if stardist_window_size_m is not None and stardist_window_size_m <= 0:

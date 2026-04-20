@@ -11,38 +11,35 @@ pip install samstars
 
 Or use the pinned Conda environment from [Installation](installation.md) if you want the repo development setup.
 
-## 2) Train or prepare model artifacts
+## 2) Train or prepare a model bundle
 
 `samstars` does not bundle pretrained model weights.
-Train models for your own data first.
-You will need:
+Train a model bundle for your own data first, or prepare one separately.
 
-- a trained SAM decoder checkpoint
-- a trained StarDist model directory
-
-See [Training](training.md) for how to produce these artifacts.
+See [Training](training.md) for how to produce a bundle directory with `samstars.train(...)`.
 
 ## 3) Run segmentation on a small input area
 
 ```python
 from pathlib import Path
 
-from samstars.segmentation import run_segmentation
+from samstars import segment
 
-run_segmentation(
+segment(
     img=Path("/abs/path/image.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/segmentation_run"),
-    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
-    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
+    model=Path("/abs/path/your_model_bundle"),
+    out=Path("/abs/path/run_dir/segmentation_run"),
+    storage="temp",
     device="cpu",
 )
 ```
 
 Use `"cuda"` on supported Linux/NVIDIA systems.
 
-The run prepares any required intermediate files under `out_dir` automatically.
+Use `storage="persistent"` when you want to keep proposals, prep artifacts, and other run state under `out`.
+Use `storage="temp"` when you only want final outputs left in `out`.
 
 ## Outputs
 
