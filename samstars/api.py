@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
+import sys
 import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -376,6 +378,7 @@ class SamStars:
         stardist_window_size_m: float | None = None,
         stardist_window_overlap_m: float = 0.0,
         stardist_dedup_iou_thr: float = 0.0,
+        stardist_cpu: bool = False,
         fast: bool = False,
     ) -> SamStars:
         """Train a flat samstars model bundle from one labeled area or prepared labeled tiles."""
@@ -384,7 +387,6 @@ class SamStars:
         from samstars.training.chips import build_training_chips
         from samstars.training.records import build_stardist_training_records
         from samstars.training.sam_training import train_decoder
-        from samstars.training.stardist_training import train_stardist_model
 
         storage = _normalize_storage(storage)
         out = Path(out)
@@ -472,19 +474,50 @@ class SamStars:
                 nodata_values=(-9999.0,),
             )
 
-            train_stardist_model(
-                train_records=train_records,
-                val_records=val_records,
-                out_dir=stardist_train_root,
-                model_name="stardist",
-                epochs=stardist_epochs,
-                min_iters=stardist_min_iters,
-                input_key=stardist_input_key,
-                use_aux=stardist_use_aux,
-                scale_stats_path=scale_stats if stardist_use_aux else None,
-                normalize_inputs=stardist_normalize_inputs,
-                augment=stardist_augment,
-            )
+            if stardist_cpu:
+                cmd = [
+                    sys.executable,
+                    str(Path(__file__).resolve().parent / "training" / "stardist_training.py"),
+                    "--train-records",
+                    str(train_records),
+                    "--val-records",
+                    str(val_records),
+                    "--out-dir",
+                    str(stardist_train_root),
+                    "--model-name",
+                    "stardist",
+                    "--epochs",
+                    str(stardist_epochs),
+                    "--min-iters",
+                    str(stardist_min_iters),
+                    "--input-key",
+                    stardist_input_key,
+                ]
+                if stardist_use_aux:
+                    cmd.extend(["--use-aux", "--scale-stats", str(scale_stats)])
+                if not stardist_normalize_inputs:
+                    cmd.append("--no-normalize")
+                if not stardist_augment:
+                    cmd.append("--no-augment")
+                env = dict(os.environ)
+                env["CUDA_VISIBLE_DEVICES"] = ""
+                subprocess.run(cmd, check=True, env=env)
+            else:
+                from samstars.training.stardist_training import train_stardist_model
+
+                train_stardist_model(
+                    train_records=train_records,
+                    val_records=val_records,
+                    out_dir=stardist_train_root,
+                    model_name="stardist",
+                    epochs=stardist_epochs,
+                    min_iters=stardist_min_iters,
+                    input_key=stardist_input_key,
+                    use_aux=stardist_use_aux,
+                    scale_stats_path=scale_stats if stardist_use_aux else None,
+                    normalize_inputs=stardist_normalize_inputs,
+                    augment=stardist_augment,
+                )
 
             stardist_dir = stardist_train_root / "stardist"
             shutil.copy2(stardist_dir / "config.json", out / "config.json")
@@ -507,6 +540,7 @@ class SamStars:
                 "stardist_window_size_m": stardist_window_size_m,
                 "stardist_window_overlap_m": stardist_window_overlap_m,
                 "stardist_dedup_iou_thr": stardist_dedup_iou_thr,
+                "stardist_cpu": stardist_cpu,
                 "crop_smooth_sigma": crop_smooth_sigma,
                 "smooth_sigma": smooth_sigma,
                 "post_smooth_sigma": post_smooth_sigma,
@@ -685,6 +719,7 @@ def train(
     stardist_window_size_m: float | None = None,
     stardist_window_overlap_m: float = 0.0,
     stardist_dedup_iou_thr: float = 0.0,
+    stardist_cpu: bool = False,
     fast: bool = False,
 ) -> SamStars:
     """Train a flat samstars model bundle and return its runtime wrapper."""
@@ -725,6 +760,7 @@ def train(
         stardist_window_size_m=stardist_window_size_m,
         stardist_window_overlap_m=stardist_window_overlap_m,
         stardist_dedup_iou_thr=stardist_dedup_iou_thr,
+        stardist_cpu=stardist_cpu,
         fast=fast,
     )
 

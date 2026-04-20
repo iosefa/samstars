@@ -97,7 +97,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--stardist-cpu",
         action="store_true",
-        help="Force StarDist refinement onto CPU in segmentation mode.",
+        help="Force StarDist onto CPU in training or segmentation mode.",
     )
     parser.add_argument(
         "--stardist-input-key",
@@ -240,8 +240,6 @@ def main() -> None:
         raise SystemExit(
             "--sam-only, --stardist-only, and --no-skip-existing-sam apply only in segmentation mode."
         )
-    if args.stardist_cpu:
-        raise SystemExit("--stardist-cpu applies only in segmentation mode.")
     if args.stardist_prob_thr is not None or args.stardist_nms_thr is not None:
         raise SystemExit("--stardist-prob-thr and --stardist-nms-thr apply only in segmentation mode.")
 
@@ -264,6 +262,7 @@ def main() -> None:
         stardist_window_size_m=args.stardist_window_size_m,
         stardist_window_overlap_m=_default_if_none(args.stardist_window_overlap_m, 0.0),
         stardist_dedup_iou_thr=_default_if_none(args.stardist_dedup_iou_thr, 0.0),
+        stardist_cpu=args.stardist_cpu,
         fast=_default_if_none(args.fast, False),
     )
     print(model.root)
