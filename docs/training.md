@@ -54,14 +54,21 @@ model = train(
 )
 ```
 
-When you pass `tiles_dir`, the tiles are expected to already be prepared and labeled.
-Each usable training tile should contain:
+When you pass `tiles_dir`, each training tile can be either:
 
-- `img.tif`
-- `chm.tif`
-- `cost.tif`
-- `seeds.gpkg`
-- `crowns.gpkg`
+- fully prepared and labeled:
+  - `img.tif`
+  - `chm.tif`
+  - `cost.tif`
+  - `seeds.gpkg`
+  - `crowns.gpkg`
+- or raw labeled tile inputs:
+  - `img.tif`
+  - `chm.tif`
+  - `den.tif`
+  - `crowns.gpkg`
+
+In the raw-labeled case, `train(...)` derives `cost.tif` and `seeds.gpkg` internally before continuing.
 
 The lower-level modules documented below remain available when you need finer control.
 

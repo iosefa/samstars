@@ -38,9 +38,11 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         type=Path,
         help=(
-            "Prepared tiles directory. For training, tiles must already be labeled and "
-            "contain crowns.gpkg. For segmentation, tiles must already contain the "
-            "prepared inference inputs such as img.tif, chm.tif, cost.tif, and seeds.gpkg."
+            "Tiles directory. In training mode, each tile may be either raw labeled "
+            "(img.tif, chm.tif, den.tif, crowns.gpkg) or fully prepared labeled "
+            "(img.tif, chm.tif, cost.tif, seeds.gpkg, crowns.gpkg). In segmentation "
+            "mode, tiles must already contain the prepared inference inputs such as "
+            "img.tif, chm.tif, cost.tif, and seeds.gpkg."
         ),
     )
     parser.add_argument(

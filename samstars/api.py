@@ -76,7 +76,7 @@ def _resolve_training_tiles(
     seed_merge_radius: float,
     seed_min_canopy_height: float,
 ) -> Path:
-    """Resolve the training tiles from either prepared tiles or one raw labeled area."""
+    """Resolve training tiles from one raw labeled area, prepared tiles, or raw labeled tiles."""
     raw_inputs = (img, chm, den, crowns)
     if tiles_dir is not None and any(v is not None for v in raw_inputs):
         raise ValueError("Provide either tiles_dir or img/chm/den/crowns, not both.")
@@ -92,7 +92,7 @@ def _resolve_training_tiles(
                 den=Path(den),
                 crowns=Path(crowns),
                 rgb_bands=rgb_bands,
-                out=prep_root,
+                out=prep_root / "scene",
                 thin_seeds=thin_seeds,
                 thin_dist=thin_dist,
                 seed_d_min=seed_d_min,
@@ -115,22 +115,64 @@ def _resolve_training_tiles(
     if not tile_dirs:
         raise ValueError(f"No tile directories found under {tiles_dir}")
 
-    required = ("img.tif", "chm.tif", "cost.tif", "seeds.gpkg", "crowns.gpkg")
-    usable = []
+    prepared_required = ("img.tif", "chm.tif", "cost.tif", "seeds.gpkg", "crowns.gpkg")
+    raw_required = ("img.tif", "chm.tif", "den.tif", "crowns.gpkg")
+    usable_prepared = []
+    usable_raw = []
     missing_examples: list[str] = []
     for tile_dir in tile_dirs:
-        missing = [name for name in required if not (tile_dir / name).exists()]
-        if not missing:
-            usable.append(tile_dir)
+        missing_prepared = [name for name in prepared_required if not (tile_dir / name).exists()]
+        if not missing_prepared:
+            usable_prepared.append(tile_dir)
+            continue
+        missing_raw = [name for name in raw_required if not (tile_dir / name).exists()]
+        if not missing_raw:
+            usable_raw.append(tile_dir)
             continue
         if len(missing_examples) < 3:
-            missing_examples.append(f"{tile_dir.name}: missing {', '.join(missing)}")
+            missing_examples.append(
+                f"{tile_dir.name}: missing prepared [{', '.join(missing_prepared)}] and raw [{', '.join(missing_raw)}]"
+            )
 
-    if not usable:
-        detail = "; ".join(missing_examples) if missing_examples else "no usable labeled tiles found"
-        raise ValueError(f"Prepared training tiles must contain {required}: {detail}")
+    if len(usable_prepared) == len(tile_dirs):
+        return tiles_dir
 
-    return tiles_dir
+    if usable_prepared and usable_raw:
+        raise ValueError(
+            "Training tiles must be consistently prepared or raw-labeled. "
+            "Do not mix tile directories that already contain cost/seeds with ones that do not."
+        )
+
+    if len(usable_raw) == len(tile_dirs):
+        from samstars.data import build_single_tile
+
+        prepared_tiles_dir = prep_root / "tiles"
+        for tile_dir in tile_dirs:
+            build_single_tile(
+                img=tile_dir / "img.tif",
+                chm=tile_dir / "chm.tif",
+                den=tile_dir / "den.tif",
+                crowns=tile_dir / "crowns.gpkg",
+                rgb_bands=rgb_bands,
+                out=prepared_tiles_dir,
+                tile_name=tile_dir.name,
+                thin_seeds=thin_seeds,
+                thin_dist=thin_dist,
+                seed_d_min=seed_d_min,
+                seed_min_dist_px=seed_min_dist_px,
+                seed_gauss_sigma=seed_gauss_sigma,
+                seed_min_samples=seed_min_samples,
+                seed_merge_radius=seed_merge_radius,
+                seed_min_canopy_height=seed_min_canopy_height,
+                skip_existing=False,
+            )
+        return prepared_tiles_dir
+
+    detail = "; ".join(missing_examples) if missing_examples else "no usable labeled tiles found"
+    raise ValueError(
+        "Training tiles must contain either prepared labeled tile contents "
+        f"{prepared_required} or raw labeled tile contents {raw_required}: {detail}"
+    )
 
 
 @dataclass(slots=True)
@@ -359,7 +401,7 @@ class SamStars:
 
         with cls._work_root(out, storage, prefix="samstars-train-") as work_root:
             training_root = work_root / "_training" if storage == "persistent" else work_root
-            prep_root = training_root / "prep" / "scene"
+            prep_root = training_root / "prep"
             training_chips_dir = training_root / "training_chips"
             training_run_dir = training_root / "training_run"
             records_dir = training_root / "stardist_training_records"
