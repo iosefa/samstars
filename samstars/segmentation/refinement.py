@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -30,12 +31,167 @@ from rasterio.windows import transform as window_transform
 from shapely.geometry import MultiPolygon, Polygon, box, shape
 from shapely.strtree import STRtree
 from stardist.models import StarDist2D
+from tqdm.auto import tqdm
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from samstars.data.scaling import load_scale_stats, scale_to_01
+
+
+def _safe_source_name(source: str) -> str:
+    """Return a filesystem-safe source name for checkpoint files."""
+    safe = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in str(source))
+    return safe or "record"
+
+
+def _parse_csv_values(value: str | None) -> set[str]:
+    """Parse a comma-separated CLI value into a set of non-empty strings."""
+    if not value:
+        return set()
+    return {item.strip() for item in value.split(",") if item.strip()}
+
+
+def _load_skip_sources(*, skip_sources: str | None, skip_sources_file: Path | None) -> set[str]:
+    """Load source names to skip from CLI CSV and/or a text file."""
+    sources = _parse_csv_values(skip_sources)
+    if skip_sources_file is not None:
+        with open(skip_sources_file) as f:
+            for line in f:
+                item = line.split("#", 1)[0].strip()
+                if item:
+                    sources.add(item)
+    return sources
+
+
+def _write_json_atomic(path: Path, data: dict) -> None:
+    """Write JSON via a temporary path so completed markers are atomic."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=2, sort_keys=True)
+    tmp.replace(path)
+
+
+def _write_features_gpkg(
+    path: Path,
+    features_list: list[dict],
+    *,
+    schema: dict,
+    crs_wkt: str | None,
+) -> None:
+    """Write polygon features to a GeoPackage via an atomic replacement."""
+    import fiona
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp.gpkg")
+    if tmp.exists():
+        tmp.unlink()
+    with fiona.open(
+        tmp,
+        "w",
+        driver="GPKG",
+        layer="crowns",
+        schema=schema,
+        crs_wkt=crs_wkt,
+    ) as dst:
+        for idx, feat in enumerate(features_list, start=1):
+            dst.write(
+                {
+                    "geometry": feat["geometry"].__geo_interface__,
+                    "properties": {
+                        "id": int(idx),
+                        "source": feat["source"],
+                        "label": int(feat["label"]),
+                        "score": float(feat["score"]),
+                    },
+                }
+            )
+    tmp.replace(path)
+
+
+def _read_features_gpkg(path: Path) -> list[dict]:
+    """Read polygon features from a refinement checkpoint GeoPackage."""
+    import fiona
+
+    features_list: list[dict] = []
+    with fiona.open(path, layer="crowns") as src:
+        for feat in src:
+            props = dict(feat["properties"])
+            score = props.get("score", float("nan"))
+            features_list.append(
+                {
+                    "geometry": shape(feat["geometry"]),
+                    "source": str(props.get("source", "")),
+                    "label": int(props.get("label", 0)),
+                    "score": float(score) if score is not None else float("nan"),
+                }
+            )
+    return features_list
+
+
+def _write_labels_atomic(path: Path, labels: np.ndarray, *, meta: dict, dtype: str) -> None:
+    """Write a label raster via an atomic replacement."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp.tif")
+    if tmp.exists():
+        tmp.unlink()
+    out_meta = meta.copy()
+    out_meta.update(count=1, dtype=dtype, compress="deflate")
+    with rasterio.open(tmp, "w", **out_meta) as out_ds:
+        out_ds.write(labels.astype(dtype), 1)
+    tmp.replace(path)
+
+
+def _checkpoint_complete(shard: Path, done_marker: Path, label_path: Path | None) -> bool:
+    """Return true only for fully completed per-record checkpoint outputs."""
+    if not shard.exists() or not done_marker.exists():
+        return False
+    if label_path is not None and not label_path.exists():
+        return False
+    return True
+
+
+def _bootstrap_checkpoint_from_label(
+    *,
+    label_path: Path,
+    source: str,
+    shard_path: Path,
+    done_marker: Path,
+    schema: dict,
+    crs_wkt: str | None,
+    min_area_m2: float,
+) -> int:
+    """Create a per-record checkpoint from an existing label raster."""
+    with rasterio.open(label_path) as src:
+        labels = src.read(1)
+        tfm = src.transform
+
+    record_features = [
+        {
+            "geometry": poly,
+            "source": str(source),
+            "label": int(lbl_id),
+            "score": float("nan"),
+        }
+        for lbl_id, poly in _iter_polys_from_labels(
+            labels,
+            transform=tfm,
+            min_area_m2=float(min_area_m2),
+        )
+    ]
+    _write_features_gpkg(shard_path, record_features, schema=schema, crs_wkt=crs_wkt)
+    _write_json_atomic(
+        done_marker,
+        {
+            "source": str(source),
+            "input": str(label_path),
+            "features": len(record_features),
+            "bootstrapped_from_label": True,
+        },
+    )
+    return len(record_features)
 
 
 def _align_to_shape(arr: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
@@ -308,6 +464,39 @@ def main() -> None:
     pa.add_argument("--write-labels", action="store_true", help="Write per-input label rasters under out_dir/labels")
     pa.add_argument("--preds-name", type=str, default="crowns.gpkg", help="Output GeoPackage filename")
     pa.add_argument(
+        "--resume",
+        action="store_true",
+        help=(
+            "Resume from per-record checkpoints under out_dir/record_shards. "
+            "Completed records are skipped and the final GeoPackage is rebuilt at the end."
+        ),
+    )
+    pa.add_argument(
+        "--resume-from-labels",
+        action="store_true",
+        help=(
+            "With --resume and --write-labels, bootstrap missing per-record checkpoints "
+            "from existing label rasters. Bootstrapped features have NaN scores."
+        ),
+    )
+    pa.add_argument(
+        "--skip-sources",
+        type=str,
+        default=None,
+        help="Comma-separated source names to skip before StarDist inference, for example tile_086_031_0.",
+    )
+    pa.add_argument(
+        "--skip-sources-file",
+        type=Path,
+        default=None,
+        help="Optional text file of source names to skip, one per line. Lines may contain # comments.",
+    )
+    pa.add_argument(
+        "--print-source-before-run",
+        action="store_true",
+        help="Print each source immediately before running or bootstrapping it; useful for native crashes.",
+    )
+    pa.add_argument(
         "--window-size-m",
         type=float,
         default=None,
@@ -334,10 +523,19 @@ def main() -> None:
         default=0.0,
         help="Optional final polygon dedup IoU threshold; keep the higher-score polygon when IoU exceeds this value.",
     )
+    pa.add_argument(
+        "--log",
+        action="store_true",
+        help="Show verbose refinement logs, including StarDist internal tile progress.",
+    )
     args = pa.parse_args()
 
     if args.normalize and args.no_normalize:
         raise SystemExit("Use only one of --normalize or --no-normalize.")
+    if args.resume_from_labels and not args.resume:
+        raise SystemExit("--resume-from-labels requires --resume.")
+    if args.resume_from_labels and not args.write_labels:
+        raise SystemExit("--resume-from-labels requires --write-labels.")
     if args.window_size_m is not None and args.window_size_m <= 0:
         raise SystemExit("--window-size-m must be > 0")
     if args.window_overlap_m < 0:
@@ -356,6 +554,10 @@ def main() -> None:
     recs = json.load(open(args.proposal_records))
     if not isinstance(recs, list):
         raise SystemExit(f"{args.proposal_records} is not a list of records.")
+    skip_sources = _load_skip_sources(
+        skip_sources=args.skip_sources,
+        skip_sources_file=args.skip_sources_file,
+    )
 
     scale_stats = load_scale_stats(args.scale_stats) if args.scale_stats else None
     if args.use_aux and scale_stats is None:
@@ -377,19 +579,30 @@ def main() -> None:
         prob_thr, nms_thr = p1, n1
     if (prob_thr is None) ^ (nms_thr is None):
         raise SystemExit("Provide both --prob-thr and --nms-thr, or neither to use optimized thresholds.")
-    if prob_thr is not None and nms_thr is not None:
+    if args.log and prob_thr is not None and nms_thr is not None:
         print(f"Using effective thresholds: prob_thresh={prob_thr}, nms_thresh={nms_thr}.")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    labels_dir = args.out_dir / "labels"
-    if args.write_labels:
-        labels_dir.mkdir(parents=True, exist_ok=True)
-
     out_gpkg = args.out_dir / args.preds_name
-    if out_gpkg.exists():
-        out_gpkg.unlink()
-
-    import fiona
+    labels_dir = args.out_dir / "labels"
+    shards_dir = args.out_dir / "record_shards"
+    if args.resume:
+        shards_dir.mkdir(parents=True, exist_ok=True)
+        if args.write_labels:
+            labels_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        if out_gpkg.exists():
+            out_gpkg.unlink()
+        tmp_out_gpkg = out_gpkg.with_suffix(".tmp.gpkg")
+        if tmp_out_gpkg.exists():
+            tmp_out_gpkg.unlink()
+        if shards_dir.exists():
+            shutil.rmtree(shards_dir)
+        shards_dir.mkdir(parents=True, exist_ok=True)
+        if args.write_labels:
+            if labels_dir.exists():
+                shutil.rmtree(labels_dir)
+            labels_dir.mkdir(parents=True, exist_ok=True)
 
     schema = {
         "geometry": "Polygon",
@@ -402,16 +615,53 @@ def main() -> None:
     }
 
     wrote = 0
-    next_id = 1
     crs_wkt = _first_crs_wkt(recs, args.input_key)
-    out_features: list[dict] = []
+    skipped = 0
+    skipped_by_request = 0
 
-    for rec in recs:
+    pbar = tqdm(
+        recs,
+        desc="StarDist refinement",
+        unit="record",
+        dynamic_ncols=True,
+    )
+    for rec in pbar:
             x_path = rec.get(args.input_key, "")
             if not x_path or not Path(x_path).exists():
                 continue
 
             source = _guess_source_name(x_path)
+            pbar.set_postfix_str(source, refresh=False)
+            if source in skip_sources or _safe_source_name(source) in skip_sources:
+                skipped_by_request += 1
+                continue
+            safe_source = _safe_source_name(source)
+            shard_path = shards_dir / f"{safe_source}.gpkg"
+            done_marker = shards_dir / f"{safe_source}.done.json"
+            label_path = labels_dir / f"{source}_labels.tif" if args.write_labels else None
+            if args.resume and _checkpoint_complete(shard_path, done_marker, label_path):
+                skipped += 1
+                continue
+            current_source_path = args.out_dir / "current_refinement_source.txt"
+            current_source_path.write_text(f"{source}\n")
+            if args.print_source_before_run:
+                print(f"processing source: {source}", flush=True)
+            if args.resume_from_labels and label_path is not None and label_path.exists():
+                try:
+                    _bootstrap_checkpoint_from_label(
+                        label_path=label_path,
+                        source=source,
+                        shard_path=shard_path,
+                        done_marker=done_marker,
+                        schema=schema,
+                        crs_wkt=crs_wkt,
+                        min_area_m2=float(args.min_area_m2),
+                    )
+                    skipped += 1
+                    continue
+                except Exception as exc:
+                    if args.log:
+                        print(f"Could not bootstrap checkpoint from {label_path}: {exc}")
 
             with rasterio.open(x_path) as src:
                 x = src.read(1).astype(np.float32)
@@ -439,7 +689,7 @@ def main() -> None:
                 x_in = normalize(x_in, 1, 99.8, axis=(0, 1)).astype(np.float32)
 
             predict_kwargs = {
-                "show_tile_progress": False,
+                "show_tile_progress": bool(args.log),
             }
             if prob_thr is not None and nms_thr is not None:
                 predict_kwargs["prob_thresh"] = prob_thr
@@ -468,12 +718,9 @@ def main() -> None:
                     window_polys.append((poly, int(lbl_id), score))
 
                 if args.write_labels:
-                    out_lbl = labels_dir / f"{source}_labels.tif"
                     with rasterio.open(x_path) as src:
                         meta = src.meta.copy()
-                    meta.update(count=1, dtype="uint16", compress="deflate")
-                    with rasterio.open(out_lbl, "w", **meta) as out_ds:
-                        out_ds.write(labels.astype(np.uint16), 1)
+                    _write_labels_atomic(label_path, labels, meta=meta, dtype="uint16")
             else:
                 patch_size_px = max(1, int(round(float(args.window_size_m) / res_m)))
                 overlap_px = max(0, int(round(float(args.window_overlap_m) / res_m)))
@@ -518,10 +765,8 @@ def main() -> None:
                         window_polys.append((poly, int(lbl_id), score))
 
                 if args.write_labels:
-                    out_lbl = labels_dir / f"{source}_labels.tif"
                     with rasterio.open(x_path) as src:
                         meta = src.meta.copy()
-                    meta.update(count=1, dtype="uint32", compress="deflate")
                     shapes = [
                         (poly, int(i + 1))
                         for i, (poly, _lbl_id, _score) in enumerate(window_polys)
@@ -533,48 +778,47 @@ def main() -> None:
                         fill=0,
                         dtype="uint32",
                     )
-                    with rasterio.open(out_lbl, "w", **meta) as out_ds:
-                        out_ds.write(labels_full.astype(np.uint32), 1)
+                    _write_labels_atomic(label_path, labels_full, meta=meta, dtype="uint32")
 
-            for poly, lbl_id, score in window_polys:
-                out_features.append(
-                    {
-                        "geometry": poly,
-                        "source": str(source),
-                        "label": int(lbl_id),
-                        "score": float(score),
-                    }
-                )
+            record_features = [
+                {
+                    "geometry": poly,
+                    "source": str(source),
+                    "label": int(lbl_id),
+                    "score": float(score),
+                }
+                for poly, lbl_id, score in window_polys
+            ]
+            _write_features_gpkg(shard_path, record_features, schema=schema, crs_wkt=crs_wkt)
+            _write_json_atomic(
+                done_marker,
+                {
+                    "source": str(source),
+                    "input": str(x_path),
+                    "features": len(record_features),
+                },
+            )
+
+    out_features: list[dict] = []
+    for marker in sorted(shards_dir.glob("*.done.json")):
+        shard_path = marker.with_suffix("").with_suffix(".gpkg")
+        if not shard_path.exists():
+            continue
+        out_features.extend(_read_features_gpkg(shard_path))
 
     out_features = _dedup_features_by_iou(
         out_features,
         iou_thr=float(args.dedup_iou_thr),
     )
 
-    with fiona.open(
-        out_gpkg,
-        "w",
-        driver="GPKG",
-        layer="crowns",
-        schema=schema,
-        crs_wkt=crs_wkt,
-    ) as dst:
-        for feat in out_features:
-            dst.write(
-                {
-                    "geometry": feat["geometry"].__geo_interface__,
-                    "properties": {
-                        "id": int(next_id),
-                        "source": feat["source"],
-                        "label": feat["label"],
-                        "score": feat["score"],
-                    },
-                }
-            )
-            next_id += 1
-            wrote += 1
+    _write_features_gpkg(out_gpkg, out_features, schema=schema, crs_wkt=crs_wkt)
+    wrote = len(out_features)
 
     print(f"✓ wrote {wrote} crown polygons to {out_gpkg}")
+    if args.resume:
+        print(f"✓ skipped {skipped} completed refinement records")
+    if skipped_by_request:
+        print(f"✓ skipped {skipped_by_request} requested sources")
 
 
 if __name__ == "__main__":

@@ -73,6 +73,45 @@ def _normalize_record_paths(records_json: Path) -> None:
         json.dump(recs, open(records_json, "w"))
 
 
+def _complete_proposal_records_from_rasters(proposal_rasters_dir: Path) -> list[dict]:
+    """Build proposal records from every complete proposal raster set on disk."""
+    recs = []
+    if not proposal_rasters_dir.exists():
+        return recs
+
+    for idx in sorted(proposal_rasters_dir.glob("*_sam_index.tif")):
+        stem = idx.stem
+        if not stem.endswith("_sam_index"):
+            continue
+        base = stem[:-10]
+        prob = proposal_rasters_dir / f"{base}_sam_prob.tif"
+        chm = proposal_rasters_dir / f"{base}_chm.tif"
+        cost = proposal_rasters_dir / f"{base}_cost.tif"
+        logit = proposal_rasters_dir / f"{base}_logit.tif"
+        if not (prob.exists() and chm.exists() and cost.exists() and logit.exists()):
+            continue
+        recs.append(
+            {
+                "file_name": str(prob.resolve()),
+                "chm": str(chm.resolve()),
+                "cost": str(cost.resolve()),
+                "logit": str(logit.resolve()),
+                "index": str(idx.resolve()),
+                "mask": "",
+                "meta": {},
+            }
+        )
+    return recs
+
+
+def _record_count(records_json: Path) -> int | None:
+    """Return the number of records in a records JSON file, if readable."""
+    if not records_json.exists():
+        return None
+    recs = json.load(open(records_json))
+    return len(recs) if isinstance(recs, list) else None
+
+
 def run_segmentation(
     *,
     tiles_dir: Path | None = None,
@@ -92,9 +131,14 @@ def run_segmentation(
     stardist_window_overlap_m: float = 0.0,
     stardist_dedup_iou_thr: float = 0.0,
     stardist_cpu: bool = False,
+    stardist_resume: bool = False,
+    stardist_resume_from_labels: bool = False,
+    stardist_skip_sources: str | None = None,
+    stardist_skip_sources_file: Path | None = None,
     run_sam: bool = True,
     run_stardist: bool = True,
     skip_existing_sam: bool = True,
+    log_refinement: bool = False,
     fast: bool = True,
     fast_batch_size: int = 32,
     crop_smooth_sigma: float = 2.0,
@@ -165,6 +209,7 @@ def run_segmentation(
         )
 
     _normalize_record_paths(proposal_records)
+    proposal_records_rebuilt = False
 
     if not run_stardist:
         return {
@@ -174,33 +219,14 @@ def run_segmentation(
             "proposal_records": proposal_records,
         }
 
-    if not proposal_records.exists() and proposal_rasters_dir.exists():
-        partial = []
-        for idx in sorted(proposal_rasters_dir.glob("*_sam_index.tif")):
-            stem = idx.stem
-            if not stem.endswith("_sam_index"):
-                continue
-            base = stem[:-10]
-            prob = proposal_rasters_dir / f"{base}_sam_prob.tif"
-            chm = proposal_rasters_dir / f"{base}_chm.tif"
-            cost = proposal_rasters_dir / f"{base}_cost.tif"
-            logit = proposal_rasters_dir / f"{base}_logit.tif"
-            if prob.exists() and chm.exists() and cost.exists() and logit.exists():
-                partial.append(
-                    {
-                        "file_name": str(prob.resolve()),
-                        "chm": str(chm.resolve()),
-                        "cost": str(cost.resolve()),
-                        "logit": str(logit.resolve()),
-                        "index": str(idx.resolve()),
-                        "mask": "",
-                        "meta": {},
-                    }
-                )
-        if partial:
+    if proposal_rasters_dir.exists():
+        partial = _complete_proposal_records_from_rasters(proposal_rasters_dir)
+        existing_count = _record_count(proposal_records)
+        if partial and existing_count != len(partial):
             proposal_records.parent.mkdir(parents=True, exist_ok=True)
             json.dump(partial, open(proposal_records, "w"))
             _normalize_record_paths(proposal_records)
+            proposal_records_rebuilt = True
 
     if not proposal_records.exists():
         raise RuntimeError(f"Missing proposal records: {proposal_records}")
@@ -209,6 +235,8 @@ def run_segmentation(
     resolved_stardist_model = Path(stardist_model_dir) / stardist_model_name
 
     scale_stats = out_dir / "proposal_scale_stats.json"
+    if proposal_records_rebuilt and scale_stats.exists():
+        scale_stats.unlink()
     if not scale_stats.exists():
         build_scale_stats_from_proposal_records(
             proposal_records=proposal_records,
@@ -257,6 +285,8 @@ def run_segmentation(
         raise ValueError("stardist_window_overlap_m must be smaller than stardist_window_size_m.")
     if not (0.0 <= stardist_dedup_iou_thr < 1.0):
         raise ValueError("stardist_dedup_iou_thr must be in [0, 1).")
+    if stardist_resume_from_labels and not stardist_resume:
+        raise ValueError("stardist_resume_from_labels requires stardist_resume.")
     if stardist_prob_thr is not None and stardist_nms_thr is not None:
         cmd.extend(
             [
@@ -282,6 +312,16 @@ def run_segmentation(
                 str(stardist_dedup_iou_thr),
             ]
         )
+    if log_refinement:
+        cmd.append("--log")
+    if stardist_resume:
+        cmd.append("--resume")
+    if stardist_resume_from_labels:
+        cmd.append("--resume-from-labels")
+    if stardist_skip_sources:
+        cmd.extend(["--skip-sources", stardist_skip_sources])
+    if stardist_skip_sources_file is not None:
+        cmd.extend(["--skip-sources-file", str(stardist_skip_sources_file)])
     env = None
     if stardist_cpu:
         env = dict(**os.environ)

@@ -5,7 +5,7 @@ make_tiles.py – split IMG / CHM / COST / SEEDS into 500 m tiles (+20 m ove
 """
 
 from __future__ import annotations
-import sys, argparse, tempfile, shutil
+import sys, argparse, tempfile, shutil, warnings
 from pathlib import Path
 import numpy as np
 import rasterio
@@ -19,6 +19,20 @@ from tqdm.auto import tqdm
 
 # local libraries
 from samstars.features import build_cost_surface, canonical_seeds, SeedParams
+
+
+_SUPPRESSED_TILE_WARNING_PATTERNS = (
+    r"Warning: 'partition' will ignore the 'mask' of the MaskedArray\.",
+    r"No SLIC provided .* cost built from 3 terms only\.",
+    r"Precomputed sparse input was not sorted by row values\.",
+)
+
+
+def _suppress_repeated_tile_warnings():
+    """Suppress known per-tile warnings that otherwise corrupt tqdm output."""
+    for pattern in _SUPPRESSED_TILE_WARNING_PATTERNS:
+        warnings.filterwarnings("ignore", message=pattern)
+
 
 # ───────────────────────── helpers ─────────────────────────────
 def _align_to_img(src: Path | str, img_ds: rasterio.DatasetReader):
@@ -121,6 +135,8 @@ def _prepare_tile(
     skip_existing: bool,
 ) -> bool:
     """Internal helper function."""
+    _suppress_repeated_tile_warnings()
+
     required = _required_tile_outputs(tile_dir, write_den=write_den)
     if skip_existing and all(p.exists() for p in required):
         return True
