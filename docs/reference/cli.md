@@ -1,32 +1,159 @@
 # Command-Line Entry Points
 
-This repo includes runnable scripts around the `samstars` Python API.
+This repository includes runnable scripts around the `samstars` Python API. They are repository-local entry points, not installed console commands.
 
-These are repository-local entrypoints.
-They are not installed as console commands by `pip install samstars`.
+Run them from the repository root or set `PYTHONPATH` to the checkout.
 
-## Data preparation
+## Prepared Tile Bundle Wrapper
 
-- `samstars/data/tiling.py`
-- `examples/build_tile_records.py`
-- `examples/build_pending_tile_records.py`
+Train a bundle from prepared or raw labeled tiles:
 
-## Proposal generation
+```bash
+python examples/run_prepared_tiles_inference.py \
+  --sam-base-ckpt /abs/path/sam_vit_l_0b3195.pth \
+  --tiles-dir /abs/path/training_tiles \
+  --out /abs/path/model_bundle \
+  --storage persistent \
+  --device cpu
+```
 
-- `samstars/segmentation/proposals.py`
+Segment prepared tiles with an existing bundle:
 
-## Refinement
+```bash
+python examples/run_prepared_tiles_inference.py \
+  --model /abs/path/model_bundle \
+  --tiles-dir /abs/path/inference_tiles \
+  --out /abs/path/segmentation_run \
+  --storage persistent \
+  --device cpu
+```
 
-- `examples/build_scale_stats_from_proposal_records.py`
-- `samstars/segmentation/refinement.py`
+Useful options:
 
-## Training
+- `--stardist-cpu`: force StarDist to CPU
+- `--stardist-input-key index|file_name|logit`
+- `--stardist-prob-thr` and `--stardist-nms-thr`
+- `--stardist-window-size-m`
+- `--stardist-window-overlap-m`
+- `--stardist-dedup-iou-thr`
+- `--sam-only`
+- `--stardist-only`
+- `--fast` or `--slow`
 
-- `samstars/training/chips.py`
-- `samstars/training/records.py`
-- `samstars/training/sam_training.py`
-- `samstars/training/stardist_training.py`
+## Direct-Artifact Tiled Wrapper
 
-## End-to-end wrappers
+Use this when you have a SAM decoder checkpoint and a StarDist model directory instead of a flat bundle:
 
-- `examples/run_tiled_segmentation.sh`
+```bash
+bash examples/run_tiled_segmentation.sh \
+  --tiles-dir /abs/path/inference_tiles \
+  --out-dir /abs/path/segmentation_run \
+  --sam-ckpt /abs/path/models/sam_crowns_decoder.pth \
+  --stardist-model /abs/path/models/stardist \
+  --device cpu
+```
+
+The wrapper builds tile records, skips complete SAM proposal rasters by default, builds scale stats when needed, and runs StarDist refinement.
+
+## Data Preparation Scripts
+
+Build tile records:
+
+```bash
+python examples/build_tile_records.py \
+  --tiles-dir /abs/path/tiles \
+  --out-root /abs/path/segmentation_run/run_records
+```
+
+Build pending tile records:
+
+```bash
+python examples/build_pending_tile_records.py \
+  --records /abs/path/run_records/tiles.json \
+  --proposal-rasters /abs/path/proposals/rasters \
+  --out /abs/path/run_records/tiles.pending.json
+```
+
+Build scale stats from proposal records:
+
+```bash
+python examples/build_scale_stats_from_proposal_records.py \
+  --proposal-records /abs/path/proposals/proposal_records.json \
+  --out /abs/path/proposal_scale_stats.json
+```
+
+## Module Entrypoints
+
+Build prepared tiles:
+
+```bash
+python -m samstars.data.tiling \
+  --img /abs/path/image.tif \
+  --chm /abs/path/chm.tif \
+  --den /abs/path/first_return_density.tif \
+  --out /abs/path/tiles
+```
+
+Run SAM proposals:
+
+```bash
+python -m samstars.segmentation.proposals \
+  --tile-records /abs/path/run_records/tiles.json \
+  --ckpt-path /abs/path/models/sam_crowns_decoder.pth \
+  --out-root /abs/path/proposals \
+  --device cpu \
+  --fast
+```
+
+Run StarDist refinement:
+
+```bash
+python -m samstars.segmentation.refinement \
+  --proposal-records /abs/path/proposals/proposal_records.json \
+  --model-dir /abs/path/models \
+  --model-name stardist \
+  --out-dir /abs/path/crowns \
+  --input-key index \
+  --use-aux \
+  --scale-stats /abs/path/proposal_scale_stats.json \
+  --write-labels
+```
+
+Build SAM training chips:
+
+```bash
+python -m samstars.training.chips \
+  --tiles-dir /abs/path/training_tiles \
+  --out-dir /abs/path/training_chips
+```
+
+Train the SAM decoder:
+
+```bash
+python -m samstars.training.sam_training \
+  --training-chips-dir /abs/path/training_chips \
+  --out-path /abs/path/models/sam_crowns_decoder.pth \
+  --ckpt /abs/path/sam_vit_l_0b3195.pth \
+  --device cpu
+```
+
+Build StarDist training records:
+
+```bash
+python -m samstars.training.records \
+  --proposal-records /abs/path/training_run/proposals/proposal_records.json \
+  --tiles-dir /abs/path/training_tiles \
+  --out-dir /abs/path/training_records
+```
+
+Train StarDist:
+
+```bash
+python -m samstars.training.stardist_training \
+  --train-records /abs/path/training_records/train_records.json \
+  --val-records /abs/path/training_records/val_records.json \
+  --out-dir /abs/path/stardist_models \
+  --model-name stardist \
+  --use-aux \
+  --scale-stats /abs/path/training_scale_stats.json
+```

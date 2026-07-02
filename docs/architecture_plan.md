@@ -64,7 +64,7 @@ model/
   manifest.json
   decoder.pth
   config.json
-  thresholds.json
+  thresholds.json  # optional
   weights.h5
 ```
 
@@ -160,15 +160,15 @@ They are the processing unit.
 
 Every segmentation workflow should accept or internally choose a storage policy, conceptually:
 
-- `storage="memory"`
 - `storage="temp"`
 - `storage="persistent"`
+- `storage="memory"` as a future design option
 
 Interpretation:
 
-- `memory`: keep intermediates in RAM when feasible
 - `temp`: write intermediates to a temporary working directory
 - `persistent`: write intermediates to a user-specified durable directory
+- `memory`: keep intermediates in RAM when feasible; this is not part of the current public API
 
 This lets one segmentation API support both notebooks and production runs.
 
@@ -295,7 +295,7 @@ out/
   manifest.json
   decoder.pth
   config.json
-  thresholds.json
+  thresholds.json  # optional
   weights.h5
   _training/
     prep/
@@ -327,7 +327,7 @@ out/
   manifest.json
   decoder.pth
   config.json
-  thresholds.json
+  thresholds.json  # optional
   weights.h5
 ```
 

@@ -1,25 +1,24 @@
 # Training
 
-This page covers the model-training path for samstars.
-The intended workflow is to train your own SAM and StarDist artifacts for your data and then pass those outputs into the segmentation pipeline.
+This page covers training a samstars model bundle for later segmentation. The intended workflow is to train SAM and StarDist artifacts for your own imagery, CHM, density, and crown-label data.
 
-## Recommended entry point
+The recommended public entry point is `samstars.train(...)`. It runs the lower-level preparation, SAM training, proposal generation, StarDist record creation, and StarDist training steps, then writes a flat model bundle for `samstars.segment(...)`.
 
-For the simplest public API, use `samstars.train(...)`.
-It writes a single flat model bundle directory containing:
+## Input Expectations
 
-- `decoder.pth`
-- `config.json`
-- `thresholds.json`
-- `weights.h5`
-- a bundle manifest used later by `samstars.segment(...)`
+Training requires:
 
-You can train from either:
+- imagery raster
+- CHM raster
+- first-return density raster
+- crown polygons for supervision
+- base SAM checkpoint, such as `sam_vit_l_0b3195.pth`
 
-- one raw labeled area via `img`, `chm`, `den`, and `crowns`
-- or a prepared labeled `tiles_dir`
+Training can start from one labeled scene or from a directory of labeled tiles.
 
-Example from one labeled area:
+## Model Bundle Training
+
+Train from one labeled scene:
 
 ```python
 from pathlib import Path
@@ -36,9 +35,11 @@ model = train(
     storage="persistent",
     device="cpu",
 )
+
+print(model.root)
 ```
 
-Example from prepared labeled tiles:
+Train from labeled tiles:
 
 ```python
 from pathlib import Path
@@ -54,55 +55,50 @@ model = train(
 )
 ```
 
-When you pass `tiles_dir`, each training tile can be either:
+Each training tile can be fully prepared:
 
-- fully prepared and labeled:
-  - `img.tif`
-  - `chm.tif`
-  - `cost.tif`
-  - `seeds.gpkg`
-  - `crowns.gpkg`
-- or raw labeled tile inputs:
-  - `img.tif`
-  - `chm.tif`
-  - `den.tif`
-  - `crowns.gpkg`
+- `img.tif`
+- `chm.tif`
+- `cost.tif`
+- `seeds.gpkg`
+- `crowns.gpkg`
 
-In the raw-labeled case, `train(...)` derives `cost.tif` and `seeds.gpkg` internally before continuing.
+or raw labeled:
 
-The lower-level modules documented below remain available when you need finer control.
+- `img.tif`
+- `chm.tif`
+- `den.tif`
+- `crowns.gpkg`
 
-## Available training modules
+For raw labeled tiles, `train(...)` derives `cost.tif` and `seeds.gpkg` internally before continuing. Do not mix fully prepared and raw labeled tile layouts in the same `tiles_dir`.
 
-- `samstars/training/chips.py`
-- `samstars/training/records.py`
-- `samstars/training/sam_training.py`
-- `samstars/training/stardist_training.py`
+## Bundle Contents
 
-At the package level, these are exposed as:
+A trained bundle contains:
 
-- `samstars.training.chips`
-- `samstars.training.records`
-- `samstars.training.sam_training`
-- `samstars.training.stardist_training`
+- `manifest.json`
+- `decoder.pth`
+- `config.json`
+- `weights.h5`
+- `thresholds.json`, when StarDist threshold optimization produced one
 
-## Typical workflow
+The manifest records the bundle format, artifact filenames, and defaults used later by `segment(...)`.
 
-1. Prepare training data.
-2. Train SAM components.
-3. Build StarDist training records.
-4. Train StarDist refinement.
-5. Run evaluation/inference on held-out areas.
+With `storage="persistent"`, training intermediates are kept under:
 
-## Build training chips for SAM
+```text
+model_bundle/_training/
+```
 
-Use `samstars.training.chips` to build the SAM training-chip directory from labeled tiles.
+This includes prepared tiles, SAM training chips, SAM proposal outputs, StarDist training records, scale stats, and the temporary StarDist training directory.
 
-This step expects prepared training tiles.
-If you are starting from larger rasters, first build tiles and then add crown labels to each tile.
-The training-chip directory is the output of this step, not the input.
+## Lower-Level Training Steps
 
-Example:
+Use the lower-level modules when you need to inspect or replace part of the training workflow.
+
+## SAM Training Chips
+
+Build SAM training chips from labeled tiles:
 
 ```bash
 python -m samstars.training.chips \
@@ -112,12 +108,9 @@ python -m samstars.training.chips \
 
 Each input tile should contain:
 
-- `img.tif`: imagery raster
-- `chm.tif`: canopy height raster
-- `crowns.gpkg`: crown polygons for supervision
-
-Use `samstars.data.build_tiles(...)` when you need to create the tile layout first.
-If you are preparing tiles from a multiband raster, choose the three image bands you want to use at tile-building time and keep that choice consistent through training and segmentation.
+- `img.tif`
+- `chm.tif`
+- `crowns.gpkg`
 
 The output directory contains:
 
@@ -126,11 +119,9 @@ The output directory contains:
 - `chm/`: CHM chips as `.npy`
 - `prompts/`: prompt metadata per chip
 
-## SAM decoder training
+## SAM Decoder Training
 
-Use `samstars.training.sam_training` to train the SAM decoder from a prepared training-chip directory.
-
-Example:
+Train the SAM decoder from prepared chips:
 
 ```bash
 python -m samstars.training.sam_training \
@@ -140,30 +131,19 @@ python -m samstars.training.sam_training \
   --device cpu
 ```
 
-This produces the SAM decoder artifact used later by `run_segmentation(...)` via `sam_ckpt`.
-
-The chip directory should contain:
-
-- `images/`: image chips as `.npy`
-- `masks/`: binary crown masks as `.npy`
-- `chm/`: CHM chips as `.npy`
-- `prompts/`: prompt metadata per chip
-
 Key arguments:
 
 - `--training-chips-dir`: prepared training-chip directory
 - `--out-path`: output checkpoint path for the trained decoder
-- `--ckpt`: base SAM checkpoint used to initialize training
+- `--ckpt`: base SAM checkpoint
 - `--device`: training device
 - `--scale-stats`: optional global imagery scaling
 - `--epochs`: number of epochs
 - `--min-iters`: minimum number of training iterations
 
-## StarDist training
+## StarDist Training Records
 
-Before training StarDist, build train/val proposal-record files with rasterized crown masks.
-
-Example:
+StarDist training records are built from SAM proposal records plus crown labels:
 
 ```bash
 python -m samstars.training.records \
@@ -178,9 +158,15 @@ This writes:
 - `val_records.json`
 - rasterized instance masks under `masks/`
 
-Use `samstars.training.stardist_training` to train the refinement model from training and validation proposal-record files.
+With the high-level persistent training API, the proposal records live under:
 
-Example:
+```text
+model_bundle/_training/training_run/proposals/proposal_records.json
+```
+
+## StarDist Model Training
+
+Train the refinement model from train/validation records:
 
 ```bash
 python -m samstars.training.stardist_training \
@@ -192,29 +178,47 @@ python -m samstars.training.stardist_training \
   --scale-stats /abs/path/scale_2_98.json
 ```
 
-This produces the StarDist artifact set used later by `run_segmentation(...)` via `stardist_model`.
-
 Each training record should point to:
 
 - the primary proposal raster used for refinement training
 - the CHM raster if `--use-aux` is enabled
-- the instance mask raster in the `mask` field
+- the rasterized instance mask in the `mask` field
 
 Key arguments:
 
 - `--train-records`: training proposal-record JSON
 - `--val-records`: validation proposal-record JSON
-- `--out-dir`: output directory for the trained StarDist model
-- `--model-name`: model subdirectory name created under `--out-dir`
+- `--out-dir`: parent directory for the trained StarDist model
+- `--model-name`: model subdirectory name under `--out-dir`
 - `--use-aux`: include CHM as an auxiliary input channel
-- `--scale-stats`: required with `--use-aux`; used to scale the CHM input
-- `--input-key`: choose which raster field to use as the primary model input; the default is `index`
+- `--scale-stats`: required with `--use-aux`
+- `--input-key`: primary raster field, default `index`
 - `--epochs`: number of epochs
 - `--min-iters`: minimum number of training iterations
 
-## How training outputs connect to inference
+If no validation records are available, the trainer reuses the training data as validation data.
 
-After training, the segmentation call uses those artifact roots directly:
+## Using the Trained Model
+
+Use the bundle directly:
+
+```python
+from pathlib import Path
+
+from samstars import segment
+
+result = segment(
+    model=Path("/abs/path/model_bundle"),
+    img=Path("/abs/path/image.tif"),
+    chm=Path("/abs/path/chm.tif"),
+    den=Path("/abs/path/first_return_density.tif"),
+    out=Path("/abs/path/segmentation_run"),
+    storage="persistent",
+    device="cpu",
+)
+```
+
+Use lower-level artifacts directly when needed:
 
 ```python
 from pathlib import Path
@@ -225,18 +229,11 @@ run_segmentation(
     img=Path("/abs/path/image.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/segmentation_run"),
-    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
-    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
+    out_dir=Path("/abs/path/segmentation_run"),
+    sam_ckpt=Path("/abs/path/models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/stardist_models/stardist"),
     device="cpu",
 )
 ```
 
-## Notes
-
-- Keep training runs in dedicated output directories.
-- Pin environment versions for reproducibility.
-- The package does not ship pretrained models.
-- Use API docs for full parameter details.
-
-See [API Levels](reference/api_levels.md) for which layer to call directly.
+For examples, see [Train and Segment One Area](train_and_segment_one_area.ipynb) and [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb).

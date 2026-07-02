@@ -30,14 +30,14 @@ See [Training](training.md) and [Segmentation](segmentation.md).
 Latest source from GitHub:
 
 ```bash
-pip install "git+https://github.com/iosefa/sam.git"
+pip install "git+https://github.com/iosefa/samstars.git"
 ```
 
 Editable development install from a local clone:
 
 ```bash
-git clone https://github.com/iosefa/sam.git
-cd sam
+git clone https://github.com/iosefa/samstars.git
+cd samstars
 pip install -e .
 ```
 

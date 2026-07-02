@@ -1,6 +1,6 @@
 site_name: samstars
 site_description: Multimodal instance segmentation of individual trees
-repo_url: https://github.com/iosefa/sam
+repo_url: https://github.com/iosefa/samstars
 docs_dir: docs
 
 theme:
@@ -12,7 +12,9 @@ theme:
         repo: fontawesome/brands/github
     features:
         - navigation.instant
+        - navigation.sections
         - search.highlight
+        - search.suggest
     custom_dir: overrides
 
 plugins:
@@ -24,11 +26,15 @@ plugins:
                 paths:
                     - .
                 options:
+                    docstring_style: google
                     show_root_heading: true
-                    show_source: false
+                    show_source: true
+                    show_symbol_type_heading: true
 
 markdown_extensions:
+    - admonition
     - attr_list
+    - pymdownx.details
     - pymdownx.superfences
     - pymdownx.highlight:
           linenums: true
@@ -52,6 +58,7 @@ nav:
         - CLI Scripts: reference/cli.md
         - API Levels: reference/api_levels.md
     - API Reference:
+        - samstars.api: api/top_level.md
         - samstars.features.cost_surface: api/features_cost_surface.md
         - samstars.features.seed_generation: api/features_seed_generation.md
         - samstars.data.scaling: api/data_scaling.md
@@ -64,7 +71,7 @@ nav:
         - samstars.training.sam_training: api/training_sam.md
         - samstars.training.stardist_training: api/training_stardist.md
         - samstars.utils: api/utils.md
-    - Report Issues: https://github.com/iosefa/sam/issues
+    - Report Issues: https://github.com/iosefa/samstars/issues
 
 extra_css:
     - overrides/custom.css

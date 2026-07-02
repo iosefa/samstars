@@ -1,111 +1,87 @@
 # Segmentation
 
-samstars uses a two-stage segmentation strategy:
+This page covers the standard inference case: imagery, canopy-height and density rasters, trained samstars model artifacts, and crown polygons as output.
 
-1. Lidar-guided prompting for high-recall canopy detection.
-2. Shape-aware instance separation to split adjacent crowns.
+samstars uses two stages:
 
-In practice, this means:
+1. SAM proposal generation from image, CHM, density-derived cost, and seed prompts.
+2. StarDist refinement to split touching crowns and write instance polygons.
 
-- proposal stage: prompt-guided crown likelihood inference
-- refinement stage: instance delineation into crown polygons
+The recommended public API is the model-bundle interface. The lower-level `run_segmentation(...)` API remains available when you need to pass a SAM decoder checkpoint and StarDist model directory directly.
 
-## Goal
+## Input Expectations
 
-Given high-resolution imagery and a point cloud, delineate upper-canopy individual tree crowns as polygons.
+For raw-scene inference, samstars expects:
 
-## Before you run
+- a multiband imagery raster
+- a CHM raster aligned or alignable to the imagery
+- a first-return density raster aligned or alignable to the imagery
+- a trained model bundle, or direct SAM and StarDist artifacts
 
-You need trained model artifacts in addition to the input rasters.
-The intended workflow is to train these for your own data.
+Point-cloud processing is upstream of this package. Convert point clouds to CHM and density rasters before running segmentation.
 
-At inference time, you provide:
-
-- `sam_ckpt`: the direct path to your trained SAM decoder checkpoint
-- `stardist_model`: the direct path to your trained StarDist model directory
-
-See [Training](training.md) for how to produce both artifact types.
-
-## Required inputs
-
-### Source inputs
-
-- Multiband imagery raster
-- Point cloud data
-- model checkpoints/weights available in expected paths
-
-### Derived inputs used by segmentation
-
-- imagery raster
-- CHM raster
-- Density raster
-- seed prompts derived from the raster inputs
-
-## Conceptual stages
-
-### Stage 1: Proposal generation
-
-- For a small scene, run directly from the input rasters.
-- For a large scene, tile first and then run the same proposal stage per tile.
-- Use imagery, CHM, and density-derived prompts to build a crown-likelihood raster.
-
-### Stage 2: Instance separation and polygons
-
-- Run the refinement model over the proposal raster.
-- Polygonize and write crown instances.
-
-This stage decoupling is intentional: detect canopy candidates first, then separate touching crowns.
-
-## Standard segmentation run
-
-```python
-from pathlib import Path
-from samstars.segmentation import run_segmentation
-
-run_segmentation(
-    img=Path("/abs/path/image.tif"),
-    chm=Path("/abs/path/chm.tif"),
-    den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/segmentation_run"),
-    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
-    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
-    device="cpu",
-)
-```
-
-Use `"cuda"` on supported Linux/NVIDIA systems.
-
-## Prepared tiles variant
-
-Use this when you already have a prepared tile directory.
-Each tile folder should contain the per-tile segmentation inputs, including:
+For prepared-tile inference, each tile directory should contain:
 
 - `img.tif`
 - `chm.tif`
 - `cost.tif`
 - `seeds.gpkg`
 
-You can build this layout with `samstars.data.build_tiles(...)`.
+Prepared tiles can be created with `samstars.data.build_tiles(...)`.
+
+## Model Bundle Segmentation
+
+Use this path when you trained or received a flat samstars model bundle containing `manifest.json`, `decoder.pth`, `config.json`, and `weights.h5`.
 
 ```python
 from pathlib import Path
-from samstars.segmentation import run_segmentation
 
-run_segmentation(
+from samstars import segment
+
+result = segment(
+    model=Path("/abs/path/model_bundle"),
+    img=Path("/abs/path/image.tif"),
+    chm=Path("/abs/path/chm.tif"),
+    den=Path("/abs/path/first_return_density.tif"),
+    out=Path("/abs/path/run_dir/segmentation_run"),
+    storage="persistent",
+    device="cpu",
+)
+
+print(result.crowns)
+```
+
+Use `"cuda"` on supported Linux/NVIDIA systems. Use `"mps"` on supported Apple Silicon environments.
+
+`storage="persistent"` keeps run records, prepared inputs, proposal rasters, scale stats, labels, and crown outputs under `out`. `storage="temp"` uses temporary intermediate storage and copies durable final outputs back to `out`.
+
+## Prepared Tiles
+
+Use prepared tiles when the scene is too large for a single raw-scene preparation step or when you want explicit control over tiling.
+
+```python
+from pathlib import Path
+
+from samstars import segment
+
+result = segment(
+    model=Path("/abs/path/model_bundle"),
     tiles_dir=Path("/abs/path/run_dir/tiles"),
-    out_dir=Path("/abs/path/run_dir/segmentation_run"),
-    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
-    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
+    out=Path("/abs/path/run_dir/segmentation_run"),
+    storage="persistent",
     device="cpu",
 )
 ```
 
-## Common variants
+For the tiling step, see [Large Raster Runs](large_raster_runs.md).
 
-### Proposal stage only
+## Direct Artifact Segmentation
+
+Use `run_segmentation(...)` when you want to pass lower-level model artifacts directly instead of a flat model bundle.
 
 ```python
 from pathlib import Path
+
 from samstars.segmentation import run_segmentation
 
 run_segmentation(
@@ -113,42 +89,71 @@ run_segmentation(
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
     out_dir=Path("/abs/path/run_dir/segmentation_run"),
-    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
-    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
+    sam_ckpt=Path("/abs/path/models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/models/stardist"),
     device="cpu",
+)
+```
+
+The direct StarDist path should be the model subdirectory containing `config.json`, for example `/abs/path/models/stardist`.
+
+## Stage Control
+
+Run SAM proposals only:
+
+```python
+run_segmentation(
+    tiles_dir=Path("/abs/path/run_dir/tiles"),
+    out_dir=Path("/abs/path/run_dir/segmentation_run"),
+    sam_ckpt=Path("/abs/path/models/sam_crowns_decoder.pth"),
     run_stardist=False,
 )
 ```
 
-### Refinement stage only (from existing proposal outputs)
+Rerun StarDist from existing proposal outputs:
 
 ```python
-from pathlib import Path
-from samstars.segmentation import run_segmentation
-
 run_segmentation(
-    img=Path("/abs/path/image.tif"),
-    chm=Path("/abs/path/chm.tif"),
-    den=Path("/abs/path/first_return_density.tif"),
+    tiles_dir=Path("/abs/path/run_dir/tiles"),
     out_dir=Path("/abs/path/run_dir/segmentation_run"),
-    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
-    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
+    sam_ckpt=Path("/abs/path/models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/models/stardist"),
     run_sam=False,
     run_stardist=True,
 )
 ```
 
-Use the prepared-tile path when you already have a tile directory and want to rerun the same scene without rebuilding the internal prepared inputs.
+Use the same `out_dir` that already contains `proposals/proposal_records.json`.
+
+## Resumability
+
+SAM proposal runs are resumable by default. Existing complete proposal rasters are skipped unless `skip_existing_sam=False`.
+
+StarDist refinement has additional controls:
+
+- `stardist_resume=True`: reuse completed refinement checkpoints.
+- `stardist_resume_from_labels=True`: rebuild completed checkpoints from existing label rasters; requires `stardist_resume=True`.
+- `stardist_skip_sources="tile_a,tile_b"`: skip named sources.
+- `stardist_skip_sources_file=Path(...)`: skip sources listed in a file.
+- `stardist_cpu=True`: run StarDist in a subprocess with `CUDA_VISIBLE_DEVICES=""`.
+
+Windowed refinement is controlled with `stardist_window_size_m`, `stardist_window_overlap_m`, and `stardist_dedup_iou_thr`.
 
 ## Outputs
 
-- `.../crowns/crowns.gpkg`
+The main polygon output is:
 
-- `.../crowns/labels/*_labels.tif` (if `--write-labels`)
+```text
+out/crowns/crowns.gpkg
+```
 
-## Troubleshooting
+Persistent direct-artifact runs also keep:
 
-- Partial completion:
-  - rerun with same output paths; run records and proposal outputs are resumable
+- `out/run_records/tiles.json`
+- `out/run_records/tiles.pending.json`
+- `out/proposals/proposal_records.json`
+- `out/proposals/rasters/`
+- `out/proposal_scale_stats.json`
+- `out/crowns/labels/`
 
-For parameter details, see [API Levels](reference/api_levels.md), [CLI Scripts](reference/cli.md), and the [API Reference](api/segmentation_proposals.md).
+For parameter details, see [API Levels](reference/api_levels.md), [CLI Scripts](reference/cli.md), and the [API Reference](api/segmentation_engine.md).

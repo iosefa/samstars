@@ -53,7 +53,7 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/iosefa/sam"
+Repository = "https://github.com/iosefa/samstars"
 
 [project.optional-dependencies]
 docs = [
