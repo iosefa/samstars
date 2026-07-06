@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run a trained StarDist model on proposal outputs and write predicted crowns as polygons.
+Run a trained polygon-refinement model on proposal outputs and write predicted crowns as polygons.
 
 Inputs:
   - A proposal-records JSON produced by `samstars/segmentation/proposals.py`.

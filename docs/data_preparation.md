@@ -1,12 +1,27 @@
 # Data Preparation
 
-This page covers the data products samstars uses before training and segmentation.
+`samstars` starts from imagery, canopy-height, and first-return density rasters.
+It aligns those inputs and derives the prepared tile products that guide crown prompts, boundary and gap costs, proposal scoring, and polygon refinement.
 
-Most users can start with `samstars.train(...)`, `samstars.segment(...)`, and `samstars.data.build_tiles(...)`. The lower-level helpers are useful when you want to inspect, resume, or customize intermediate files.
+For small scenes, `samstars.segment(...)` creates the derived files during the run.
+For large scenes or reusable inputs, build prepared tiles first with `samstars.data.build_tiles(...)`.
+Run segmentation with `storage="persistent"` to keep prepared files on disk.
+
+## Source Rasters
+
+Start with three aligned or alignable geospatial rasters:
+
+- `img`: multiband imagery. Tile preparation writes the image bands used for segmentation.
+- `chm`: canopy height model. Heights guide crown-center prompts, proposal scoring, and optional refinement input.
+- `den`: first-return density raster. Density peaks are combined with CHM peaks to find candidate crown centers.
+
+Point clouds are not direct inputs to `samstars`.
+Convert point clouds to CHM and first-return density rasters before training or segmentation.
 
 ## Prepared Tiles
 
-Prepared tiles are the processing units for tiled segmentation. Build them from imagery, CHM, and density rasters:
+Prepared tiles are directories of aligned imagery and canopy-derived features.
+Build them from imagery, CHM, and density rasters:
 
 ```python
 from pathlib import Path
@@ -30,66 +45,52 @@ Each inference tile contains:
 - `cost.tif`
 - `seeds.gpkg`
 
-Training tiles also need `crowns.gpkg`. Raw labeled training tiles can contain `den.tif` instead of `cost.tif` and `seeds.gpkg`; `samstars.train(...)` prepares those derived files internally.
+Training tiles also need `crowns.gpkg`.
+Raw labeled training tiles can contain `den.tif` instead of `cost.tif` and `seeds.gpkg`; `samstars.train(...)` prepares those derived files internally.
 
-## Run Records
+## Tile Files
 
-Run records are JSON indexes over prepared tiles and proposal rasters. They make tiled runs explicit and resumable.
+| File | Description |
+| --- | --- |
+| `img.tif` | Three image bands clipped to the tile footprint. This is the image input for proposal generation. |
+| `chm.tif` | Canopy heights clipped to the same tile footprint. The CHM places prompt points, emphasizes canopy pixels in proposal scoring, and can provide an auxiliary channel during polygon refinement. |
+| `cost.tif` | Boundary and gap cost surface generated from the CHM and imagery. Higher values discourage merging or scoring across likely crown edges and canopy gaps. |
+| `seeds.gpkg` | Candidate crown-center points. The proposal stage uses these points as prompts for crown proposals. |
+| `crowns.gpkg` | Training labels for crown polygons. This file is required only for training tiles. |
 
-Build tile records manually with:
+## Cost Raster
 
-```bash
-python examples/build_tile_records.py \
-  --tiles-dir /abs/path/run_dir/tiles \
-  --out-root /abs/path/run_dir/segmentation_run/run_records
-```
+`cost.tif` marks likely crown boundaries and canopy gaps.
+Higher values indicate pixels that are harder to cross when grouping seed candidates or scoring proposal pixels.
+Lower values indicate pixels that are easier to keep within the same crown neighborhood.
 
-This writes:
+The default cost surface combines:
 
-```text
-run_records/tiles.json
-```
+- CHM gradient, which highlights sharp canopy-height changes.
+- `1 - NDVI`, a low-vegetation or gap term derived from red and near-infrared imagery.
+- Image texture entropy.
+- Optional SLIC segment edges, when a SLIC raster or polygon layer is supplied to tile preparation.
 
-Build pending records when you want to rerun only tiles without complete proposal rasters:
+The cost raster affects two steps:
 
-```bash
-python examples/build_pending_tile_records.py \
-  --records /abs/path/run_records/tiles.json \
-  --proposal-rasters /abs/path/proposals/rasters \
-  --out /abs/path/run_records/tiles.pending.json
-```
+- Seed generation uses it to avoid merging nearby seed candidates across high-cost pixels.
+- Proposal generation uses it to reduce the proposal score in high-cost areas.
 
-The high-level segmentation API creates these records automatically.
+## Seed Points
 
-## Scale Stats
+`seeds.gpkg` stores candidate crown-center points.
+`samstars` builds these points by detecting local peaks in the CHM and first-return density rasters, filtering out low-canopy points, and merging nearby candidates into one prompt point per likely crown center.
 
-StarDist can use CHM as an auxiliary channel. Scale stats normalize that CHM channel consistently across proposal records.
+The main seed controls exposed by training and tiling are:
 
-```bash
-python examples/build_scale_stats_from_proposal_records.py \
-  --proposal-records /abs/path/proposals/proposal_records.json \
-  --out /abs/path/proposal_scale_stats.json
-```
+- `seed_d_min`: minimum peak value for CHM and density seed candidates.
+- `seed_min_dist_px`: local-maximum suppression radius in pixels.
+- `seed_gauss_sigma`: smoothing applied before peak detection.
+- `seed_merge_radius`: distance used when merging nearby candidates.
+- `seed_min_canopy_height`: minimum CHM value retained as a seed.
+- `thin_seeds`: whether to thin dense seed sets after generation.
 
-High-level training and segmentation build these stats when needed.
-
-## Training Chips
-
-SAM decoder training uses chip arrays derived from labeled tiles:
-
-```bash
-python -m samstars.training.chips \
-  --tiles-dir /abs/path/training_tiles \
-  --out-dir /abs/path/training_chips
-```
-
-The output contains image chips, masks, CHM chips, and prompt metadata. See [Training](training.md) for the full model-training workflow.
-
-## Entry Points
-
-- `samstars.data.build_tiles(...)`
-- `samstars.data.build_single_tile(...)`
-- `samstars.data.build_tile_records(...)`
-- `samstars.data.build_pending_tile_records(...)`
-- `samstars.data.build_scale_stats_from_proposal_records(...)`
-- `samstars.training.chips`
+Segmentation creates proposal rasters, canopy index rasters, run records, and CHM scale stats.
+See [Segmentation](segmentation.md) for those run outputs.
+Training creates chip arrays from labeled tiles.
+See [Training](training.md) for training products.

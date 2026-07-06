@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train Keras StarDist2D on per-chip inputs derived from proposal outputs.
+Train the polygon-refinement model on per-chip inputs derived from proposal outputs.
 
 This version restores the *original* StarDist training behavior that worked well:
 - Use canopy index (default: record key "index") rather than raw SAM prob
@@ -265,15 +265,15 @@ def train_stardist_model(
         except Exception as exc:
             print(f"[warn] threshold optimization failed: {exc}")
 
-    print(f"✓ trained StarDist -> {out_dir / model_name}")
+    print(f"✓ trained refinement model -> {out_dir / model_name}")
 
 
 def main() -> None:
     """Run the command-line entry point."""
-    pa = argparse.ArgumentParser(description="Train a StarDist refinement model from proposal-record files.")
+    pa = argparse.ArgumentParser(description="Train the polygon-refinement model from proposal-record files.")
     pa.add_argument("--train-records", type=Path, required=True, help="Training proposal-record JSON with masks")
     pa.add_argument("--val-records", type=Path, required=True, help="Validation proposal-record JSON with masks")
-    pa.add_argument("--out-dir", type=Path, required=True, help="Output directory for the trained StarDist model")
+    pa.add_argument("--out-dir", type=Path, required=True, help="Output directory for the trained refinement model")
     pa.add_argument("--model-name", type=str, default="stardist", help="Model subdir name to create under --out-dir")
     pa.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     pa.add_argument("--min-iters", type=int, default=0, help="Minimum training iterations (converted to epochs)")

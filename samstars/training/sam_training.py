@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train a SAM ViT-L mask decoder from prepared training chips.
+Train the proposal decoder from prepared training chips.
 
 Upgrade: align training prompts with inference:
 - Use box prompts (json["box"] if present, else derived from mask bbox)
@@ -419,7 +419,7 @@ def train_decoder(
 
 def main():
     """Run the command-line entry point."""
-    pa = argparse.ArgumentParser(description="Train the SAM decoder from a prepared training-chip directory.")
+    pa = argparse.ArgumentParser(description="Train the proposal decoder from a prepared training-chip directory.")
     pa.add_argument(
         "--training-chips-dir",
         type=Path,

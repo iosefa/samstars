@@ -1,17 +1,18 @@
-# API Levels
+# API Guide
 
-samstars has three practical API layers.
+`samstars` exposes a small training and segmentation interface, plus component functions for prepared tiles, records, and custom reruns.
 
-## Bundle API
+## Model Bundle Workflow
 
-Use this layer for most training and segmentation runs:
+Use these objects for most training and segmentation runs:
 
 - `samstars.train(...)`
 - `samstars.segment(...)`
 - `samstars.SamStars`
 - `samstars.SamStarsResult`
 
-`train(...)` writes a flat model bundle and returns a `SamStars` runtime wrapper. `segment(...)` accepts either a bundle path or an existing `SamStars` instance and returns a `SamStarsResult`.
+`train(...)` writes a model bundle and returns a `SamStars` runtime wrapper.
+`segment(...)` accepts either a bundle path or an existing `SamStars` instance and returns a `SamStarsResult`.
 
 ```python
 from pathlib import Path
@@ -28,11 +29,11 @@ result = segment(
 )
 ```
 
-Use this layer when you want stable model packaging, stored defaults, and fewer artifact paths to manage.
+Use the model bundle workflow when you want stored defaults and a single model directory to pass between training and segmentation.
 
-## Pipeline API
+## Component Functions
 
-Use this layer when you want direct control over prepared tiles, run records, SAM checkpoints, or StarDist model directories:
+Use these functions when you want direct control over prepared tiles, run records, SAM checkpoints, or StarDist model directories:
 
 - `samstars.data`
 - `samstars.segmentation.run_segmentation(...)`
@@ -56,17 +57,19 @@ run_segmentation(
 )
 ```
 
-Use this layer for experiments, partial reruns, and custom training workflows.
+Use these functions for experiments, partial reruns, and custom training workflows.
 
-## Building Blocks
+## Feature Helpers
 
 Use these modules when you need custom feature preparation or utility behavior:
 
 - `samstars.features`
 - `samstars.utils`
 
-These expose cost-surface, seed-generation, raster, and geometry helpers. They are lower-level than the training and segmentation workflows.
+These expose cost-surface, seed-generation, raster, and geometry helpers.
 
-## Choosing a Layer
+## Choosing an Interface
 
-Start with the bundle API. Move to the pipeline API when you need direct artifact paths or partial stage control. Move to building blocks only when you are replacing part of the pipeline.
+Start with `train(...)` and `segment(...)`.
+Use component functions when you need separate model-file paths, prepared-tile records, or partial stage control.
+Use feature helpers when you are replacing or inspecting part of the data-preparation workflow.

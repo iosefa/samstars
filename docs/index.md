@@ -5,20 +5,20 @@
 [![Docs](https://img.shields.io/badge/docs-mkdocs%20material-0A7F46)](index.md)
 [![Repo](https://img.shields.io/badge/github-iosefa%2Fsamstars-black?logo=github)](https://github.com/iosefa/samstars)
 
-**Multimodal instance segmentation of individual trees.**
+**Multimodal individual tree crown segmentation from imagery and lidar-derived rasters.**
 
 ## Overview
 
-samstars is a Python package for individual tree crown segmentation from high-resolution imagery and lidar-derived rasters.
+`samstars` is a Python package for individual tree crown segmentation from high-resolution imagery and lidar-derived rasters.
 
 It combines:
 
 - high-resolution imagery (satellite, aerial, or drone)
 - lidar-derived raster layers (e.g., canopy height and density)
 
-These inputs are used for individual tree crown instance segmentation.
+The package prepares canopy-derived seed points, boundary and gap cost rasters, and proposal index rasters before writing crown polygons.
 
-The project was developed with WorldView + lidar data and is designed to generalize to other high-resolution imagery and point-cloud products.
+The workflow was developed with WorldView-3 imagery and airborne lidar-derived rasters, but the library interface accepts any aligned or alignable imagery, canopy-height, and first-return density rasters.
 
 ## First Segmentation
 
@@ -42,6 +42,6 @@ print(result.crowns)
 
 Use `"cuda"` on supported Linux/NVIDIA systems.
 
-See [Installation](installation.md) to set up the environment.
+See [Installation](installation.md) to install the library.
 For a minimal run path, see [Quick Start](quickstart.md).
-For task-focused documentation, see [Segmentation](segmentation.md), [Training](training.md), and [Data Preparation](data_preparation.md).
+For task-focused documentation, see [Data Preparation](data_preparation.md), [Training](training.md), [Segmentation](segmentation.md), and [Downstream Analysis](downstream.md).

@@ -1,4 +1,4 @@
-"""High-level segmentation interfaces for samstars."""
+"""Segmentation interfaces for samstars."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ __all__ = ["run_segmentation"]
 
 
 def __getattr__(name: str):
-    """Lazily expose the high-level segmentation entrypoint."""
+    """Lazily expose the segmentation entry point."""
     if name == "run_segmentation":
         from .engine import run_segmentation
 

@@ -1,45 +1,17 @@
 # Installation
 
-## Choose an install path
-
-Use one of these:
-
-1. **PyPI install**: install the library with pip.
-2. **GitHub/source install**: install from this repository.
-3. **Developer/reproducible setup**: use the pinned conda environment files.
-
-`samstars` uses geospatial and ML dependencies.
-Depending on your platform, some of these may need to be installed separately.
-If you want the most predictable setup, use the Conda environment files.
-
-## Option 1: pip install the library
+## Install the library
 
 ```bash
 pip install samstars
 ```
 
-Use this when your Python environment can resolve the required dependencies cleanly.
+`samstars` uses geospatial and machine-learning dependencies. On most supported Python environments, pip will install the required Python packages directly.
 
-If some native or platform-specific dependencies do not install with pip on your system, install those separately or use the Conda environment files instead.
+If a native or platform-specific dependency does not install cleanly on your system, install that dependency using the package manager recommended for your platform and then rerun `pip install samstars`.
 
 `samstars` does not bundle trained model files.
 See [Training](training.md) and [Segmentation](segmentation.md).
-
-## Option 2: install from GitHub or from a local clone
-
-Latest source from GitHub:
-
-```bash
-pip install "git+https://github.com/iosefa/samstars.git"
-```
-
-Editable development install from a local clone:
-
-```bash
-git clone https://github.com/iosefa/samstars.git
-cd samstars
-pip install -e .
-```
 
 Verify:
 
@@ -48,35 +20,11 @@ python -c "import samstars; print('samstars import ok')"
 pip show samstars
 ```
 
-## Option 3 (Developer/Reproducible): pinned conda environment files
-
-Use these when you want the repo development environment with the project dependencies pinned.
-
-### Ubuntu
-
-```bash
-mamba env create -f environment.ubuntu.samstars.yml
-conda activate samstars
-```
-
-### macOS
-
-```bash
-mamba env create -f environment.macos.samstars.yml
-conda activate samstars
-```
-
-Update an existing environment:
-
-```bash
-mamba env update -n samstars -f environment.ubuntu.samstars.yml
-```
-
 ## CUDA and GPU notes
 
 - For NVIDIA acceleration on Ubuntu/Linux, you need a working NVIDIA driver on the host.
-- The provided Ubuntu environment file includes the CUDA-enabled packages used by this project.
-- A pip install may still require additional platform-specific setup for GPU use.
+- GPU use may require additional platform-specific setup for PyTorch and TensorFlow.
+- CPU execution is supported for the documented workflows and is the safest installation target when GPU packages are difficult to resolve.
 
 Check CUDA availability:
 

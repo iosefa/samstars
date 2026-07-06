@@ -30,7 +30,7 @@ python examples/run_prepared_tiles_inference.py \
 
 Useful options:
 
-- `--stardist-cpu`: force StarDist to CPU
+- `--stardist-cpu`: force polygon refinement to CPU
 - `--stardist-input-key index|file_name|logit`
 - `--stardist-prob-thr` and `--stardist-nms-thr`
 - `--stardist-window-size-m`
@@ -40,9 +40,9 @@ Useful options:
 - `--stardist-only`
 - `--fast` or `--slow`
 
-## Direct-Artifact Tiled Wrapper
+## Separate Model Files Wrapper
 
-Use this when you have a SAM decoder checkpoint and a StarDist model directory instead of a flat bundle:
+Use this when you have a SAM decoder checkpoint and a StarDist model directory instead of a model bundle:
 
 ```bash
 bash examples/run_tiled_segmentation.sh \
@@ -53,9 +53,9 @@ bash examples/run_tiled_segmentation.sh \
   --device cpu
 ```
 
-The wrapper builds tile records, skips complete SAM proposal rasters by default, builds scale stats when needed, and runs StarDist refinement.
+The wrapper builds tile records, skips complete proposal rasters by default, builds CHM scale stats when needed, and runs polygon refinement.
 
-## Data Preparation Scripts
+## Segmentation Run Utilities
 
 Build tile records:
 
@@ -74,7 +74,7 @@ python examples/build_pending_tile_records.py \
   --out /abs/path/run_records/tiles.pending.json
 ```
 
-Build scale stats from proposal records:
+Build CHM scale stats from proposal records:
 
 ```bash
 python examples/build_scale_stats_from_proposal_records.py \
@@ -94,7 +94,7 @@ python -m samstars.data.tiling \
   --out /abs/path/tiles
 ```
 
-Run SAM proposals:
+Run proposal generation:
 
 ```bash
 python -m samstars.segmentation.proposals \
@@ -105,7 +105,7 @@ python -m samstars.segmentation.proposals \
   --fast
 ```
 
-Run StarDist refinement:
+Run polygon refinement:
 
 ```bash
 python -m samstars.segmentation.refinement \
@@ -119,7 +119,7 @@ python -m samstars.segmentation.refinement \
   --write-labels
 ```
 
-Build SAM training chips:
+Build proposal-decoder training chips:
 
 ```bash
 python -m samstars.training.chips \
@@ -127,7 +127,7 @@ python -m samstars.training.chips \
   --out-dir /abs/path/training_chips
 ```
 
-Train the SAM decoder:
+Train the proposal decoder:
 
 ```bash
 python -m samstars.training.sam_training \
@@ -137,7 +137,7 @@ python -m samstars.training.sam_training \
   --device cpu
 ```
 
-Build StarDist training records:
+Build refinement training records:
 
 ```bash
 python -m samstars.training.records \
@@ -146,7 +146,7 @@ python -m samstars.training.records \
   --out-dir /abs/path/training_records
 ```
 
-Train StarDist:
+Train the refinement model:
 
 ```bash
 python -m samstars.training.stardist_training \

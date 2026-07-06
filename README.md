@@ -1,31 +1,48 @@
 # samstars
 
 `samstars` is a Python library for instance segmentation of individual trees
-using lidar-derived rasters and WorldView imagery.
+using high-resolution imagery and lidar-derived rasters.
 
 ## Installation
 
-Install the full library:
+For users, install the published library from PyPI:
 
 ```bash
 pip install samstars
 ```
 
-Editable source install:
+`samstars` does not bundle trained model files.
+See [`docs/training.md`](docs/training.md) and
+[`docs/segmentation.md`](docs/segmentation.md) to train a model bundle and run
+segmentation.
+
+## Developer setup
+
+For local development from a clone:
 
 ```bash
 pip install -e .
 ```
 
-If pip wheels are not available for your platform, or if you want the most
-reproducible setup, use the platform Conda environment files documented in
-[`docs/installation.md`](docs/installation.md).
+For documentation development:
+
+```bash
+pip install -e ".[docs]"
+mkdocs serve
+```
+
+For reproducible development environments, use the platform Conda environment
+files in this repository:
+
+```bash
+conda env create -f environment.ubuntu.samstars.yml
+conda activate samstars
+```
+
+On macOS, use `environment.macos.samstars.yml` instead.
 
 ## Notes
 
 - `pip install samstars` is the simplest install path when your platform resolves the dependencies cleanly.
-- `pip install -e .` installs the current checkout in editable mode.
-- If some dependencies do not install cleanly with pip on your system, use the Conda environment files instead.
-- Segmentation runs also require trained model artifacts.
-- The intended workflow is to train your own models and then use those artifacts for inference.
-- See [`docs/training.md`](docs/training.md) and [`docs/segmentation.md`](docs/segmentation.md) for the library-facing usage contract.
+- Segmentation runs require a trained `samstars` model bundle.
+- The intended workflow is to train a model bundle for your data and then use it for segmentation.

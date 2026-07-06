@@ -1,24 +1,21 @@
 # Quick Start
 
-This page shows the fastest path to run tree crown segmentation with `samstars`.
-It assumes you are starting from a small input area.
+Run tree crown segmentation from a trained `samstars` model bundle and one small input area.
 
-## 1) Install and activate the environment
+## 1) Install the library
 
 ```bash
 pip install samstars
 ```
 
-Or use the pinned Conda environment from [Installation](installation.md) if you want the repo development setup.
-
-## 2) Train or prepare a model bundle
+## 2) Prepare a model bundle
 
 `samstars` does not bundle pretrained model weights.
 Train a model bundle for your own data first, or prepare one separately.
 
 See [Training](training.md) for how to produce a bundle directory with `samstars.train(...)`.
 
-## 3) Run segmentation on a small input area
+## 3) Segment a small input area
 
 ```python
 from pathlib import Path

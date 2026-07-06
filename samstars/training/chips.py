@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build SAM training chips from prepared tiles and crown annotations."""
+"""Build proposal-decoder training chips from prepared tiles and crown annotations."""
 
 from __future__ import annotations
 
@@ -68,7 +68,7 @@ def build_training_chips(
     image_bands: tuple[int, ...] = (1, 2, 3),
     skip_tiles: tuple[str, ...] = (),
 ) -> int:
-    """Build training chips for the SAM decoder from labeled tiles."""
+    """Build proposal-decoder training chips from labeled tiles."""
     stride = chip_size if stride is None else int(stride)
     skip_set = set(skip_tiles)
 
@@ -155,7 +155,7 @@ def build_training_chips(
 
 def main() -> None:
     """Run the command-line entry point."""
-    parser = argparse.ArgumentParser(description="Build SAM training chips from labeled tiles.")
+    parser = argparse.ArgumentParser(description="Build proposal-decoder training chips from labeled tiles.")
     parser.add_argument("--tiles-dir", type=Path, required=True, help="Directory containing prepared tile folders")
     parser.add_argument("--out-dir", type=Path, required=True, help="Directory to write training chips")
     parser.add_argument("--chip-size", type=int, default=512, help="Output chip size in pixels")

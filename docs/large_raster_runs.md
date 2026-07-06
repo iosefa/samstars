@@ -1,8 +1,8 @@
 # Large Raster Runs
 
-Use prepared tiles when the inference scene is too large or expensive to prepare and segment as one raw scene.
+Use prepared tiles when the segmentation area is too large or expensive to prepare as one scene.
 
-The large-raster workflow has two steps:
+Large-raster segmentation has two steps:
 
 1. build tile directories from source rasters
 2. run segmentation from those prepared tiles
@@ -24,7 +24,7 @@ build_tiles(
 )
 ```
 
-Each tile directory contains the prepared inference inputs used by segmentation:
+Each tile directory contains the aligned inputs used by segmentation:
 
 - `img.tif`
 - `chm.tif`
@@ -33,7 +33,7 @@ Each tile directory contains the prepared inference inputs used by segmentation:
 
 `tile` and `overlap` are expressed in raster CRS units. For projected data in meters, `tile=500.0` creates approximately 500-meter tiles.
 
-## Segment Tiles With a Bundle
+## Segment Prepared Tiles
 
 ```python
 from pathlib import Path
@@ -51,9 +51,9 @@ result = segment(
 print(result.crowns)
 ```
 
-This is the recommended path when you trained with `samstars.train(...)`.
+Use this when you trained or received a `samstars` model bundle.
 
-## Segment Tiles With Direct Artifacts
+## Segment With Separate Model Files
 
 ```python
 from pathlib import Path
@@ -69,13 +69,14 @@ run_segmentation(
 )
 ```
 
+Use this path when you have a SAM decoder checkpoint and a StarDist model directory instead of a model bundle.
 Use `"cuda"` on supported Linux/NVIDIA systems. Use `"mps"` on supported Apple Silicon environments.
 
 ## Choosing Tile Settings
 
-Use tiles large enough to include useful crown context, but small enough to keep SAM proposal generation stable. Increase overlap when edge effects are visible near tile boundaries.
+Use tiles large enough to include useful crown context, but small enough to keep proposal generation stable. Increase overlap when edge effects are visible near tile boundaries.
 
-The outer tile size controls prepared inference units. StarDist can also run internal refinement windows through `stardist_window_size_m`, `stardist_window_overlap_m`, and `stardist_dedup_iou_thr`.
+The outer tile size controls prepared segmentation units. Polygon refinement can also use internal windows through `stardist_window_size_m`, `stardist_window_overlap_m`, and `stardist_dedup_iou_thr`.
 
 ## Outputs
 
@@ -87,4 +88,4 @@ run_dir/segmentation_run/crowns/crowns.gpkg
 
 Persistent runs also keep tile records, pending records, proposal rasters, proposal records, scale stats, and optional labels under the segmentation output directory.
 
-See [Segmentation](segmentation.md), [Data Preparation](data_preparation.md), and [Examples](examples.md) for lower-level controls and runnable wrappers.
+See [Data Preparation](data_preparation.md), [Segmentation](segmentation.md), and [Examples](examples.md) for related workflows.

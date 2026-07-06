@@ -199,7 +199,7 @@ class SamStarsResult:
 
 
 class SamStars:
-    """Runtime wrapper around a flat samstars model bundle."""
+    """Runtime wrapper around a samstars model bundle."""
 
     def __init__(self, model: Path):
         self.root = Path(model)
@@ -268,7 +268,7 @@ class SamStars:
         out: Path,
         defaults: dict[str, Any],
     ) -> Path:
-        """Write the flat model-bundle manifest."""
+        """Write the model-bundle manifest."""
         thresholds_name = "thresholds.json" if (out / "thresholds.json").exists() else None
         manifest = {
             "bundle_format": _BUNDLE_FORMAT,
@@ -328,7 +328,7 @@ class SamStars:
             shutil.copytree(labels_src, labels_dst)
 
     def _stage_stardist_model(self, stage_root: Path) -> Path:
-        """Create a temporary nested StarDist directory expected by the low-level refinement path."""
+        """Create the temporary StarDist directory used by refinement."""
         model_root = stage_root / "stardist_model"
         nested = model_root / "stardist"
         nested.mkdir(parents=True, exist_ok=True)
@@ -381,7 +381,7 @@ class SamStars:
         stardist_cpu: bool = False,
         fast: bool = False,
     ) -> SamStars:
-        """Train a flat samstars model bundle from one labeled area or prepared labeled tiles."""
+        """Train a samstars model bundle from one labeled area or prepared labeled tiles."""
         from samstars.data import build_scale_stats_from_proposal_records
         from samstars.segmentation.engine import run_segmentation
         from samstars.training.chips import build_training_chips
@@ -732,7 +732,7 @@ def train(
     stardist_cpu: bool = False,
     fast: bool = False,
 ) -> SamStars:
-    """Train a flat samstars model bundle and return its runtime wrapper."""
+    """Train a samstars model bundle and return its runtime wrapper."""
     return SamStars.train(
         tiles_dir=tiles_dir,
         img=img,
