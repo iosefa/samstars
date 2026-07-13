@@ -22,6 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
+import geopandas as gpd
 import numpy as np
 import rasterio
 from csbdeep.utils import normalize
@@ -78,56 +79,66 @@ def _write_features_gpkg(
     path: Path,
     features_list: list[dict],
     *,
-    schema: dict,
     crs_wkt: str | None,
 ) -> None:
     """Write polygon features to a GeoPackage via an atomic replacement."""
-    import fiona
-
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp.gpkg")
     if tmp.exists():
         tmp.unlink()
-    with fiona.open(
-        tmp,
-        "w",
-        driver="GPKG",
-        layer="crowns",
-        schema=schema,
-        crs_wkt=crs_wkt,
-    ) as dst:
-        for idx, feat in enumerate(features_list, start=1):
-            dst.write(
-                {
-                    "geometry": feat["geometry"].__geo_interface__,
-                    "properties": {
-                        "id": int(idx),
-                        "source": feat["source"],
-                        "label": int(feat["label"]),
-                        "score": float(feat["score"]),
-                    },
-                }
-            )
-    tmp.replace(path)
+
+    feature_count = len(features_list)
+    frame = gpd.GeoDataFrame(
+        {
+            "id": np.arange(1, feature_count + 1, dtype=np.int64),
+            "source": np.asarray(
+                [str(feat["source"]) for feat in features_list],
+                dtype=object,
+            ),
+            "label": np.asarray(
+                [int(feat["label"]) for feat in features_list],
+                dtype=np.int64,
+            ),
+            "score": np.asarray(
+                [float(feat["score"]) for feat in features_list],
+                dtype=np.float64,
+            ),
+        },
+        geometry=gpd.GeoSeries(
+            [feat["geometry"] for feat in features_list],
+            crs=crs_wkt,
+        ),
+        crs=crs_wkt,
+    )
+    try:
+        frame.to_file(
+            tmp,
+            driver="GPKG",
+            layer="crowns",
+            engine="pyogrio",
+            geometry_type="Polygon",
+            index=False,
+        )
+        tmp.replace(path)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def _read_features_gpkg(path: Path) -> list[dict]:
     """Read polygon features from a refinement checkpoint GeoPackage."""
-    import fiona
-
     features_list: list[dict] = []
-    with fiona.open(path, layer="crowns") as src:
-        for feat in src:
-            props = dict(feat["properties"])
-            score = props.get("score", float("nan"))
-            features_list.append(
-                {
-                    "geometry": shape(feat["geometry"]),
-                    "source": str(props.get("source", "")),
-                    "label": int(props.get("label", 0)),
-                    "score": float(score) if score is not None else float("nan"),
-                }
-            )
+    frame = gpd.read_file(path, layer="crowns", engine="pyogrio")
+    for feat in frame.itertuples(index=False):
+        score = feat.score
+        features_list.append(
+            {
+                "geometry": feat.geometry,
+                "source": str(feat.source),
+                "label": int(feat.label),
+                "score": float(score) if score is not None else float("nan"),
+            }
+        )
     return features_list
 
 
@@ -159,7 +170,6 @@ def _bootstrap_checkpoint_from_label(
     source: str,
     shard_path: Path,
     done_marker: Path,
-    schema: dict,
     crs_wkt: str | None,
     min_area_m2: float,
 ) -> int:
@@ -181,7 +191,7 @@ def _bootstrap_checkpoint_from_label(
             min_area_m2=float(min_area_m2),
         )
     ]
-    _write_features_gpkg(shard_path, record_features, schema=schema, crs_wkt=crs_wkt)
+    _write_features_gpkg(shard_path, record_features, crs_wkt=crs_wkt)
     _write_json_atomic(
         done_marker,
         {
@@ -604,16 +614,6 @@ def main() -> None:
                 shutil.rmtree(labels_dir)
             labels_dir.mkdir(parents=True, exist_ok=True)
 
-    schema = {
-        "geometry": "Polygon",
-        "properties": {
-            "id": "int",
-            "source": "str",
-            "label": "int",
-            "score": "float",
-        },
-    }
-
     wrote = 0
     crs_wkt = _first_crs_wkt(recs, args.input_key)
     skipped = 0
@@ -653,7 +653,6 @@ def main() -> None:
                         source=source,
                         shard_path=shard_path,
                         done_marker=done_marker,
-                        schema=schema,
                         crs_wkt=crs_wkt,
                         min_area_m2=float(args.min_area_m2),
                     )
@@ -789,7 +788,7 @@ def main() -> None:
                 }
                 for poly, lbl_id, score in window_polys
             ]
-            _write_features_gpkg(shard_path, record_features, schema=schema, crs_wkt=crs_wkt)
+            _write_features_gpkg(shard_path, record_features, crs_wkt=crs_wkt)
             _write_json_atomic(
                 done_marker,
                 {
@@ -811,7 +810,7 @@ def main() -> None:
         iou_thr=float(args.dedup_iou_thr),
     )
 
-    _write_features_gpkg(out_gpkg, out_features, schema=schema, crs_wkt=crs_wkt)
+    _write_features_gpkg(out_gpkg, out_features, crs_wkt=crs_wkt)
     wrote = len(out_features)
 
     print(f"✓ wrote {wrote} crown polygons to {out_gpkg}")
