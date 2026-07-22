@@ -61,12 +61,11 @@ Use these functions for experiments, partial reruns, and custom training workflo
 
 ## Feature Helpers
 
-Use these modules when you need custom feature preparation or utility behavior:
+Use this module when you need custom feature preparation:
 
 - `samstars.features`
-- `samstars.utils`
 
-These expose cost-surface, seed-generation, raster, and geometry helpers.
+It exposes cost-surface and seed-generation helpers.
 
 ## Choosing an Interface
 

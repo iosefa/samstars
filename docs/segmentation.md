@@ -53,7 +53,9 @@ result = segment(
 print(result.crowns)
 ```
 
-Use `"cuda"` on supported Linux/NVIDIA systems. Use `"mps"` on supported Apple Silicon environments.
+CPU is the supported baseline. Use `"cuda"` only when PyTorch reports CUDA as
+available, and use `"mps"` only when PyTorch reports MPS as available. See
+[Installation](installation.md).
 
 `storage="persistent"` keeps run records, prepared inputs, proposal rasters, scale stats, labels, and crown outputs under `out`. `storage="temp"` uses temporary intermediate storage and copies durable final outputs back to `out`.
 

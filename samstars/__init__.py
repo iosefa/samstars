@@ -13,7 +13,6 @@ __all__ = [
     "segmentation",
     "training",
     "features",
-    "utils",
     "CostSurfaceWeights",
     "SeedParams",
     "build_cost_surface",
@@ -23,7 +22,7 @@ __all__ = [
     "canonical_seeds",
 ]
 
-_SUBMODULES = {"data", "segmentation", "training", "features", "utils"}
+_SUBMODULES = {"data", "segmentation", "training", "features"}
 _API_EXPORTS = {"SamStars", "SamStarsResult", "train", "segment"}
 _FEATURE_EXPORTS = {
     "CostSurfaceWeights",

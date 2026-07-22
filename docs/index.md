@@ -1,6 +1,6 @@
 # samstars Documentation
 
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](installation.md)
+[![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](installation.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/iosefa/samstars/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-mkdocs%20material-0A7F46)](index.md)
 [![Repo](https://img.shields.io/badge/github-iosefa%2Fsamstars-black?logo=github)](https://github.com/iosefa/samstars)
@@ -40,7 +40,8 @@ result = segment(
 print(result.crowns)
 ```
 
-Use `"cuda"` on supported Linux/NVIDIA systems.
+CPU is the supported baseline. Use `"cuda"` or `"mps"` only after verifying
+the accelerator as described in [Installation](installation.md).
 
 See [Installation](installation.md) to install the library.
 For a minimal run path, see [Quick Start](quickstart.md).

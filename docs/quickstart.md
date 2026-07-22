@@ -5,7 +5,7 @@ Run tree crown segmentation from a trained `samstars` model bundle and one small
 ## 1) Install the library
 
 ```bash
-pip install samstars
+python -m pip install samstars
 ```
 
 ## 2) Prepare a model bundle
@@ -33,7 +33,8 @@ segment(
 )
 ```
 
-Use `"cuda"` on supported Linux/NVIDIA systems.
+CPU is the supported baseline. See [Installation](installation.md) before
+selecting `"cuda"` or `"mps"`.
 
 Use `storage="persistent"` when you want to keep proposals, prep artifacts, and other run state under `out`.
 Use `storage="temp"` when you only want final outputs left in `out`.

@@ -19,7 +19,7 @@ Required:
 
 Optional:
   --python BIN                Python executable (default: python3)
-  --device DEV                SAM device (default: mps)
+  --device DEV                SAM device (default: cpu)
   --skip-existing-sam         Run SAM only on chips without existing proposal rasters (default)
   --no-skip-existing-sam      Recompute SAM for every tile record
   --crop-smooth-sigma FLOAT   Per-crop SAM logit blur sigma (default: 2)
@@ -39,7 +39,7 @@ export PYTHONPATH="${ROOT_DIR}:${PYTHONPATH:-}"
 PYTHON_BIN="python3"
 TILES_DIR=""
 OUT_DIR=""
-DEVICE="mps"
+DEVICE="cpu"
 SAM_CKPT=""
 STARDIST_MODEL=""
 STARDIST_INPUT_KEY="index"

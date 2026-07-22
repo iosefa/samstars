@@ -70,7 +70,8 @@ run_segmentation(
 ```
 
 Use this path when you have a SAM decoder checkpoint and a StarDist model directory instead of a model bundle.
-Use `"cuda"` on supported Linux/NVIDIA systems. Use `"mps"` on supported Apple Silicon environments.
+CPU is the supported baseline. Use `"cuda"` or `"mps"` only after verifying
+the accelerator as described in [Installation](installation.md).
 
 ## Choosing Tile Settings
 

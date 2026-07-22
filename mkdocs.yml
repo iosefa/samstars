@@ -71,7 +71,6 @@ nav:
         - samstars.training.records: api/training_records.md
         - samstars.training.sam_training: api/training_sam.md
         - samstars.training.stardist_training: api/training_stardist.md
-        - samstars.utils: api/utils.md
     - Report Issues: https://github.com/iosefa/samstars/issues
 
 extra_css:
