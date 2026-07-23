@@ -1,5 +1,6 @@
 site_name: samstars
 site_description: Multimodal instance segmentation of individual trees
+site_url: https://samstars.sefa.ai
 repo_url: https://github.com/iosefa/samstars
 docs_dir: docs
 
@@ -15,7 +16,6 @@ theme:
         - navigation.sections
         - search.highlight
         - search.suggest
-    custom_dir: overrides
 
 plugins:
     - search
@@ -74,4 +74,4 @@ nav:
     - Report Issues: https://github.com/iosefa/samstars/issues
 
 extra_css:
-    - overrides/custom.css
+    - stylesheets/extra.css

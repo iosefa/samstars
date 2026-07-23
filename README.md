@@ -3,6 +3,8 @@
 `samstars` is a Python library for instance segmentation of individual trees
 using high-resolution imagery and lidar-derived rasters.
 
+Read the full documentation at [samstars.sefa.ai](https://samstars.sefa.ai).
+
 ## Installation
 
 For users, install the published library from PyPI:
@@ -19,9 +21,9 @@ CUDA users should install a matched PyTorch/Torchvision build using the
 installing `samstars`.
 
 `samstars` does not bundle trained model files.
-See [`docs/training.md`](docs/training.md) and
-[`docs/segmentation.md`](docs/segmentation.md) to train a model bundle and run
-segmentation.
+See the [training](https://samstars.sefa.ai/training/) and
+[segmentation](https://samstars.sefa.ai/segmentation/) guides to train a model
+bundle and run segmentation.
 
 ## Developer setup
 
