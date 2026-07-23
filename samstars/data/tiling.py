@@ -5,7 +5,7 @@ make_tiles.py – split IMG / CHM / COST / SEEDS into 500 m tiles (+20 m ove
 """
 
 from __future__ import annotations
-import sys, argparse, tempfile, shutil
+import sys, argparse, tempfile, shutil, warnings
 from pathlib import Path
 import numpy as np
 import rasterio
@@ -19,6 +19,20 @@ from tqdm.auto import tqdm
 
 # local libraries
 from samstars.features import build_cost_surface, canonical_seeds, SeedParams
+
+
+_SUPPRESSED_TILE_WARNING_PATTERNS = (
+    r"Warning: 'partition' will ignore the 'mask' of the MaskedArray\.",
+    r"No SLIC provided .* cost built from 3 terms only\.",
+    r"Precomputed sparse input was not sorted by row values\.",
+)
+
+
+def _suppress_repeated_tile_warnings():
+    """Suppress known per-tile warnings that otherwise corrupt tqdm output."""
+    for pattern in _SUPPRESSED_TILE_WARNING_PATTERNS:
+        warnings.filterwarnings("ignore", message=pattern)
+
 
 # ───────────────────────── helpers ─────────────────────────────
 def _align_to_img(src: Path | str, img_ds: rasterio.DatasetReader):
@@ -121,6 +135,8 @@ def _prepare_tile(
     skip_existing: bool,
 ) -> bool:
     """Internal helper function."""
+    _suppress_repeated_tile_warnings()
+
     required = _required_tile_outputs(tile_dir, write_den=write_den)
     if skip_existing and all(p.exists() for p in required):
         return True
@@ -196,6 +212,7 @@ def build_tiles(*,
                 img: Path,
                 chm: Path,
                 den: Path,
+                rgb_bands: tuple[int, int, int] | None = None,
                 slic: Path | None = None,
                 out: Path = Path("tiles"),
                 tile: float = 500.0,
@@ -221,7 +238,11 @@ def build_tiles(*,
 
         img_h, img_w = img_ds.height, img_ds.width
         img_tfm, img_crs = img_ds.transform, img_ds.crs
-        rgb_bands = (7, 5, 3) if img_ds.count >= 7 else (1, 2, 3)
+        rgb_bands = tuple(rgb_bands) if rgb_bands is not None else ((7, 5, 3) if img_ds.count >= 7 else (1, 2, 3))
+        if len(rgb_bands) != 3:
+            raise ValueError("rgb_bands must contain exactly 3 band indices.")
+        if any(b < 1 or b > img_ds.count for b in rgb_bands):
+            raise ValueError(f"rgb_bands must be between 1 and {img_ds.count}.")
 
         base_meta = img_ds.profile | {"driver": "GTiff", "count": 3,
                                       "compress": "deflate", "predictor": 2,
@@ -284,6 +305,7 @@ def build_single_tile(*,
                       chm: Path,
                       den: Path,
                       crowns: Path | None = None,
+                      rgb_bands: tuple[int, int, int] | None = None,
                       slic: Path | None = None,
                       out: Path = Path("tiles"),
                       tile_name: str = "tile_000_000",
@@ -307,7 +329,11 @@ def build_single_tile(*,
         res = abs(img_ds.transform.a)
         assert abs(res - abs(img_ds.transform.e)) < 1e-6, "non-square pixels"
 
-        rgb_bands = (7, 5, 3) if img_ds.count >= 7 else (1, 2, 3)
+        rgb_bands = tuple(rgb_bands) if rgb_bands is not None else ((7, 5, 3) if img_ds.count >= 7 else (1, 2, 3))
+        if len(rgb_bands) != 3:
+            raise ValueError("rgb_bands must contain exactly 3 band indices.")
+        if any(b < 1 or b > img_ds.count for b in rgb_bands):
+            raise ValueError(f"rgb_bands must be between 1 and {img_ds.count}.")
         base_meta = img_ds.profile | {
             "driver": "GTiff",
             "count": 3,
@@ -376,6 +402,8 @@ def _parse_cli():
     pa.add_argument("--img", required=True, type=Path)
     pa.add_argument("--chm", required=True, type=Path)
     pa.add_argument("--den", required=True, type=Path)
+    pa.add_argument("--rgb-bands", nargs=3, type=int, default=None,
+                    help="Three 1-based image bands to write to img.tif. Defaults to (7,5,3) when available, else (1,2,3).")
     pa.add_argument("--slic", type=Path, default=None)
     pa.add_argument("--out",  type=Path, default=Path("tiles"))
     pa.add_argument("--tile", type=float, default=500.0)
@@ -415,6 +443,7 @@ def _main():
     ns = _parse_cli()
     try:
         build_tiles(img=ns.img, chm=ns.chm, den=ns.den,
+                    rgb_bands=tuple(ns.rgb_bands) if ns.rgb_bands is not None else None,
                     slic=ns.slic, out=ns.out,
                     tile=ns.tile, overlap=ns.overlap,
                     cost_weights=tuple(ns.weights),

@@ -7,7 +7,6 @@ from .scaling import (
     scale_to_01,
     scale_to_u8_per_channel,
 )
-from .tiling import build_single_tile, build_tiles
 
 __all__ = [
     "build_single_tile",
@@ -19,3 +18,12 @@ __all__ = [
     "scale_to_01",
     "scale_to_u8_per_channel",
 ]
+
+
+def __getattr__(name):
+    """Lazy-load tiling helpers so ``python -m samstars.data.tiling`` is clean."""
+    if name in {"build_single_tile", "build_tiles"}:
+        from .tiling import build_single_tile, build_tiles
+
+        return {"build_single_tile": build_single_tile, "build_tiles": build_tiles}[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train Keras StarDist2D on per-chip inputs derived from proposal outputs.
+Train the polygon-refinement model on per-chip inputs derived from proposal outputs.
 
 This version restores the *original* StarDist training behavior that worked well:
 - Use canopy index (default: record key "index") rather than raw SAM prob
@@ -196,6 +196,7 @@ def train_stardist_model(
     train_records: Path,
     val_records: Path,
     out_dir: Path,
+    model_name: str = "stardist",
     epochs: int = 50,
     min_iters: int = 0,
     input_key: str = "index",
@@ -241,11 +242,21 @@ def train_stardist_model(
 
     n_channels = Xtr[0].shape[-1]
     conf = Config2D(n_rays=32, grid=(2, 2), use_gpu=False, n_channel_in=n_channels)
-    model = StarDist2D(conf, name="stardist", basedir=str(out_dir))
+    model = StarDist2D(conf, name=model_name, basedir=str(out_dir))
 
     val_data = (Xval, Yval) if (len(Xval) > 0 and len(Yval) > 0) else None
     aug = augmenter if augment else None
-    model.train(Xtr, Ytr, validation_data=val_data, epochs=epochs, augmenter=aug)
+    if val_data is None:
+        print("no validation records found; reusing training data as validation_data")
+        val_data = (Xtr, Ytr)
+
+    model.train(
+        Xtr,
+        Ytr,
+        validation_data=val_data,
+        epochs=epochs,
+        augmenter=aug,
+    )
 
     if val_data is not None:
         try:
@@ -254,15 +265,16 @@ def train_stardist_model(
         except Exception as exc:
             print(f"[warn] threshold optimization failed: {exc}")
 
-    print(f"✓ trained StarDist -> {out_dir}")
+    print(f"✓ trained refinement model -> {out_dir / model_name}")
 
 
 def main() -> None:
     """Run the command-line entry point."""
-    pa = argparse.ArgumentParser(description="Train a StarDist refinement model from proposal-record files.")
+    pa = argparse.ArgumentParser(description="Train the polygon-refinement model from proposal-record files.")
     pa.add_argument("--train-records", type=Path, required=True, help="Training proposal-record JSON with masks")
     pa.add_argument("--val-records", type=Path, required=True, help="Validation proposal-record JSON with masks")
-    pa.add_argument("--out-dir", type=Path, required=True, help="Output directory for the trained StarDist model")
+    pa.add_argument("--out-dir", type=Path, required=True, help="Output directory for the trained refinement model")
+    pa.add_argument("--model-name", type=str, default="stardist", help="Model subdir name to create under --out-dir")
     pa.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     pa.add_argument("--min-iters", type=int, default=0, help="Minimum training iterations (converted to epochs)")
 
@@ -296,6 +308,7 @@ def main() -> None:
         train_records=args.train_records,
         val_records=args.val_records,
         out_dir=args.out_dir,
+        model_name=args.model_name,
         epochs=args.epochs,
         min_iters=args.min_iters,
         input_key=args.input_key,

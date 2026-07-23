@@ -9,9 +9,7 @@ from samstars.data import build_scale_stats_from_proposal_records
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
-    pa = argparse.ArgumentParser(
-        description="Build StarDist scale-stats JSON (chm_01 lo/hi) from proposal records."
-    )
+    pa = argparse.ArgumentParser(description="Build CHM scale-stats JSON from proposal records.")
     pa.add_argument("--proposal-records", type=Path, required=True, help="Path to proposal_records.json")
     pa.add_argument("--out", type=Path, required=True, help="Output JSON path (e.g., scale_2_98.json)")
     pa.add_argument(

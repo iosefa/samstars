@@ -1,55 +1,60 @@
 # Examples
 
-The `examples/` directory contains runnable wrappers around the library API.
+The examples are notebook walkthroughs for the main `samstars` use cases.
+Use them when you want to run the workflow step by step in a local checkout.
 
-Use these when you want a ready-to-run command.
-Use the Python API in [Quick Start](quickstart.md) and [Segmentation](segmentation.md) when you want to integrate `samstars` directly into your own code.
+They are tutorials, not evaluation protocols.
+For model assessment, keep separate training and held-out areas.
 
-These wrappers are repository-local helper scripts.
-They are useful when you are working from a checkout of this repo.
-They are not installed as console commands by `pip install samstars`.
+## Train and Segment One Area
 
-## Main wrappers
+Use [Train and Segment One Area](train_and_segment_one_area.ipynb) when you want the shortest end-to-end training and segmentation walkthrough.
 
-- `examples/run_tiled_segmentation.sh`
+The notebook uses one labeled training package to train a model bundle, then segments a small input area with that bundle.
 
-## End-to-end tutorial
+It covers:
 
-Use this when you have one labeled area and want to:
+1. setting training and segmentation paths
+2. choosing tutorial parameters
+3. training a model bundle
+4. inspecting persistent training outputs
+5. segmenting an input area
+6. reading the final crown output
 
-1. prepare training chips
-2. train the models
-3. inspect SAM proposal outputs
-4. run segmentation on the same area
+## Train and Segment a Tiled Area
 
-This is a tutorial example, not a recommended evaluation setup.
-For real model assessment, keep separate training and held-out areas.
+Use [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb) when the segmentation area should be prepared and processed as tiles.
 
-See [Train and Segment One Area](train_and_segment_one_area.ipynb) for the rendered notebook walkthrough.
+The notebook trains one model bundle from a labeled training package, builds prepared inference tiles from larger rasters, and segments those tiles.
 
-The notebook walks through:
+It covers:
 
-1. preparing one labeled tile
-2. building SAM training chips
-3. training the SAM decoder
-4. inspecting SAM proposal outputs
-5. building StarDist training records
-6. training StarDist
-7. running segmentation
+1. training one model bundle
+2. building prepared tiles from larger segmentation rasters
+3. running segmentation from the prepared tiles
+4. reading the final crown output
 
-The final output path is:
+## Retrain Refinement for One Area
 
-- `/abs/path/run_dir/segmentation_run/crowns/crowns.gpkg`
+Use [Retrain Refinement for One Area](retrain_stardist_one_area.ipynb) when proposal rasters already exist and you want to rebuild only the polygon-refinement stage with a different crown-label layer.
 
-## Utility wrappers
+The notebook reuses saved proposal rasters from a persistent training run, builds new refinement records, trains a new refinement model, and writes a new crown output.
 
-- `examples/build_tile_records.py`
-- `examples/build_pending_tile_records.py`
-- `examples/build_scale_stats_from_proposal_records.py`
+It covers:
 
-## Suggested sequence
+1. preparing a labeled tile for refinement training
+2. reusing existing proposal records
+3. building refinement training records
+4. training a replacement refinement model
+5. rerunning refinement without rerunning proposal generation
 
-1. Use [Train and Segment One Area](train_and_segment_one_area.ipynb) when you want one labeled area to exercise the full pipeline end to end.
-2. Run [Quick Start](quickstart.md) for the shorter inference-only path.
-3. Use [Segmentation](segmentation.md) variants when you already have trained models.
-4. Use API-level functions when you need lower-level control.
+## Suggested Sequence
+
+1. Start with [Quick Start](quickstart.md) for the shortest inference path.
+2. Use [Training](training.md) to create a model bundle.
+3. Use [Segmentation](segmentation.md) when you already have a trained bundle or separate model files.
+4. Use [Downstream Analysis](downstream.md) when you want to use crown polygons for species classification or other crown-level analyses.
+5. Use [Large Raster Runs](large_raster_runs.md) for tiled inference scenes.
+6. Use the notebooks when you want an end-to-end walkthrough in a local checkout.
+
+For repository-local command-line wrappers and utility scripts, see [CLI Scripts](reference/cli.md).

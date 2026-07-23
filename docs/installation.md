@@ -1,105 +1,150 @@
 # Installation
 
-## Choose an install path
+## Supported environments
 
-Use one of these:
+The initial `samstars` release supports Python 3.10 through 3.12 on these
+64-bit platforms:
 
-1. **PyPI install**: install the library with pip.
-2. **GitHub/source install**: install from this repository.
-3. **Developer/reproducible setup**: use the pinned conda environment files.
+| Platform | Baseline | Optional acceleration |
+| --- | --- | --- |
+| Ubuntu 20.04 or newer on x86-64 | CPU | NVIDIA CUDA |
+| macOS 14 or newer on Apple Silicon | CPU | PyTorch MPS and TensorFlow Metal |
 
-`samstars` uses geospatial and ML dependencies.
-Depending on your platform, some of these may need to be installed separately.
-If you want the most predictable setup, use the Conda environment files.
+CPU execution is the supported baseline and is used by the examples unless
+stated otherwise. Windows, Linux ARM64, and Intel macOS are not currently
+tested release targets.
 
-## Option 1: pip install the library
+## Install the library from PyPI
 
 ```bash
-pip install samstars
+python -m pip install --upgrade pip
+python -m pip install samstars
 ```
 
-Use this when your Python environment can resolve the required dependencies cleanly.
+This installs the geospatial libraries and CPU-capable machine-learning stack
+needed by the documented workflows. Accelerator-specific setup is separate so
+that a normal installation does not require CUDA or Metal.
 
-If some native or platform-specific dependencies do not install with pip on your system, install those separately or use the Conda environment files instead.
+On Linux, use PyTorch's CPU-only package index when you do not want pip to
+install NVIDIA runtime libraries:
+
+```bash
+python -m pip install "torch>=2.3,<3" "torchvision>=0.18,<1" \
+  --index-url https://download.pytorch.org/whl/cpu
+python -m pip install samstars
+```
 
 `samstars` does not bundle trained model files.
 See [Training](training.md) and [Segmentation](segmentation.md).
 
-## Option 2: install from GitHub or from a local clone
-
-Latest source from GitHub:
-
-```bash
-pip install "git+https://github.com/iosefa/sam.git"
-```
-
-Editable development install from a local clone:
-
-```bash
-git clone https://github.com/iosefa/sam.git
-cd sam
-pip install -e .
-```
-
 Verify:
 
 ```bash
-python -c "import samstars; print('samstars import ok')"
+python -c "import samstars, torch, tensorflow as tf; print('samstars import ok'); print('torch', torch.__version__); print('tensorflow', tf.__version__)"
 pip show samstars
 ```
 
-## Option 3 (Developer/Reproducible): pinned conda environment files
+## NVIDIA CUDA on Linux
 
-Use these when you want the repo development environment with the project dependencies pinned.
-
-### Ubuntu
-
-```bash
-mamba env create -f environment.ubuntu.samstars.yml
-conda activate samstars
-```
-
-### macOS
+CUDA builds of PyTorch and Torchvision must be installed as a matched pair.
+Use the [official PyTorch installation selector](https://pytorch.org/get-started/locally/)
+to install a pair within the supported ranges (`torch>=2.3,<3` and
+`torchvision>=0.18,<1`), then install `samstars`:
 
 ```bash
-mamba env create -f environment.macos.samstars.yml
-conda activate samstars
+# Run the command produced by the PyTorch selector first.
+python -m pip install "tensorflow[and-cuda]>=2.15,<2.19"
+python -m pip install samstars
 ```
 
-Update an existing environment:
-
-```bash
-mamba env update -n samstars -f environment.ubuntu.samstars.yml
-```
-
-## CUDA and GPU notes
-
-- For NVIDIA acceleration on Ubuntu/Linux, you need a working NVIDIA driver on the host.
-- The provided Ubuntu environment file includes the CUDA-enabled packages used by this project.
-- A pip install may still require additional platform-specific setup for GPU use.
+The TensorFlow command follows the
+[official TensorFlow pip guide](https://www.tensorflow.org/install/pip) and
+requires a compatible NVIDIA driver. If TensorFlow GPU support is not needed,
+omit that command and let `samstars` install standard TensorFlow.
+PyTorch and TensorFlow detect accelerators independently: `device="cuda"`
+controls the SAM stage, while TensorFlow controls StarDist. Set
+`stardist_cpu=True` when only the SAM stage should use CUDA.
 
 Check CUDA availability:
 
 ```bash
 python - <<'PY'
 import torch
+import tensorflow as tf
+
 print("torch:", torch.__version__)
 print("cuda runtime:", torch.version.cuda)
 print("cuda available:", torch.cuda.is_available())
 print("device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "none")
+print("tensorflow:", tf.__version__)
+print("tensorflow GPUs:", tf.config.list_physical_devices("GPU"))
 PY
 ```
 
-- On some newer NVIDIA GPUs, specific kernels may be unstable due to runtime/PTX compatibility.
-- If that happens, run the affected step on CPU (`CUDA_VISIBLE_DEVICES=""`), which is supported by the example run commands.
+Use `device="cuda"` only when `torch.cuda.is_available()` returns `True`.
 
-Check visible accelerators in the environment:
+## Apple Silicon acceleration
+
+The standard Apple Silicon PyTorch build can use MPS when it is available.
+TensorFlow Metal support is optional; see Apple's
+[TensorFlow acceleration guide](https://developer.apple.com/metal/tensorflow-plugin/)
+for host requirements:
+
+```bash
+python -m pip install "samstars[metal]"
+```
+
+The `metal` extra installs `tensorflow-metal>=1.2,<2`. Because the plug-in does
+not declare a TensorFlow compatibility range in its package metadata, verify
+both frameworks after installation:
 
 ```bash
 python - <<'PY'
+import torch
 import tensorflow as tf
-print("tf:", tf.__version__)
-print("built with cuda:", tf.test.is_built_with_cuda())
-print("visible GPUs:", tf.config.list_physical_devices("GPU"))
+
+print("mps built:", torch.backends.mps.is_built())
+print("mps available:", torch.backends.mps.is_available())
+print("tensorflow:", tf.__version__)
+print("tensorflow GPUs:", tf.config.list_physical_devices("GPU"))
 PY
 ```
+
+Use `device="mps"` only when `torch.backends.mps.is_available()` returns
+`True`. Otherwise, keep `device="cpu"`. TensorFlow Metal availability does not
+change the PyTorch device setting.
+
+## Conda development environments
+
+The repository environment files provide platform-specific Python 3.10 CPU
+development baselines. From the repository root, use the file for your
+platform and then install the checkout in editable mode:
+
+```bash
+# Ubuntu x86-64
+conda env create -f environment.ubuntu.samstars.yml
+conda activate samstars
+python -m pip install -e .
+```
+
+```bash
+# Apple Silicon macOS
+conda env create -f environment.macos.samstars.yml
+conda activate samstars
+python -m pip install -e .
+```
+
+For Apple Silicon development with TensorFlow Metal, replace the final command
+with `python -m pip install -e ".[metal]"`. The Ubuntu environment pins CPU
+builds of PyTorch and Torchvision. For CUDA development, uninstall those two
+packages after creating the environment, run the matched installation command
+from the PyTorch selector, and then install the checkout:
+
+```bash
+python -m pip uninstall -y torch torchvision
+# Run the matched CUDA command produced by the PyTorch selector.
+python -m pip install -e .
+```
+
+Verify that `torch.version.cuda` is non-empty and
+`torch.cuda.is_available()` is `True` before selecting `device="cuda"`.

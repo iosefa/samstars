@@ -1,48 +1,43 @@
 # Quick Start
 
-This page shows the fastest path to run tree crown segmentation with `samstars`.
-It assumes you are starting from a small input area.
+Run tree crown segmentation from a trained `samstars` model bundle and one small input area.
 
-## 1) Install and activate the environment
+## 1) Install the library
 
 ```bash
-pip install samstars
+python -m pip install samstars
 ```
 
-Or use the pinned Conda environment from [Installation](installation.md) if you want the repo development setup.
-
-## 2) Train or prepare model artifacts
+## 2) Prepare a model bundle
 
 `samstars` does not bundle pretrained model weights.
-Train models for your own data first.
-You will need:
+Train a model bundle for your own data first, or prepare one separately.
 
-- a trained SAM decoder checkpoint
-- a trained StarDist model directory
+See [Training](training.md) for how to produce a bundle directory with `samstars.train(...)`.
 
-See [Training](training.md) for how to produce these artifacts.
-
-## 3) Run segmentation on a small input area
+## 3) Segment a small input area
 
 ```python
 from pathlib import Path
 
-from samstars.segmentation import run_segmentation
+from samstars import segment
 
-run_segmentation(
+segment(
     img=Path("/abs/path/image.tif"),
     chm=Path("/abs/path/chm.tif"),
     den=Path("/abs/path/first_return_density.tif"),
-    out_dir=Path("/abs/path/run_dir/segmentation_run"),
-    sam_ckpt=Path("/abs/path/your_sam_models/sam_crowns_decoder.pth"),
-    stardist_model=Path("/abs/path/your_stardist_models/stardist"),
+    model=Path("/abs/path/your_model_bundle"),
+    out=Path("/abs/path/run_dir/segmentation_run"),
+    storage="temp",
     device="cpu",
 )
 ```
 
-Use `"cuda"` on supported Linux/NVIDIA systems.
+CPU is the supported baseline. See [Installation](installation.md) before
+selecting `"cuda"` or `"mps"`.
 
-The run prepares any required intermediate files under `out_dir` automatically.
+Use `storage="persistent"` when you want to keep proposals, prep artifacts, and other run state under `out`.
+Use `storage="temp"` when you only want final outputs left in `out`.
 
 ## Outputs
 

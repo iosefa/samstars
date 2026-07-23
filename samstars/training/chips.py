@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build SAM training chips from prepared tiles and crown annotations."""
+"""Build proposal-decoder training chips from prepared tiles and crown annotations."""
 
 from __future__ import annotations
 
@@ -36,6 +36,19 @@ def _prompt_from_mask(mask: np.ndarray) -> dict[str, list[int]] | None:
     }
 
 
+def _rasterize_one_geometry(geom, out_shape: tuple[int, int], transform) -> np.ndarray:
+    """Rasterize one geometry into a binary chip mask."""
+    mask = rasterize(
+        [(geom, 1)],
+        out_shape=out_shape,
+        transform=transform,
+        fill=0,
+        all_touched=True,
+        dtype="uint8",
+    )
+    return mask.astype(np.uint8)
+
+
 def _save_prompt_json(path: Path, payload: dict[str, list[int]]) -> None:
     """Write prompt metadata for one chip."""
     with path.open("w", encoding="utf-8") as f:
@@ -55,7 +68,7 @@ def build_training_chips(
     image_bands: tuple[int, ...] = (1, 2, 3),
     skip_tiles: tuple[str, ...] = (),
 ) -> int:
-    """Build training chips for the SAM decoder from labeled tiles."""
+    """Build proposal-decoder training chips from labeled tiles."""
     stride = chip_size if stride is None else int(stride)
     skip_set = set(skip_tiles)
 
@@ -113,30 +126,26 @@ def build_training_chips(
                     image_chip = np.pad(image_chip, ((0, 0), (0, pad_h), (0, pad_w)), mode="constant")
                     chm_chip = np.pad(chm_chip, ((0, pad_h), (0, pad_w)), mode="constant")
 
-                mask_chip = rasterize(
-                    [(geom, 1) for geom in clipped.geometry],
-                    out_shape=(y1 - y0, x1 - x0),
-                    transform=win_transform,
-                    fill=0,
-                    all_touched=True,
-                    dtype="uint8",
-                )
-                if pad_h or pad_w:
-                    mask_chip = np.pad(mask_chip, ((0, pad_h), (0, pad_w)), mode="constant")
+                base_image_chip = image_chip.astype(np.float32)
+                base_chm_chip = chm_chip.astype(np.float32)
+                for geom in clipped.geometry:
+                    mask_chip = _rasterize_one_geometry(geom, (y1 - y0, x1 - x0), win_transform)
+                    if pad_h or pad_w:
+                        mask_chip = np.pad(mask_chip, ((0, pad_h), (0, pad_w)), mode="constant")
 
-                prompt = _prompt_from_mask(mask_chip)
-                if prompt is None:
-                    continue
+                    prompt = _prompt_from_mask(mask_chip)
+                    if prompt is None:
+                        continue
 
-                stem = f"{tile.name}_{chip_id}"
-                np.save(out_dir / "images" / f"{stem}.npy", image_chip.astype(np.float32))
-                np.save(out_dir / "masks" / f"{stem}.npy", mask_chip.astype(np.uint8))
-                np.save(out_dir / "chm" / f"{stem}.npy", chm_chip.astype(np.float32))
-                _save_prompt_json(out_dir / "prompts" / f"{stem}.json", prompt)
+                    stem = f"{tile.name}_{chip_id}"
+                    np.save(out_dir / "images" / f"{stem}.npy", base_image_chip)
+                    np.save(out_dir / "masks" / f"{stem}.npy", mask_chip.astype(np.uint8))
+                    np.save(out_dir / "chm" / f"{stem}.npy", base_chm_chip)
+                    _save_prompt_json(out_dir / "prompts" / f"{stem}.json", prompt)
 
-                chip_id += 1
-                tile_count += 1
-                written += 1
+                    chip_id += 1
+                    tile_count += 1
+                    written += 1
 
         print(f"{tile.name}: wrote {tile_count} training chips")
 
@@ -146,7 +155,7 @@ def build_training_chips(
 
 def main() -> None:
     """Run the command-line entry point."""
-    parser = argparse.ArgumentParser(description="Build SAM training chips from labeled tiles.")
+    parser = argparse.ArgumentParser(description="Build proposal-decoder training chips from labeled tiles.")
     parser.add_argument("--tiles-dir", type=Path, required=True, help="Directory containing prepared tile folders")
     parser.add_argument("--out-dir", type=Path, required=True, help="Directory to write training chips")
     parser.add_argument("--chip-size", type=int, default=512, help="Output chip size in pixels")

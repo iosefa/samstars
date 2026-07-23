@@ -1,33 +1,74 @@
-# API Levels
+# API Guide
 
-samstars is documented in two levels.
+`samstars` exposes a small training and segmentation interface, plus component functions for prepared tiles, records, and custom reruns.
 
-## High-level API (recommended)
+## Model Bundle Workflow
 
-Use these for most applications:
+Use these objects for most training and segmentation runs:
+
+- `samstars.train(...)`
+- `samstars.segment(...)`
+- `samstars.SamStars`
+- `samstars.SamStarsResult`
+
+`train(...)` writes a model bundle and returns a `SamStars` runtime wrapper.
+`segment(...)` accepts either a bundle path or an existing `SamStars` instance and returns a `SamStarsResult`.
+
+```python
+from pathlib import Path
+
+from samstars import segment
+
+result = segment(
+    model=Path("/abs/path/model_bundle"),
+    img=Path("/abs/path/image.tif"),
+    chm=Path("/abs/path/chm.tif"),
+    den=Path("/abs/path/first_return_density.tif"),
+    out=Path("/abs/path/segmentation_run"),
+    storage="persistent",
+)
+```
+
+Use the model bundle workflow when you want stored defaults and a single model directory to pass between training and segmentation.
+
+## Component Functions
+
+Use these functions when you want direct control over prepared tiles, run records, SAM checkpoints, or StarDist model directories:
 
 - `samstars.data`
-- `samstars.segmentation`
-- `samstars.training`
+- `samstars.segmentation.run_segmentation(...)`
+- `samstars.training.chips`
+- `samstars.training.records`
+- `samstars.training.sam_training`
+- `samstars.training.stardist_training`
 
-These provide end-to-end operations with sensible defaults.
+`run_segmentation(...)` uses a direct SAM decoder checkpoint path and a direct StarDist model path.
 
-In practice:
+```python
+from pathlib import Path
 
-- `samstars.data` exposes tiling, run-record, and scaling helpers
-- `samstars.segmentation` exposes `run_segmentation(...)`
-- `samstars.training` exposes training-chip preparation, StarDist record preparation, and the `sam_training` / `stardist_training` entrypoint modules
+from samstars.segmentation import run_segmentation
 
-## Low-level API (advanced)
+run_segmentation(
+    tiles_dir=Path("/abs/path/tiles"),
+    out_dir=Path("/abs/path/segmentation_run"),
+    sam_ckpt=Path("/abs/path/models/sam_crowns_decoder.pth"),
+    stardist_model=Path("/abs/path/models/stardist"),
+)
+```
 
-Use these when you need custom control:
+Use these functions for experiments, partial reruns, and custom training workflows.
+
+## Feature Helpers
+
+Use this module when you need custom feature preparation:
 
 - `samstars.features`
-- `samstars.utils`
 
-These expose building blocks (costs, seeds, transforms, utilities).
+It exposes cost-surface and seed-generation helpers.
 
-## How to choose
+## Choosing an Interface
 
-- Start with high-level APIs.
-- Move to low-level APIs only when you need custom logic, parameter sweeps, or integration into a larger system.
+Start with `train(...)` and `segment(...)`.
+Use component functions when you need separate model-file paths, prepared-tile records, or partial stage control.
+Use feature helpers when you are replacing or inspecting part of the data-preparation workflow.

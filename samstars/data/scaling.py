@@ -9,6 +9,17 @@ import numpy as np
 import rasterio
 
 
+def _resolve_record_path(value: str, records_path: Path) -> Path:
+    """Resolve a possibly relative record path against a records JSON file."""
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    candidate = (records_path.parent / path).resolve()
+    if candidate.exists():
+        return candidate
+    return path.resolve()
+
+
 def load_scale_stats(path: Path) -> dict:
     """Load scale stats."""
     return json.load(open(path))
@@ -66,7 +77,7 @@ def build_scale_stats_from_proposal_records(
         if not chm_path:
             missing += 1
             continue
-        p = Path(chm_path)
+        p = _resolve_record_path(chm_path, proposal_records)
         if not p.exists():
             missing += 1
             continue
