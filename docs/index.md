@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](installation.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/iosefa/samstars/blob/main/LICENSE)
-[![Docs](https://img.shields.io/badge/docs-mkdocs%20material-0A7F46)](index.md)
+[![Docs](https://img.shields.io/badge/docs-samstars.sefa.ai-0A7F46)](https://samstars.sefa.ai)
 [![Repo](https://img.shields.io/badge/github-iosefa%2Fsamstars-black?logo=github)](https://github.com/iosefa/samstars)
 
 **Multimodal individual tree crown segmentation from imagery and lidar-derived rasters.**

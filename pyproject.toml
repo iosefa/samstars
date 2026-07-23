@@ -51,6 +51,7 @@ dependencies = [
 ]
 
 [project.urls]
+Documentation = "https://samstars.sefa.ai"
 Repository = "https://github.com/iosefa/samstars"
 
 [project.optional-dependencies]
