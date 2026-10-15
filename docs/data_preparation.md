@@ -1,6 +1,6 @@
 # Data Preparation
 
-Start with imagery, a canopy height model, and a first-return density raster.
+Data preparation requires imagery, a canopy height model (CHM), and a first-return density raster.
 `samstars` uses these to generate crown prompts and boundary cues that help separate neighboring crowns.
 
 `train(...)` and `segment(...)` can create the cost surface and seed points automatically from these rasters.
@@ -19,16 +19,18 @@ The current cost-surface builder expects eight image bands in WorldView-3 order:
 coastal, blue, green, yellow, red, red edge, near-infrared 1, and near-infrared 2.
 Keep all eight bands in the source image; the prepared tiles retain only the three bands selected for segmentation.
 
-## Prepare Lidar Rasters with PyForestScan
+## Prepare Lidar Rasters
 
-Use [PyForestScan](https://pyforestscan.sefa.ai/) to create the CHM and first-return density rasters from LAS/LAZ point clouds:
+The CHM and first-return density raster can be derived from LAS/LAZ point clouds with any suitable processing tool:
 
-1. **Calculate height above ground.** Use classified ground points or a terrain model to normalize point heights. See the [preprocessing guide](https://pyforestscan.sefa.ai/usage/getting-started-import-and-preprocess/).
-2. **Create the CHM.** Use the maximum height above ground in each cell. PyForestScan's [CHM guide](https://pyforestscan.sefa.ai/usage/forest-structure/chm/) shows how to use `calculate_chm`.
-3. **Create first-return density.** Keep points with `ReturnNumber == 1`, group them with `assign_voxels`, and use [`calculate_point_density`](https://pyforestscan.sefa.ai/api/calculate/#pyforestscan.calculate.calculate_point_density). It returns counts per cell by default; `per_area=True` with `cell_area=dx * dy` gives returns per square meter when coordinates are in meters.
+1. **Height above ground.** Normalize point heights using classified ground points or a terrain model.
+2. **Canopy height model.** Calculate the maximum height above ground in each raster cell.
+3. **First-return density.** Select points with `ReturnNumber == 1` and count them in each raster cell. For returns per square meter, divide each count by the cell area in square meters.
 
-Export both outputs as single-band GeoTIFFs; the [worked PyForestScan example](https://pyforestscan.sefa.ai/examples/getting-started-importing-preprocessing-dtm-chm/) includes raster export.
+Export both outputs as single-band GeoTIFFs.
 Keep density units and cell size consistent between training and segmentation, since seed detection uses the raster values directly.
+
+For implementation details, see PDAL's [height normalization](https://pdal.io/en/stable/stages/filters.hag_delaunay.html) and [raster output](https://pdal.io/en/stable/stages/writers.gdal.html) tools, or the [PyForestScan Python example](https://pyforestscan.sefa.ai/examples/getting-started-importing-preprocessing-dtm-chm/).
 
 ## Align and Check the Rasters
 
