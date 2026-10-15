@@ -113,6 +113,20 @@ def build_sparse_cost_graph(xs: np.ndarray,
 
 @dataclass
 class SeedParams:
+    """Seed detection settings for aligned imagery-grid rasters.
+
+    Attributes:
+        chm_raster: Canopy height GeoTIFF in meters.
+        den_raster: First-return counts or density GeoTIFF.
+        cost_raster: Boundary cost GeoTIFF on the same grid.
+        d_min: Minimum peak value in both CHM and density; interpret against each
+            raster's units.
+        min_dist_px: Peak-search radius in pixels.
+        gauss_sigma: Gaussian smoothing scale in pixels before peak detection.
+        merge_radius: Candidate grouping distance in projected CRS units.
+        cost_weight: Strength of the cost penalty between candidate seeds.
+        min_canopy_height: Minimum canopy height in meters at a candidate seed.
+    """
     chm_raster: Path
     den_raster: Path
     cost_raster: Path
@@ -134,7 +148,17 @@ class SeedParams:
 
 
 def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
-    """Return **one** seed (centre point) per cluster."""
+    """Detect CHM and density peaks and return one point per candidate cluster.
+
+    Args:
+        params: Raster paths and detection controls. Rasters must share a CRS,
+            pixel grid, and extent; use a projected CRS in meters.
+
+    Returns:
+        A GeoDataFrame with id and geometry columns in the input CRS. Save it
+        with to_file to create seeds.gpkg. Raises SystemExit if no candidates
+        survive detection and canopy-height filtering.
+    """
     chm_peaks = detect_peaks(params.chm_raster, "chm",
                              params.d_min, params.min_dist_px, params.gauss_sigma)
     den_peaks = detect_peaks(params.den_raster, "den",

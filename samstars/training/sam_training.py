@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
-"""
-Train the proposal decoder from prepared training chips.
+"""Train the proposal decoder from image chips and individual crown masks.
 
-Upgrade: align training prompts with inference:
-- Use box prompts (json["box"] if present, else derived from mask bbox)
-- Use many fg/bg points derived from CHM, like inference
-- Pad variable-length points to a fixed size with (-10,-10) and label -1
-
-We still:
-- freeze image_encoder + prompt_encoder
-- train mask_decoder only
-- use global RGB scaling to uint8 (via --scale-stats)
+Training uses crown boxes and foreground/background points derived from canopy
+height. The image and prompt encoders remain frozen while the mask decoder is
+optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 """
 from __future__ import annotations
 

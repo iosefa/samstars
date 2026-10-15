@@ -68,6 +68,8 @@ def _resolve_training_tiles(
     den: Path | None,
     crowns: Path | None,
     rgb_bands: tuple[int, int, int] | None,
+    nir_band: int | None,
+    texture_band: int | None,
     prep_root: Path,
     thin_seeds: bool,
     thin_dist: float,
@@ -94,6 +96,8 @@ def _resolve_training_tiles(
                 den=Path(den),
                 crowns=Path(crowns),
                 rgb_bands=rgb_bands,
+                nir_band=nir_band,
+                texture_band=texture_band,
                 out=prep_root / "scene",
                 thin_seeds=thin_seeds,
                 thin_dist=thin_dist,
@@ -156,6 +160,8 @@ def _resolve_training_tiles(
                 den=tile_dir / "den.tif",
                 crowns=tile_dir / "crowns.gpkg",
                 rgb_bands=rgb_bands,
+                nir_band=nir_band,
+                texture_band=texture_band,
                 out=prepared_tiles_dir,
                 tile_name=tile_dir.name,
                 thin_seeds=thin_seeds,
@@ -179,7 +185,15 @@ def _resolve_training_tiles(
 
 @dataclass(slots=True)
 class SamStarsResult:
-    """Stable user-facing result object for segmentation runs."""
+    """Paths returned by a segmentation run.
+
+    Attributes:
+        out: Final output directory.
+        crowns: Crown GeoPackage path, produced when refinement runs.
+        labels_dir: Label-raster directory when exposed by the run, otherwise None.
+        storage: Intermediate storage policy: persistent or temp.
+        work_dir: Retained working directory for persistent runs, otherwise None.
+    """
 
     out: Path
     crowns: Path
@@ -199,7 +213,15 @@ class SamStarsResult:
 
 
 class SamStars:
-    """Runtime wrapper around a samstars model bundle."""
+    """Load a trained bundle and reuse its model files and stored defaults.
+
+    Args:
+        model: Bundle directory containing manifest.json and the trained artifacts.
+
+    Use `train` to create a bundle and `segment` to apply it to source rasters
+    or prepared tiles. Instance methods accept the same processing controls as
+    the top-level functions.
+    """
 
     def __init__(self, model: Path):
         self.root = Path(model)
@@ -351,6 +373,8 @@ class SamStars:
         out: Path,
         storage: str,
         rgb_bands: tuple[int, int, int] | None = None,
+        nir_band: int | None = None,
+        texture_band: int | None = None,
         device: str = "cpu",
         chip_size: int = 512,
         chip_stride: int = 384,
@@ -418,6 +442,8 @@ class SamStars:
                 den=den,
                 crowns=crowns,
                 rgb_bands=rgb_bands,
+                nir_band=nir_band,
+                texture_band=texture_band,
                 prep_root=prep_root,
                 thin_seeds=thin_seeds,
                 thin_dist=thin_dist,
@@ -532,7 +558,9 @@ class SamStars:
         cls._write_bundle_manifest(
             out=out,
             defaults={
-                "rgb_bands": list(rgb_bands) if rgb_bands is not None else None,
+                "rgb_bands": list(rgb_bands) if rgb_bands is not None else [1, 2, 3],
+                "nir_band": nir_band,
+                "texture_band": texture_band,
                 "stardist_input_key": stardist_input_key,
                 "stardist_use_aux": stardist_use_aux,
                 "stardist_prob_thr": prob_thr,
@@ -559,6 +587,8 @@ class SamStars:
         chm: Path | None = None,
         den: Path | None = None,
         rgb_bands: tuple[int, int, int] | None = None,
+        nir_band: int | None = None,
+        texture_band: int | None = None,
         device: str = "cpu",
         stardist_input_key: str | None = None,
         stardist_use_aux: bool | None = None,
@@ -593,6 +623,8 @@ class SamStars:
         resolved_rgb_bands = rgb_bands
         if resolved_rgb_bands is None and self.defaults.get("rgb_bands") is not None:
             resolved_rgb_bands = tuple(self.defaults["rgb_bands"])
+        resolved_nir_band = self.defaults.get("nir_band") if nir_band is None else nir_band
+        resolved_texture_band = self.defaults.get("texture_band") if texture_band is None else texture_band
 
         resolved_stardist_input_key = stardist_input_key or self.defaults.get("stardist_input_key", "index")
         resolved_stardist_use_aux = (
@@ -643,6 +675,8 @@ class SamStars:
                     chm=chm,
                     den=den,
                     rgb_bands=resolved_rgb_bands,
+                    nir_band=resolved_nir_band,
+                    texture_band=resolved_texture_band,
                     out_dir=work_root,
                     sam_ckpt=self.decoder_path,
                     device=device,
@@ -702,6 +736,8 @@ def train(
     out: Path,
     storage: str,
     rgb_bands: tuple[int, int, int] | None = None,
+    nir_band: int | None = None,
+    texture_band: int | None = None,
     device: str = "cpu",
     chip_size: int = 512,
     chip_stride: int = 384,
@@ -732,7 +768,61 @@ def train(
     stardist_cpu: bool = False,
     fast: bool = False,
 ) -> SamStars:
-    """Train a samstars model bundle and return its runtime wrapper."""
+    """Train a model bundle from a labeled scene or labeled tile directories.
+
+    Args:
+        tiles_dir: Directory of consistently raw or prepared labeled tiles.
+            Supply this instead of the four scene inputs.
+        img: RGB or multiband source imagery with a projected CRS and square pixels.
+        chm: Canopy height raster in meters; aligned to img during preparation.
+        den: First-return count or density raster; aligned to img during preparation.
+        crowns: Crown GeoPackage with one polygon feature per tree.
+        sam_base_ckpt: Base ViT-L checkpoint used to initialize proposal training.
+        out: Destination model bundle directory. Use a new path for each experiment.
+        storage: persistent retains intermediates under out/_training; temp
+            retains only the finished bundle.
+        rgb_bands: One-based source indices in red, green, blue order. Defaults
+            to (1, 2, 3), without inferring a sensor from the band count.
+        nir_band: Optional source NIR index for the NDVI cost term. Omit for RGB.
+        texture_band: Optional source texture index; otherwise use mean RGB intensity.
+        device: PyTorch device for proposal training: cpu, cuda, or mps.
+        chip_size: Training chip width and height in pixels.
+        chip_stride: Spacing between training chips in pixels.
+        sam_epochs: Number of proposal-decoder training epochs.
+        sam_min_iters: Minimum proposal training iterations; may increase epochs.
+        sam_lr: Proposal-decoder learning rate.
+        stardist_epochs: Number of refinement training epochs.
+        stardist_min_iters: Minimum refinement training iterations.
+        val_fraction: Fraction of refinement records assigned to validation.
+            This is a record split, not a spatial holdout.
+        crop_smooth_sigma: Proposal smoothing scale within each crop, in pixels.
+        smooth_sigma: Proposal mosaic smoothing scale, in pixels.
+        post_smooth_sigma: Optional smoothing after canopy-index fusion, in pixels.
+        thin_seeds: Thin nearby seed points after detection.
+        thin_dist: Seed thinning distance in projected CRS units.
+        seed_d_min: Minimum peak value, applied to both CHM and density.
+        seed_min_dist_px: Seed peak-search radius in pixels.
+        seed_gauss_sigma: Seed detection smoothing scale in pixels.
+        seed_min_samples: Minimum samples in a seed cluster.
+        seed_merge_radius: Candidate grouping distance in projected CRS units.
+        seed_min_canopy_height: Minimum canopy height at a seed, in meters.
+        stardist_input_key: Refinement input record key, usually index.
+        stardist_use_aux: Include normalized CHM as an auxiliary refinement channel.
+        stardist_normalize_inputs: Normalize refinement inputs per channel.
+        stardist_augment: Apply training augmentation to refinement samples.
+        stardist_window_size_m: Default refinement window size for later segmentation,
+            in map units, normally meters; None processes each proposal raster whole.
+        stardist_window_overlap_m: Overlap between refinement windows in map units.
+        stardist_dedup_iou_thr: Default final polygon deduplication threshold;
+            zero disables it, positive values below one suppress matching overlaps.
+        stardist_cpu: Run refinement training in a subprocess with CUDA hidden.
+        fast: Use batched proposal decoding.
+
+    Returns:
+        A SamStars instance backed by the saved bundle. Band settings and
+        segmentation defaults are recorded in manifest.json. Prepared tiles
+        retain their existing channel order and cost rasters.
+    """
     return SamStars.train(
         tiles_dir=tiles_dir,
         img=img,
@@ -743,6 +833,8 @@ def train(
         out=out,
         storage=storage,
         rgb_bands=rgb_bands,
+        nir_band=nir_band,
+        texture_band=texture_band,
         device=device,
         chip_size=chip_size,
         chip_stride=chip_stride,
@@ -785,6 +877,8 @@ def segment(
     chm: Path | None = None,
     den: Path | None = None,
     rgb_bands: tuple[int, int, int] | None = None,
+    nir_band: int | None = None,
+    texture_band: int | None = None,
     device: str = "cpu",
     stardist_input_key: str | None = None,
     stardist_use_aux: bool | None = None,
@@ -807,7 +901,55 @@ def segment(
     smooth_sigma: float | None = None,
     post_smooth_sigma: float | None = None,
 ) -> SamStarsResult:
-    """Run segmentation from a model bundle path or SamStars instance."""
+    """Segment source rasters or prepared tiles using a trained model bundle.
+
+    Args:
+        model: Model bundle path or a loaded SamStars instance.
+        out: Segmentation output directory, separate from the model bundle.
+        storage: persistent keeps intermediates and checkpoints; temp retains
+            final crown outputs after deleting temporary intermediates.
+        tiles_dir: Prepared tile directories. Supply this instead of img/chm/den.
+        img: Source imagery. Channel content must match the model's training data.
+        chm: Canopy heights in meters, aligned to the imagery during preparation.
+        den: First-return counts or density, consistent with training units.
+        rgb_bands: One-based red, green, blue source indices. None reuses the bundle
+            setting, or (1, 2, 3) when no setting was stored.
+        nir_band: Optional NIR source index. None reuses the bundle setting.
+        texture_band: Optional texture source index. None reuses the bundle setting.
+        device: PyTorch device for proposals: cpu, cuda, or mps.
+        stardist_input_key: Override the refinement input key stored in the bundle.
+        stardist_use_aux: Override use of the normalized CHM refinement channel.
+        stardist_prob_thr: Refinement probability threshold; set with stardist_nms_thr.
+        stardist_nms_thr: Refinement suppression threshold; set with stardist_prob_thr.
+        stardist_window_size_m: Internal refinement window size in projected map units.
+        stardist_window_overlap_m: Window overlap in the same map units.
+        stardist_dedup_iou_thr: Final cross-source polygon deduplication threshold.
+            Zero disables it; positive values below one retain the higher-score
+            polygon when pairwise intersection-over-union reaches the threshold.
+        stardist_cpu: Run refinement in a subprocess with CUDA hidden.
+        stardist_resume: Reuse complete refinement checkpoints in a persistent run.
+        stardist_resume_from_labels: Rebuild checkpoints from labels; also requires
+            stardist_resume. Recovered polygons have no confidence score.
+        stardist_skip_sources: Comma-separated proposal source names to skip.
+        stardist_skip_sources_file: Text file with one source name per line.
+        run_sam: Run proposal generation. False reuses saved proposal records.
+        run_stardist: Run refinement. False stops after proposal generation.
+        skip_existing_sam: Skip complete proposal outputs already present under out.
+        log_refinement: Show detailed refinement logs.
+        fast: Override the bundle's batched proposal-decoding setting.
+        crop_smooth_sigma: Override per-crop proposal smoothing, in pixels.
+        smooth_sigma: Override proposal mosaic smoothing, in pixels.
+        post_smooth_sigma: Override smoothing after canopy-index fusion, in pixels.
+
+    Returns:
+        Output paths in a SamStarsResult. Final crowns are written to
+        out/crowns/crowns.gpkg when refinement runs. Overlapping tiles can leave
+        overlapping polygons; deduplication does not guarantee disjoint crowns.
+
+    Resume only with the same inputs, model, and settings. Use a new output
+    directory when changing them. Band overrides apply to source preparation;
+    prepared tile channels are used as supplied.
+    """
     runtime = SamStars.load(model)
     return runtime.segment(
         out=out,
@@ -817,6 +959,8 @@ def segment(
         chm=chm,
         den=den,
         rgb_bands=rgb_bands,
+        nir_band=nir_band,
+        texture_band=texture_band,
         device=device,
         stardist_input_key=stardist_input_key,
         stardist_use_aux=stardist_use_aux,

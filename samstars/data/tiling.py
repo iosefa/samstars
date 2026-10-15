@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-make_tiles.py – split IMG / CHM / COST / SEEDS into 500 m tiles (+20 m overlap)
-               *with optional spatial thinning of seeds (0.7 m)*
-"""
+"""Prepare aligned imagery, canopy heights, cost rasters, and crown seeds."""
 
 from __future__ import annotations
 import sys, argparse, tempfile, shutil, warnings
@@ -14,16 +11,16 @@ from rasterio.vrt import WarpedVRT
 from rasterio.windows import Window
 from shapely.geometry import box as Box
 import geopandas as gpd
-from scipy.spatial import cKDTree                     #  ← NEW
+from scipy.spatial import cKDTree
 from tqdm.auto import tqdm
 
 # local libraries
 from samstars.features import build_cost_surface, canonical_seeds, SeedParams
+from samstars.features.cost_surface import _resolve_image_bands
 
 
 _SUPPRESSED_TILE_WARNING_PATTERNS = (
     r"Warning: 'partition' will ignore the 'mask' of the MaskedArray\.",
-    r"No SLIC provided .* cost built from 3 terms only\.",
     r"Precomputed sparse input was not sorted by row values\.",
 )
 
@@ -51,11 +48,11 @@ def _align_to_img(src: Path | str, img_ds: rasterio.DatasetReader):
     return raw, raw
 
 
-def _write_temp_raster(arr: np.ndarray, transform, crs, path: Path):
+def _write_temp_raster(arr: np.ndarray, transform, crs, path: Path, *, nodata=None):
     """Internal helper function."""
     count = arr.shape[0] if arr.ndim == 3 else 1
     meta = dict(driver="GTiff", width=arr.shape[-1], height=arr.shape[-2],
-                count=count, dtype=arr.dtype, transform=transform, crs=crs)
+                count=count, dtype=arr.dtype, transform=transform, crs=crs, nodata=nodata)
     with rasterio.open(path, "w", **meta) as dst:
         dst.write(arr if count > 1 else arr[None, ...])
 
@@ -115,6 +112,8 @@ def _prepare_tile(
     img_tfm,
     img_crs,
     rgb_bands: tuple[int, int, int],
+    nir_band: int | None,
+    texture_band: int | None,
     base_meta: dict,
     win: Window,
     h: int,
@@ -152,17 +151,20 @@ def _prepare_tile(
 
     with tempfile.TemporaryDirectory() as tmpd:
         tmpd = Path(tmpd)
-        _write_temp_raster(full, tfm, img_crs, tmpd / "wv3.tif")
-        _write_temp_raster(chm_tile, tfm, img_crs, tmpd / "chm.tif")
-        _write_temp_raster(den_tile, tfm, img_crs, tmpd / "den.tif")
+        _write_temp_raster(full, tfm, img_crs, tmpd / "image.tif", nodata=img_ds.nodata)
+        _write_temp_raster(chm_tile, tfm, img_crs, tmpd / "chm.tif", nodata=chm_ds.nodata)
+        _write_temp_raster(den_tile, tfm, img_crs, tmpd / "den.tif", nodata=den_ds.nodata)
 
-        cost_arr, _ = build_cost_surface(
-            wv3_path=tmpd / "wv3.tif",
+        cost_arr, cost_profile = build_cost_surface(
+            img_path=tmpd / "image.tif",
             chm_path=tmpd / "chm.tif",
+            rgb_bands=rgb_bands,
+            nir_band=nir_band,
+            texture_band=texture_band,
             slic_path=slic,
             weights=cost_weights,
         )
-        _write_temp_raster(cost_arr, tfm, img_crs, tmpd / "cost.tif")
+        _write_temp_raster(cost_arr, tfm, img_crs, tmpd / "cost.tif", nodata=cost_profile["nodata"])
 
         sp = seed_params or SeedParams(
             chm_raster=tmpd / "chm.tif",
@@ -194,16 +196,16 @@ def _prepare_tile(
     with rasterio.open(tile_dir / "img.tif", "w", **meta_img) as dst:
         dst.write(rgb)
 
-    def _w1(arr, name):
+    def _w1(arr, name, *, nodata):
         """Internal helper function."""
-        meta = meta_img | {"count": 1, "dtype": "float32"}
+        meta = meta_img | {"count": 1, "dtype": "float32", "nodata": nodata}
         with rasterio.open(tile_dir / name, "w", **meta) as dst:
             dst.write(arr.astype("float32"), 1)
 
-    _w1(chm_tile, "chm.tif")
-    _w1(cost_arr, "cost.tif")
+    _w1(chm_tile, "chm.tif", nodata=chm_ds.nodata)
+    _w1(cost_arr, "cost.tif", nodata=cost_profile["nodata"])
     if write_den:
-        _w1(den_tile, "den.tif")
+        _w1(den_tile, "den.tif", nodata=den_ds.nodata)
     seeds_tile.to_file(tile_dir / "seeds.gpkg", driver="GPKG")
     return True
 
@@ -213,13 +215,15 @@ def build_tiles(*,
                 chm: Path,
                 den: Path,
                 rgb_bands: tuple[int, int, int] | None = None,
+                nir_band: int | None = None,
+                texture_band: int | None = None,
                 slic: Path | None = None,
                 out: Path = Path("tiles"),
                 tile: float = 500.0,
                 overlap: float = 20.0,
-                cost_weights=(0.4, 0.3, 0.3, 0.0),
+                cost_weights: tuple[float, float, float, float] = (0.4, 0.3, 0.3, 0.0),
                 seed_params: SeedParams | None = None,
-                thin_seeds: bool = True,                    # ← NEW
+                thin_seeds: bool = True,
                 thin_dist: float = 0.8,
                 seed_d_min: float = 4.5,
                 seed_min_dist_px: int = 4,
@@ -227,10 +231,37 @@ def build_tiles(*,
                 seed_min_samples: int = 1,
                 seed_merge_radius: float = 3.0,
                 seed_min_canopy_height: float = 2.0,
-                write_den: bool = False,                    # ← NEW
+                write_den: bool = False,
                 skip_existing: bool = True) -> None:
 
-    """Build tiles."""
+    """Align lidar rasters to imagery and prepare overlapping segmentation tiles.
+
+    Args:
+        img: Three-band RGB or multiband imagery with square pixels.
+        chm: Canopy heights in meters; resampled to the imagery grid if needed.
+        den: First-return counts or density, using the same units as training.
+        rgb_bands: One-based red, green, blue indices; defaults to `(1, 2, 3)`.
+        nir_band: Optional near-infrared band for the NDVI cost term.
+        texture_band: Optional texture band; otherwise use the mean RGB intensity.
+        out: Parent directory for `tile_000_000` and subsequent tile folders.
+        tile: Tile width and height in imagery CRS units, normally meters.
+        overlap: Overlap between neighboring tiles, in the same units as `tile`.
+        cost_weights: Height-edge, NDVI-gap, texture, and experimental SLIC weights.
+        seed_params: Optional complete seed configuration; overrides seed controls.
+        thin_seeds: Reduce closely spaced seed points after detection.
+        thin_dist: Minimum seed spacing in projected CRS units.
+        seed_d_min: Minimum peak value in the CHM and density rasters.
+        seed_min_dist_px: Peak-search radius in pixels.
+        seed_gauss_sigma: Gaussian smoothing scale in pixels.
+        seed_merge_radius: Candidate grouping distance in projected CRS units.
+        seed_min_canopy_height: Minimum canopy height in meters.
+        write_den: Also save the aligned density raster in each tile.
+        skip_existing: Reuse complete tile folders. Set to False after changing inputs
+            or preparation settings, or use a new output directory.
+
+    Each nonempty tile contains `img.tif`, `chm.tif`, `cost.tif`, and `seeds.gpkg`.
+    """
+    out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     with rasterio.open(img) as img_ds:
         res = abs(img_ds.transform.a)
@@ -238,11 +269,7 @@ def build_tiles(*,
 
         img_h, img_w = img_ds.height, img_ds.width
         img_tfm, img_crs = img_ds.transform, img_ds.crs
-        rgb_bands = tuple(rgb_bands) if rgb_bands is not None else ((7, 5, 3) if img_ds.count >= 7 else (1, 2, 3))
-        if len(rgb_bands) != 3:
-            raise ValueError("rgb_bands must contain exactly 3 band indices.")
-        if any(b < 1 or b > img_ds.count for b in rgb_bands):
-            raise ValueError(f"rgb_bands must be between 1 and {img_ds.count}.")
+        rgb_bands = _resolve_image_bands(img_ds.count, rgb_bands, nir_band, texture_band)
 
         base_meta = img_ds.profile | {"driver": "GTiff", "count": 3,
                                       "compress": "deflate", "predictor": 2,
@@ -272,6 +299,8 @@ def build_tiles(*,
                 img_tfm=img_tfm,
                 img_crs=img_crs,
                 rgb_bands=rgb_bands,
+                nir_band=nir_band,
+                texture_band=texture_band,
                 base_meta=base_meta,
                 win=win,
                 h=h,
@@ -306,10 +335,12 @@ def build_single_tile(*,
                       den: Path,
                       crowns: Path | None = None,
                       rgb_bands: tuple[int, int, int] | None = None,
+                      nir_band: int | None = None,
+                      texture_band: int | None = None,
                       slic: Path | None = None,
                       out: Path = Path("tiles"),
                       tile_name: str = "tile_000_000",
-                      cost_weights=(0.4, 0.3, 0.3, 0.0),
+                      cost_weights: tuple[float, float, float, float] = (0.4, 0.3, 0.3, 0.0),
                       seed_params: SeedParams | None = None,
                       thin_seeds: bool = True,
                       thin_dist: float = 0.8,
@@ -321,7 +352,12 @@ def build_single_tile(*,
                       seed_min_canopy_height: float = 2.0,
                       write_den: bool = False,
                       skip_existing: bool = True) -> Path:
-    """Prepare a single tile-style input directory from one scene."""
+    """Prepare one scene as a tile and return its parent directory.
+
+    Uses the same band selection, alignment, and seed controls as `build_tiles`.
+    `crowns`, when supplied, is copied into the tile as `crowns.gpkg` for training.
+    The entire scene is processed as one tile; use `build_tiles` for larger areas.
+    """
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -329,11 +365,7 @@ def build_single_tile(*,
         res = abs(img_ds.transform.a)
         assert abs(res - abs(img_ds.transform.e)) < 1e-6, "non-square pixels"
 
-        rgb_bands = tuple(rgb_bands) if rgb_bands is not None else ((7, 5, 3) if img_ds.count >= 7 else (1, 2, 3))
-        if len(rgb_bands) != 3:
-            raise ValueError("rgb_bands must contain exactly 3 band indices.")
-        if any(b < 1 or b > img_ds.count for b in rgb_bands):
-            raise ValueError(f"rgb_bands must be between 1 and {img_ds.count}.")
+        rgb_bands = _resolve_image_bands(img_ds.count, rgb_bands, nir_band, texture_band)
         base_meta = img_ds.profile | {
             "driver": "GTiff",
             "count": 3,
@@ -355,6 +387,8 @@ def build_single_tile(*,
                 img_tfm=img_tfm,
                 img_crs=img_crs,
                 rgb_bands=rgb_bands,
+                nir_band=nir_band,
+                texture_band=texture_band,
                 base_meta=base_meta,
                 win=win,
                 h=img_ds.height,
@@ -403,7 +437,11 @@ def _parse_cli():
     pa.add_argument("--chm", required=True, type=Path)
     pa.add_argument("--den", required=True, type=Path)
     pa.add_argument("--rgb-bands", nargs=3, type=int, default=None,
-                    help="Three 1-based image bands to write to img.tif. Defaults to (7,5,3) when available, else (1,2,3).")
+                    help="One-based red, green, blue band indices (default: 1 2 3).")
+    pa.add_argument("--nir-band", type=int, default=None,
+                    help="Optional one-based near-infrared band for NDVI cost cues.")
+    pa.add_argument("--texture-band", type=int, default=None,
+                    help="Optional one-based texture band; otherwise use mean RGB intensity.")
     pa.add_argument("--slic", type=Path, default=None)
     pa.add_argument("--out",  type=Path, default=Path("tiles"))
     pa.add_argument("--tile", type=float, default=500.0)
@@ -411,10 +449,10 @@ def _parse_cli():
     pa.add_argument("--weights", nargs=4, type=float,
                     default=(0.4, 0.3, 0.3, 0.0),
                     metavar=("GRAD", "GAP", "TEX", "SLIC"))
-    # new flag  → thinning ON by default; pass --no-thin to disable
+    # Seed thinning is enabled by default.
     thin_grp = pa.add_mutually_exclusive_group()
     thin_grp.add_argument("--thin",     dest="thin", action="store_true",  default=True,
-                          help="Spatially thin seeds at 0.7 m (default)")
+                          help="Spatially thin seeds at 0.8 m (default)")
     thin_grp.add_argument("--no-thin",  dest="thin", action="store_false",
                           help="Keep all seeds (no thinning)")
     pa.add_argument("--write-den", action="store_true",
@@ -444,6 +482,8 @@ def _main():
     try:
         build_tiles(img=ns.img, chm=ns.chm, den=ns.den,
                     rgb_bands=tuple(ns.rgb_bands) if ns.rgb_bands is not None else None,
+                    nir_band=ns.nir_band,
+                    texture_band=ns.texture_band,
                     slic=ns.slic, out=ns.out,
                     tile=ns.tile, overlap=ns.overlap,
                     cost_weights=tuple(ns.weights),

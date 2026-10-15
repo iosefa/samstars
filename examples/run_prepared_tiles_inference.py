@@ -62,6 +62,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="cpu",
         help="SAM runtime device, for example cpu, mps, or cuda.",
     )
+    parser.add_argument("--rgb-bands", nargs=3, type=int, default=None,
+                        help="Source red, green, blue indices for raw training tiles (default: 1 2 3).")
+    parser.add_argument("--nir-band", type=int, default=None,
+                        help="Optional source near-infrared band for raw training tiles.")
+    parser.add_argument("--texture-band", type=int, default=None,
+                        help="Optional source texture band for raw training tiles.")
 
     parser.add_argument(
         "--chip-size",
@@ -249,6 +255,9 @@ def main() -> None:
         out=args.out,
         storage=args.storage,
         device=args.device,
+        rgb_bands=tuple(args.rgb_bands) if args.rgb_bands is not None else None,
+        nir_band=args.nir_band,
+        texture_band=args.texture_band,
         chip_size=args.chip_size,
         chip_stride=args.chip_stride,
         sam_epochs=args.sam_epochs,

@@ -1,27 +1,9 @@
 #!/usr/bin/env python3
-"""
-Run SAM (fine-tuned decoder) on tile run records using seed prompts and the *original*
-probability-building logic:
+"""Generate crown proposals from prepared tile records and automatic prompts.
 
-- Use SAM low-res logits upsampled to the crop size
-- Optional logit Gaussian blur per crop
-- CHM "boost" term
-- Seed-centered core weighting in *meters*
-- Mosaic max-compositing
-- Large Gaussian smoothing of the mosaic with valid-mask normalization
-- Build "index" by fusing SAM prob + CHM + COST + ground weighting
-
-For each tile record, writes:
-  *_logit.tif     (debug: per-chip mosaic BEFORE global smoothing; this is actually prob-mosaic)
-  *_sam_prob.tif  (smoothed SAM probability mosaic, float32 in [0,1])
-  *_sam_index.tif (fused index, float32 in [0,1])
-  *_chm.tif
-  *_cost.tif
-
-And writes a proposal-records JSON file with file paths + spatial metadata.
-
-Note: this script keeps your global RGB scaling (via --scale-stats) but restores the
-core weighting + smoothing behavior from the original working implementation.
+The output includes smoothed probability, fused canopy index, aligned CHM and
+cost rasters, and a JSON index of their paths. The cached ``*_logit.tif`` output
+contains the probability mosaic before global smoothing.
 """
 from __future__ import annotations
 
@@ -47,7 +29,7 @@ if str(ROOT) not in sys.path:
 
 from samstars.data.scaling import load_scale_stats, scale_to_u8_per_channel
 
-# ───────────── hyper-params (match original) ────────────────────────────────
+# ───────────── proposal parameters ────────────────────────────────
 CONTEXT_FCTR = 1.5
 BOX_METRE = 8.0
 
@@ -98,7 +80,7 @@ def box_from_window(win: Window, tfm) -> box:
 
 
 def smooth_mosaic(prob_mosaic: np.ndarray, sigma_px: float) -> np.ndarray:
-    """Original: blur prob mosaic and divide by blurred valid-mask (handles sparse coverage)."""
+    """Smooth probabilities with valid-mask normalization for sparse coverage."""
     prob_blur = gaussian_filter(prob_mosaic, sigma_px, mode="nearest")
     val_mask = (prob_mosaic > 0).astype(np.float32)
     val_blur = gaussian_filter(val_mask, sigma_px, mode="nearest")
@@ -159,8 +141,12 @@ def process_chip(
 
     # --- Read imagery + aux rasters for this chip window ---
     with rasterio.open(img_path) as src:
-        rgb_bands = (7, 5, 3) if src.count >= 7 else (1, 2, 3)[: src.count]
-        rgb = src.read(rgb_bands, window=win, boundless=True, fill_value=0).astype(np.float32)
+        if src.count != 3:
+            raise ValueError(
+                "Prepared img.tif must contain three selected image channels. "
+                "Prepare source imagery with build_tiles(rgb_bands=...)."
+            )
+        rgb = src.read((1, 2, 3), window=win, boundless=True, fill_value=0).astype(np.float32)
         tfm = rasterio.windows.transform(win, src.transform)
         crs = src.crs
         res = abs(tfm.a)
@@ -195,7 +181,7 @@ def process_chip(
 
     prob_mosaic = np.zeros((H, W), np.float32)
 
-    # Group seeds by crop window (original caching strategy, per chip)
+    # Group seeds by crop window within each chip
     hp_px = int(round(CONTEXT_FCTR * BOX_METRE / max(res, 1e-9)))
     hb = BOX_METRE / (2 * max(res, 1e-9))  # half box width in pixels
 
@@ -426,7 +412,7 @@ def process_chip(
                 )
 
             for (r, c), low_res in zip(pts_seed, low_res_logits):
-                # Upsample low-res logits to crop size (original behavior)
+                # Upsample low-resolution logits to crop size
                 if low_res.dim() == 2:
                     low_res = low_res.unsqueeze(0).unsqueeze(0)
                 elif low_res.dim() == 3:
@@ -434,7 +420,7 @@ def process_chip(
                 logit = F.interpolate(low_res, (h_p, w_p), mode="bilinear", align_corners=False)[0, 0]
                 logit = logit.detach().cpu().numpy().astype(np.float32)
 
-                # Light blur in logit space (original used cv2.GaussianBlur)
+                # Light blur in logit space
                 if crop_smooth_sigma > 0:
                     logit = gaussian_filter(logit, crop_smooth_sigma, mode="nearest")
 
@@ -454,7 +440,7 @@ def process_chip(
                 # Mosaic max compositing
                 prob_mosaic[r0:r1, c0:c1] = np.maximum(prob_mosaic[r0:r1, c0:c1], prob.astype(np.float32))
 
-    # --- Global smoothing and index fusion (original) ---
+    # --- Global smoothing and index fusion ---
     prob_mosaic_out = prob_mosaic.copy()  # debug output (pre-smooth mosaic)
 
     prob_s = smooth_mosaic(prob_mosaic, smooth_sigma)
