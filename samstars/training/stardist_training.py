@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""
-Train the polygon-refinement model on per-chip inputs derived from proposal outputs.
+"""Train polygon refinement from proposal rasters and crown instance masks.
 
-This version restores the *original* StarDist training behavior that worked well:
-- Use canopy index (default: record key "index") rather than raw SAM prob
-- Normalize inputs with csbdeep.normalize(x, 1, 99.8) (per-channel if multi-channel)
-- Use the original augmentation (flip/rot + intensity jitter + Gaussian noise)
-
-You can still train on raw SAM prob by passing --input-key file_name.
-
-If --use-aux is set, the network input becomes [primary, chm01].
+The default primary input is the fused canopy index. Optional normalized CHM
+adds a second channel. Training supports per-channel normalization and geometric
+and intensity augmentation.
 """
 from __future__ import annotations
 
@@ -49,7 +43,7 @@ def _scale_aux(arr: np.ndarray, lo: float, hi: float) -> np.ndarray:
     return scale_to_01(arr, lo, hi)
 
 
-# ───────────── original StarDist augmenter ──────────────────────────────────
+# ───────────── refinement augmentation ──────────────────────────────────
 def random_fliprot(img: np.ndarray, mask: np.ndarray):
     """Random fliprot."""
     assert img.ndim >= mask.ndim
@@ -117,7 +111,7 @@ def load_pairs(
         chm_lo = float(scale_stats.get("chm_01", {}).get("lo", 0.0))
         chm_hi = float(scale_stats.get("chm_01", {}).get("hi", 1.0))
 
-    axis_norm = (0, 1)  # normalize channels independently (original)
+    axis_norm = (0, 1)  # normalize channels independently
 
     for rec in data:
         fname = rec.get(input_key, "")
@@ -287,7 +281,7 @@ def main() -> None:
     )
     pa.add_argument("--normalize", action="store_true", help="Enable csbdeep percentile normalization")
     pa.add_argument("--no-normalize", action="store_true", help="Disable csbdeep percentile normalization")
-    pa.add_argument("--no-augment", action="store_true", help="Disable augmentation (original had augmentation ON).")
+    pa.add_argument("--no-augment", action="store_true", help="Disable training augmentation.")
 
     # Aux channels
     pa.add_argument("--scale-stats", type=Path, default=None, help="CHM scaling stats JSON; required with --use-aux")

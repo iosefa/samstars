@@ -119,6 +119,8 @@ def run_segmentation(
     chm: Path | None = None,
     den: Path | None = None,
     rgb_bands: tuple[int, int, int] | None = None,
+    nir_band: int | None = None,
+    texture_band: int | None = None,
     out_dir: Path,
     sam_ckpt: Path,
     device: str = "cpu",
@@ -145,7 +147,21 @@ def run_segmentation(
     smooth_sigma: float = 4.0,
     post_smooth_sigma: float = 0.0,
 ) -> dict:
-    """Run end-to-end segmentation from prepared tiles or one raw input scene."""
+    """Run segmentation with separate proposal and refinement model paths.
+
+    Supply tiles_dir for prepared inputs, or img/chm/den for automatic preparation.
+    rgb_bands uses one-based red, green, blue indices, defaulting to (1, 2, 3).
+    nir_band enables the NDVI cost term; texture_band optionally selects the
+    texture source instead of mean RGB intensity.
+
+    sam_ckpt is the trained proposal checkpoint. stardist_model points directly
+    to the refinement directory containing config.json and weights.
+    out_dir retains intermediates and final crowns. The return dictionary contains
+    the run-record, proposal, and crown paths.
+
+    Stage, threshold, resume, and window controls have the meanings documented
+    by samstars.segment. Final polygon deduplication is disabled by default.
+    """
     out_dir = Path(out_dir)
     resolved_sam_ckpt: Path | None = None
     resolved_stardist_model: Path | None = None
@@ -162,6 +178,8 @@ def run_segmentation(
             chm=Path(chm),
             den=Path(den),
             rgb_bands=rgb_bands,
+            nir_band=nir_band,
+            texture_band=texture_band,
             out=prepared_root,
             skip_existing=True,
         )
