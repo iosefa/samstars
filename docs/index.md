@@ -11,7 +11,7 @@
 
 ## Overview
 
-`samstars` is a Python package for individual tree crown segmentation from high-resolution imagery and lidar-derived rasters.
+`samstars` is a Python package for instance segmentation of individual tree crowns from high-resolution imagery and lidar-derived rasters. The resulting crown polygons can be used for downstream [species classification](downstream.md#species-classification).
 
 It combines:
 
