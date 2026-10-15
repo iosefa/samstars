@@ -1,5 +1,13 @@
 # samstars
 
+[![PyPI](https://img.shields.io/pypi/v/samstars.svg)](https://pypi.org/project/samstars/)
+[![Python](https://img.shields.io/pypi/pyversions/samstars.svg)](https://pypi.org/project/samstars/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/iosefa/samstars/ci.yml?branch=main&label=tests)](https://github.com/iosefa/samstars/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/github/actions/workflow/status/iosefa/samstars/docs.yml?branch=main&label=docs)](https://samstars.sefa.ai/)
+[![Contributors](https://img.shields.io/github/contributors/iosefa/samstars.svg?label=contributors)](https://github.com/iosefa/samstars/graphs/contributors)
+[![PyPI Downloads](https://static.pepy.tech/badge/samstars)](https://pepy.tech/projects/samstars)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 `samstars` is a Python library for instance segmentation of individual trees
 using high-resolution imagery and lidar-derived rasters.
 
