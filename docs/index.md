@@ -7,6 +7,8 @@
 
 **Multimodal individual tree crown segmentation from imagery and lidar-derived rasters.**
 
+![SAM-STARS graphical abstract showing satellite imagery and lidar inputs, automatic crown prompts, canopy fusion, individual crown delineation, species classification, and annotation efficiency.](assets/figures/sam-stars-graphical-abstract.png)
+
 ## Overview
 
 `samstars` is a Python package for individual tree crown segmentation from high-resolution imagery and lidar-derived rasters.
@@ -16,9 +18,7 @@ It combines:
 - high-resolution imagery (satellite, aerial, or drone)
 - lidar-derived raster layers (e.g., canopy height and density)
 
-The package prepares canopy-derived seed points, boundary and gap cost rasters, and proposal index rasters before writing crown polygons.
-
-The workflow was developed with WorldView-3 imagery and airborne lidar-derived rasters, but the library interface accepts any aligned or alignable imagery, canopy-height, and first-return density rasters.
+It automatically derives prompts from lidar structure and spectral cues to guide the Segment Anything Model (SAM), then uses StarDist to separate individual tree crowns. The workflow is designed to work with limited training annotations.
 
 ## First Segmentation
 
