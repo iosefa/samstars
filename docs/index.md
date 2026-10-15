@@ -22,6 +22,8 @@ It automatically derives prompts from lidar structure and spectral cues to segme
 
 ## First Segmentation
 
+Use the model bundle created by [Training](training.md) with imagery and lidar rasters prepared as described in [Data Preparation](data_preparation.md).
+
 ```python
 from pathlib import Path
 
@@ -40,9 +42,6 @@ result = segment(
 print(result.crowns)
 ```
 
-CPU is the supported baseline. Use `"cuda"` or `"mps"` only after verifying
-the accelerator as described in [Installation](installation.md).
-
 See [Installation](installation.md) to install the library.
-For a minimal run path, see [Quick Start](quickstart.md).
+For a minimal training and segmentation workflow, see [Quick Start](quickstart.md).
 For task-focused documentation, see [Data Preparation](data_preparation.md), [Training](training.md), [Segmentation](segmentation.md), and [Downstream Analysis](downstream.md).

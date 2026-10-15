@@ -1,26 +1,33 @@
 # Training
 
-Training creates a `samstars` model bundle for later crown segmentation.
-The bundle stores the trained proposal decoder, polygon-refinement model files, and run defaults needed by `samstars.segment(...)`.
-
-Training uses the same input and prepared-tile products described in [Data Preparation](data_preparation.md): imagery, canopy height, first-return density, seed points, and cost rasters.
-It also requires crown polygons for supervision and a base SAM checkpoint.
+Training creates a model bundle that can be reused by `samstars.segment(...)`.
+The bundle contains the trained model files and the band settings used to prepare new imagery.
 
 ## Inputs
 
-Training requires:
+Provide imagery, a canopy height model, a first-return density raster, and crown polygons for a labeled training area.
+The raster requirements and band choices are described in [Data Preparation](data_preparation.md).
+Training also requires a base initialization checkpoint.
 
-- imagery raster
-- canopy height model raster
-- first-return density raster
-- crown polygons in a GeoPackage or other vector file readable by GeoPandas
-- base SAM checkpoint, such as `sam_vit_l_0b3195.pth`
+### Base Checkpoint
 
-You can train from one labeled scene or from a directory of labeled tiles.
+The current training implementation requires the SAM ViT-L checkpoint, [`sam_vit_l_0b3195.pth`](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth), available from the [official checkpoint list](https://github.com/facebookresearch/segment-anything#model-checkpoints).
+Save it locally and pass its path as `sam_base_ckpt`.
+
+## Prepare Crown Annotations
+
+Delineate individual crown boundaries in GIS software and save them in a GeoPackage, with one feature per crown.
+The layer should have a defined coordinate reference system and align with the training imagery.
+Species labels and additional attribute fields are not required.
+
+Use training areas with complete crown annotations.
+During refinement training, pixels outside the supplied polygons are treated as background, so crop the training rasters to the annotated area.
+
+For one training area, pass the GeoPackage path through `crowns`.
+For tiled training, save the annotations for each tile as `crowns.gpkg` inside its tile directory.
+Reserve separate areas for evaluating the trained model.
 
 ## Train From One Labeled Area
-
-Use `samstars.train(...)` with `img`, `chm`, `den`, and `crowns` when the labeled training area is a single set of aligned rasters and crown polygons.
 
 ```python
 from pathlib import Path
@@ -28,12 +35,13 @@ from pathlib import Path
 from samstars import train
 
 model = train(
-    img=Path("/abs/path/training_img.tif"),
-    chm=Path("/abs/path/training_chm.tif"),
-    den=Path("/abs/path/training_den.tif"),
-    crowns=Path("/abs/path/training_crowns.gpkg"),
-    sam_base_ckpt=Path("/abs/path/sam_vit_l_0b3195.pth"),
-    out=Path("/abs/path/model_bundle"),
+    img=Path("data/training/image.tif"),
+    chm=Path("data/training/chm.tif"),
+    den=Path("data/training/first_return_density.tif"),
+    crowns=Path("data/training/crowns.gpkg"),
+    sam_base_ckpt=Path("models/sam_vit_l_0b3195.pth"),
+    out=Path("models/crowns"),
+    rgb_bands=(1, 2, 3),
     storage="persistent",
     device="cpu",
 )
@@ -41,11 +49,11 @@ model = train(
 print(model.root)
 ```
 
-During training, `samstars` prepares a tile-style training directory, builds seed points and cost rasters, trains the proposal decoder, generates proposal rasters, builds refinement records, and trains the polygon-refinement model.
+`train(...)` prepares the cost raster and seed points, builds training samples, and trains the proposal and refinement stages.
+The example uses RGB imagery. For imagery with a near-infrared band, pass `nir_band` to include an NDVI cue in the cost surface.
+Band indices are one-based; `rgb_bands` lists red, green, and blue in that order.
 
 ## Train From Labeled Tiles
-
-Use `tiles_dir` when the training area is already split into tile directories.
 
 ```python
 from pathlib import Path
@@ -53,128 +61,48 @@ from pathlib import Path
 from samstars import train
 
 model = train(
-    tiles_dir=Path("/abs/path/training_tiles"),
-    sam_base_ckpt=Path("/abs/path/sam_vit_l_0b3195.pth"),
-    out=Path("/abs/path/model_bundle"),
+    tiles_dir=Path("data/training_tiles"),
+    sam_base_ckpt=Path("models/sam_vit_l_0b3195.pth"),
+    out=Path("models/crowns"),
+    rgb_bands=(1, 2, 3),
     storage="persistent",
     device="cpu",
 )
 ```
 
-Each tile can be fully prepared:
+Each subdirectory in `training_tiles` must use one of these layouts:
 
-- `img.tif`
-- `chm.tif`
-- `cost.tif`
-- `seeds.gpkg`
-- `crowns.gpkg`
+| Layout | Required files |
+| --- | --- |
+| Raw labeled tile | `img.tif`, `chm.tif`, `den.tif`, `crowns.gpkg` |
+| Prepared labeled tile | `img.tif`, `chm.tif`, `cost.tif`, `seeds.gpkg`, `crowns.gpkg` |
 
-or raw labeled:
-
-- `img.tif`
-- `chm.tif`
-- `den.tif`
-- `crowns.gpkg`
-
-For raw labeled tiles, `train(...)` derives `cost.tif` and `seeds.gpkg` before training.
-Do not mix fully prepared and raw labeled tile layouts in the same `tiles_dir`.
-
-## Model Bundle
-
-A trained bundle contains:
-
-- `manifest.json`
-- `decoder.pth`
-- `config.json`
-- `weights.h5`
-- `thresholds.json`, when threshold optimization produced one
-
-`manifest.json` records the bundle format, artifact filenames, and defaults used later by `segment(...)`.
-The bundle directory is the path passed to `segment(model=...)`.
-
-## Persistent Training Outputs
-
-With `storage="persistent"`, training intermediates are kept under:
-
-```text
-model_bundle/_training/
-```
-
-These files are useful for inspection, debugging, and partial reruns.
-They include:
-
-- prepared training tiles
-- training chips
-- proposal rasters and proposal records
-- refinement training records
-- CHM scale stats
-- temporary refinement model training outputs
-
-Use `storage="temp"` when you only want the final model bundle.
-
-## Training Chips
-
-Decoder training uses chip arrays derived from labeled tiles:
-
-```bash
-python -m samstars.training.chips \
-  --tiles-dir /abs/path/training_tiles \
-  --out-dir /abs/path/training_chips
-```
-
-Each input tile should contain:
-
-- `img.tif`
-- `chm.tif`
-- `crowns.gpkg`
-
-The output contains:
-
-- `images/`: image chips as `.npy`
-- `masks/`: binary crown masks as `.npy`
-- `chm/`: CHM chips as `.npy`
-- `prompts/`: prompt metadata per chip
-
-The top-level `train(...)` function builds training chips automatically.
-Use this command when you want to inspect or rebuild only the chip arrays.
+Use the same layout for all tiles. Raw tiles are prepared automatically.
+For prepared tiles, the three image channels and cost settings must already match the intended model inputs; training does not select their bands again.
+When creating a bundle from prepared tiles, supply the original source `rgb_bands`, `nir_band`, and `texture_band` settings if the bundle will later be used to prepare source rasters.
 
 ## Training Controls
 
-Common controls include:
+| Parameter | Purpose |
+| --- | --- |
+| `rgb_bands` | Source band indices in red, green, blue order; default `(1, 2, 3)`. |
+| `nir_band` | Optional near-infrared band for the NDVI cost term. |
+| `texture_band` | Optional band for image texture; otherwise use the mean RGB intensity. |
+| `sam_epochs`, `sam_lr` | Proposal training duration and learning rate; defaults `15` and `5e-5`. |
+| `stardist_epochs` | Refinement training duration; default `50`. |
+| `chip_size`, `chip_stride` | Training window size and spacing in pixels; defaults `512` and `384`. |
+| `val_fraction` | Fraction of refinement records used for validation; default `0.2`. |
 
-- `rgb_bands`: image bands used for the three-band proposal image.
-- `chip_size` and `chip_stride`: training chip size and stride in pixels.
-- `sam_epochs`, `sam_min_iters`, and `sam_lr`: proposal-decoder training controls.
-- `stardist_epochs` and `stardist_min_iters`: polygon-refinement training controls.
-- `val_fraction`: validation fraction for refinement training records.
-- `seed_d_min`, `seed_min_dist_px`, `seed_gauss_sigma`, `seed_merge_radius`, and `seed_min_canopy_height`: seed generation controls.
-- `stardist_input_key`: primary refinement input, usually `index`.
-- `stardist_use_aux`: whether to provide CHM as an auxiliary refinement channel.
-- `stardist_cpu`: run refinement training on CPU.
+The record split is not a spatially independent evaluation; use separate held-out areas for that purpose.
+Seed controls are described in [Data Preparation](data_preparation.md#create-seed-points), and the full parameter list is in the [API reference](api/top_level.md#samstars.api.train).
 
-See the [API reference for `samstars.api`](api/top_level.md) for the full function signature.
+## Model Bundle and Saved Outputs
 
-## Use the Trained Bundle
+The bundle contains `manifest.json`, `decoder.pth`, `config.json`, `weights.h5`, and, when available, `thresholds.json`.
+Pass the bundle directory to `segment(model=...)`; see [Segmentation](segmentation.md).
 
-After training, pass the bundle to `segment(...)`:
+With `storage="persistent"`, preparation, training samples, and proposal outputs are saved under `models/crowns/_training/`.
+Use `storage="temp"` to retain only the finished bundle.
+Use a new bundle directory for a new training experiment.
 
-```python
-from pathlib import Path
-
-from samstars import segment
-
-result = segment(
-    model=Path("/abs/path/model_bundle"),
-    img=Path("/abs/path/image.tif"),
-    chm=Path("/abs/path/chm.tif"),
-    den=Path("/abs/path/first_return_density.tif"),
-    out=Path("/abs/path/segmentation_run"),
-    storage="persistent",
-    device="cpu",
-)
-
-print(result.crowns)
-```
-
-For runnable walkthroughs, see [Train and Segment One Area](train_and_segment_one_area.ipynb) and [Train and Segment a Tiled Area](train_and_segment_tiled_area.ipynb).
-For component commands, see [CLI Scripts](reference/cli.md).
+See [Examples](examples.md) for notebook walkthroughs and [Advanced Workflows](advanced_workflows.md) for inspecting or rerunning individual stages.

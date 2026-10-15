@@ -50,6 +50,7 @@ nav:
     - Segmentation: segmentation.md
     - Downstream Analysis: downstream.md
     - Large Raster Runs: large_raster_runs.md
+    - Advanced Workflows: advanced_workflows.md
     - Examples:
         - Overview: examples.md
         - Train and Segment One Area: train_and_segment_one_area.ipynb
