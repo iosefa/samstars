@@ -18,7 +18,7 @@ It combines:
 - high-resolution imagery (satellite, aerial, or drone)
 - lidar-derived raster layers (e.g., canopy height and density)
 
-It automatically derives prompts from lidar structure and spectral cues to segment individual tree crowns. The workflow is designed to work with limited training annotations.
+It automatically derives prompts from lidar structure and spectral cues to segment individual tree crowns with limited training annotations.
 
 ## First Segmentation
 
