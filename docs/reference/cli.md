@@ -30,6 +30,8 @@ python examples/run_prepared_tiles_inference.py \
 
 Useful options:
 
+- `--rgb-bands R G B`: source bands for raw training tiles, using one-based indices
+- `--nir-band N` and `--texture-band N`: optional cost-surface band choices for raw training tiles
 - `--stardist-cpu`: force polygon refinement to CPU
 - `--stardist-input-key index|file_name|logit`
 - `--stardist-prob-thr` and `--stardist-nms-thr`
@@ -91,6 +93,7 @@ python -m samstars.data.tiling \
   --img /abs/path/image.tif \
   --chm /abs/path/chm.tif \
   --den /abs/path/first_return_density.tif \
+  --rgb-bands 1 2 3 \
   --out /abs/path/tiles
 ```
 

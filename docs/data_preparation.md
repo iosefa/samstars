@@ -10,14 +10,25 @@ The examples below show how to create them separately for inspection, or [prepar
 
 | Input | What to provide |
 | --- | --- |
-| `img` | A georeferenced imagery raster with the eight-band layout described below. |
+| `img` | A georeferenced RGB or multiband imagery raster. |
 | `chm` | A single-band raster of canopy height above ground, in meters. |
 | `den` | A single-band raster of first lidar returns per cell, or per square meter. |
 | `crowns` | One polygon per labeled tree crown, required only for training. |
 
-The current cost-surface builder expects eight image bands in WorldView-3 order:
-coastal, blue, green, yellow, red, red edge, near-infrared 1, and near-infrared 2.
-Keep all eight bands in the source image; the prepared tiles retain only the three bands selected for segmentation.
+## Image Bands
+
+`rgb_bands` identifies the red, green, and blue bands using one-based indices.
+The default `(1, 2, 3)` assumes the source image already has those bands in RGB order.
+For a BGR image, use `rgb_bands=(3, 2, 1)`.
+For a multiband image, select the three corresponding source bands explicitly; the sensor is not inferred from band count.
+
+An optional `nir_band` adds a near-infrared band for the NDVI cost cue.
+`texture_band` selects a separate band for image texture; by default, texture uses the mean of the selected RGB channels.
+These arguments are available in `build_cost_surface(...)`, `build_tiles(...)`, `train(...)`, and `segment(...)`.
+See [Advanced Workflows](advanced_workflows.md#multispectral-cost-settings) for a multispectral example.
+
+Prepared images contain the three selected RGB channels.
+Use the same channel content and cost settings during training and segmentation.
 
 ## Prepare Lidar Rasters
 
@@ -46,9 +57,11 @@ These lower-level functions expect already aligned inputs.
 
 ## Create a Cost Surface
 
-A cost surface is a raster with values from 0 to 1 that highlights likely crown edges and canopy gaps.
+A cost surface is a raster with values from 0 to 1 that highlights likely crown boundaries.
 Higher values discourage grouping seed points across those areas and reduce segmentation scores there.
-The default combines canopy-height changes, low vegetation values derived from red and near-infrared imagery, and image texture.
+For RGB imagery, it combines canopy-height changes and image texture.
+When `nir_band` is supplied, it also includes an NDVI cue for canopy gaps and non-vegetated areas.
+The weights of the available terms are rescaled to sum to one.
 
 Create `cost.tif` from an aligned image and CHM:
 
@@ -58,8 +71,9 @@ from pathlib import Path
 from samstars.features import build_cost_surface, write_cost_surface
 
 cost, profile = build_cost_surface(
-    wv3_path=Path("data/image.tif"),
+    img_path=Path("data/image.tif"),
     chm_path=Path("data/chm.tif"),
+    rgb_bands=(1, 2, 3),
 )
 
 write_cost_surface(cost, profile, Path("prepared/cost.tif"))
@@ -114,23 +128,22 @@ build_tiles(
     chm=Path("data/chm.tif"),
     den=Path("data/first_return_density.tif"),
     out=Path("prepared/tiles"),
-    rgb_bands=(7, 5, 3),
+    rgb_bands=(1, 2, 3),
     tile=500.0,
     overlap=20.0,
 )
 ```
 
 `tile` and `overlap` use the imagery CRS units: with a CRS in meters, this creates approximately 500-meter tiles with 20 meters of overlap.
-`rgb_bands` uses one-based indices; `(7, 5, 3)` selects near-infrared 1, red, and green.
-Use the same band selection as your model. This selection does not change the bands used to calculate the cost surface.
+The example assumes RGB imagery. If training used `nir_band` or `texture_band`, supply the same settings when building inference tiles.
 
 Each tile directory contains:
 
 | File | Contents |
 | --- | --- |
-| `img.tif` | The three selected image bands. |
+| `img.tif` | The selected red, green, and blue bands, in that order. |
 | `chm.tif` | Canopy heights on the tile grid. |
-| `cost.tif` | Boundary and gap cues. |
+| `cost.tif` | Boundary cues and, when NIR is supplied, an NDVI gap cue. |
 | `seeds.gpkg` | Candidate crown-center points. |
 
 Training tiles also need `crowns.gpkg`; see [Training](training.md) for preparing labeled tiles.

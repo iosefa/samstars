@@ -57,8 +57,8 @@ The TensorFlow command follows the
 requires a compatible NVIDIA driver. If TensorFlow GPU support is not needed,
 omit that command and let `samstars` install standard TensorFlow.
 PyTorch and TensorFlow detect accelerators independently: `device="cuda"`
-controls the SAM stage, while TensorFlow controls StarDist. Set
-`stardist_cpu=True` when only the SAM stage should use CUDA.
+controls proposal generation, while TensorFlow controls refinement. Set
+`stardist_cpu=True` when only proposal generation should use CUDA.
 
 Check CUDA availability:
 
@@ -89,9 +89,7 @@ for host requirements:
 python -m pip install "samstars[metal]"
 ```
 
-The `metal` extra installs `tensorflow-metal>=1.2,<2`. Because the plug-in does
-not declare a TensorFlow compatibility range in its package metadata, verify
-both frameworks after installation:
+Check both frameworks after installation:
 
 ```bash
 python - <<'PY'

@@ -3,8 +3,7 @@
 `samstars` writes individual crown polygons.
 Those polygons can be used as crown-level units for later analysis, including species classification, biomass estimation, crown metrics, and change analysis.
 
-The package does not assign species labels directly.
-It supports downstream species classification by providing crown geometries that can be used for feature extraction, modeling, and map production.
+Species classification is a separate downstream step using these crown geometries.
 
 ## Crown Output
 
@@ -25,7 +24,6 @@ It contains one feature per predicted crown:
 | `score` | Refinement confidence score when available. |
 | `geometry` | Crown polygon in the output CRS. |
 
-Keep these fields unchanged when adding downstream attributes.
 If you combine outputs from multiple runs, add a run identifier before merging files so crown identifiers remain unambiguous.
 
 ## Species Classification
@@ -38,12 +36,10 @@ A common downstream workflow is:
 4. Join predicted species labels and confidence scores back to the crown polygons.
 
 Use a table with one row per crown and a stable key, usually `id` for one output file or `run_id` plus `id` for merged runs.
-`samstars` does not provide species-classification or feature-extraction functions.
 
 ## Join Species Predictions
 
 After classification, read the crown GeoPackage into a GeoPandas `GeoDataFrame` and join a prediction table to it.
-The `.merge(...)` call is the standard Pandas table-join method available on GeoPandas data frames.
 
 ```python
 from pathlib import Path
@@ -89,9 +85,6 @@ Typical crown-level predictors include:
 - CHM height summaries, such as maximum, mean, and percentiles
 - texture metrics computed from imagery or canopy-height rasters
 - crown geometry metrics, such as area and perimeter
-
-Store feature tables separately from the segmentation output when they are intermediate modeling data.
-Write joined GeoPackages only for outputs intended for mapping, review, or downstream analysis.
 
 ## Quality Checks
 
