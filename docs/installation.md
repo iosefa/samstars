@@ -17,13 +17,11 @@ tested release targets.
 ## Install the library from PyPI
 
 ```bash
-python -m pip install --upgrade pip
 python -m pip install samstars
 ```
 
-This installs the geospatial libraries and CPU-capable machine-learning stack
-needed by the documented workflows. Accelerator-specific setup is separate so
-that a normal installation does not require CUDA or Metal.
+For optional GPU support, see [NVIDIA CUDA on Linux](#nvidia-cuda-on-linux)
+or [Apple Silicon acceleration](#apple-silicon-acceleration).
 
 On Linux, use PyTorch's CPU-only package index when you do not want pip to
 install NVIDIA runtime libraries:
@@ -33,9 +31,6 @@ python -m pip install "torch>=2.3,<3" "torchvision>=0.18,<1" \
   --index-url https://download.pytorch.org/whl/cpu
 python -m pip install samstars
 ```
-
-`samstars` does not bundle trained model files.
-See [Training](training.md) and [Segmentation](segmentation.md).
 
 Verify:
 
