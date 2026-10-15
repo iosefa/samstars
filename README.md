@@ -11,6 +11,8 @@
 `samstars` is a Python library for instance segmentation of individual trees
 using high-resolution imagery and lidar-derived rasters.
 
+![SAM-STARS graphical abstract showing satellite imagery and lidar inputs, automatic crown prompts, canopy fusion, individual crown delineation, species classification, and annotation efficiency.](docs/assets/figures/sam-stars-graphical-abstract.png)
+
 Read the full documentation at [samstars.sefa.ai](https://samstars.sefa.ai).
 
 ## Installation
