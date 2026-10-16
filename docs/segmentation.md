@@ -44,6 +44,7 @@ It contains one feature per predicted crown and can be opened in GIS software or
 See [Downstream Analysis](downstream.md#crown-output) for its fields and uses.
 
 With `storage="persistent"`, the output directory also keeps prepared inputs, proposal rasters, and refinement checkpoints for inspection or resuming a run.
+`proposals/proposal_records.json` indexes the rasters used by refinement and is managed automatically; see [Advanced Workflows](advanced_workflows.md#proposal-and-canopy-index-rasters) for its contents and reuse.
 With `storage="temp"`, intermediate files are removed after the run and final crown outputs are retained.
 
 Overlapping tiles can produce duplicate crowns near their boundaries.
