@@ -61,7 +61,11 @@ For retraining refinement with new annotations, see [Retrain Refinement for One 
 
 ## Proposal and Canopy Index Rasters
 
-Persistent segmentation runs save rasters in `out/proposals/rasters/` and a file index in `out/proposals/proposal_records.json`.
+The proposal stage produces raster maps of likely crown regions for refinement into individual crown polygons.
+Persistent segmentation runs save these maps and their supporting rasters in `out/proposals/rasters/`, indexed by `out/proposals/proposal_records.json`.
+
+The index is a JSON list with one record per processed tile or chip.
+Each record groups the corresponding raster paths below and may include spatial metadata in `meta`.
 
 | Record key | Raster | Contents |
 | --- | --- | --- |
@@ -73,6 +77,11 @@ Persistent segmentation runs save rasters in `out/proposals/rasters/` and a file
 
 The canopy index combines proposal probability, normalized canopy height, boundary cost, and a ground-height weight.
 Higher values indicate stronger crown support.
+
+`train(...)` and `segment(...)` create and use the index automatically.
+It connects proposal generation to refinement and is also used to build refinement training samples.
+To rerun refinement or retrain from saved proposals, retain the index and its referenced rasters at the recorded paths.
+Final crown polygons can be used independently of these intermediate files.
 
 ## Run Records and CHM Scaling
 
