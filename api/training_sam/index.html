@@ -453,6 +453,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -467,10 +494,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -488,8 +515,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -541,7 +568,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -569,7 +596,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -597,7 +624,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -638,10 +665,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -659,8 +686,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -755,10 +782,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -776,8 +803,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1465,15 +1492,10 @@
 
     <div class="doc doc-contents first">
 
-        <p>Train the proposal decoder from prepared training chips.</p>
-<p>Upgrade: align training prompts with inference:
-- Use box prompts (json["box"] if present, else derived from mask bbox)
-- Use many fg/bg points derived from CHM, like inference
-- Pad variable-length points to a fixed size with (-10,-10) and label -1</p>
-<p>We still:
-- freeze image_encoder + prompt_encoder
-- train mask_decoder only
-- use global RGB scaling to uint8 (via --scale-stats)</p>
+        <p>Train the proposal decoder from image chips and individual crown masks.</p>
+<p>Training uses crown boxes and foreground/background points derived from canopy
+height. The image and prompt encoders remain frozen while the mask decoder is
+optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.</p>
 
 
 
@@ -1520,7 +1542,14 @@
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">186</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
 <span class="normal">187</span>
 <span class="normal">188</span>
 <span class="normal">189</span>
@@ -1648,14 +1677,7 @@
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Chips</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Chips</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">chip_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
@@ -1669,11 +1691,11 @@
         <span class="n">chm_ground</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span>
         <span class="n">box_expand</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the instance.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize the instance."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">=</span> <span class="n">chip_dir</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;images&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.npy&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"images"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.npy"</span><span class="p">))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No chips in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No chips in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">img_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resize</span> <span class="o">=</span> <span class="n">ResizeLongestSide</span><span class="p">(</span><span class="n">enc_size</span><span class="p">)</span>
@@ -1690,17 +1712,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_points</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fg_extra</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">neg_max_gnd</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">neg_max_can</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of items.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the number of items."""</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return one item by index.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return one item by index."""</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">stem</span>
 
         <span class="c1"># --- load RGB chip (C,H,W) ---</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;images&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"images"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: expected img CHW, got </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: expected img CHW, got </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">C</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">if</span> <span class="n">H</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span> <span class="ow">or</span> <span class="n">W</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span><span class="p">:</span>
             <span class="c1"># if your chips are padded/cropped, this keeps things safe</span>
@@ -1719,19 +1741,19 @@
         <span class="n">img_t</span> <span class="o">=</span> <span class="n">img_u8</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>  <span class="c1"># CHW float, 0..255</span>
 
         <span class="c1"># --- load mask (H,W) ---</span>
-        <span class="n">msk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;masks&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">)</span>
+        <span class="n">msk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"masks"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy"</span><span class="p">)</span>
         <span class="n">msk</span> <span class="o">=</span> <span class="p">(</span><span class="n">msk</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
         <span class="c1"># --- load CHM (H,W) for prompt sampling ---</span>
-        <span class="n">chm_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;chm&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+        <span class="n">chm_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"chm"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy"</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">chm_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: missing CHM chip </span><span class="si">{</span><span class="n">chm_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: missing CHM chip </span><span class="si">{</span><span class="n">chm_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">chm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">chm_path</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
         <span class="c1"># --- load json (point + optional box) ---</span>
-        <span class="n">jpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;prompts&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.json&quot;</span>
+        <span class="n">jpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"prompts"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.json"</span>
         <span class="n">j</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">jpath</span><span class="p">))</span>
-        <span class="n">pt</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">pt</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"point"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">pt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># fallback: centroid of mask</span>
@@ -1745,8 +1767,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-        <span class="c1"># Box: prefer json[&quot;box&quot;], else bbox from mask</span>
-        <span class="n">box</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;box&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># Box: prefer json["box"], else bbox from mask</span>
+        <span class="n">box</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"box"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">box</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">box</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
             <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">box</span><span class="p">)</span>
             <span class="n">box_xyxy</span> <span class="o">=</span> <span class="n">_clamp_box_xyxy</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span><span class="p">)</span>
@@ -1823,7 +1845,14 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">224</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
 <span class="normal">225</span>
 <span class="normal">226</span>
 <span class="normal">227</span>
@@ -1913,21 +1942,14 @@
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return one item by index.&quot;&quot;&quot;</span>
+<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Return one item by index."""</span>
     <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">stem</span>
 
     <span class="c1"># --- load RGB chip (C,H,W) ---</span>
-    <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;images&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"images"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: expected img CHW, got </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: expected img CHW, got </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">C</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">if</span> <span class="n">H</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span> <span class="ow">or</span> <span class="n">W</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span><span class="p">:</span>
         <span class="c1"># if your chips are padded/cropped, this keeps things safe</span>
@@ -1946,19 +1968,19 @@
     <span class="n">img_t</span> <span class="o">=</span> <span class="n">img_u8</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>  <span class="c1"># CHW float, 0..255</span>
 
     <span class="c1"># --- load mask (H,W) ---</span>
-    <span class="n">msk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;masks&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">)</span>
+    <span class="n">msk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"masks"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy"</span><span class="p">)</span>
     <span class="n">msk</span> <span class="o">=</span> <span class="p">(</span><span class="n">msk</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
     <span class="c1"># --- load CHM (H,W) for prompt sampling ---</span>
-    <span class="n">chm_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;chm&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+    <span class="n">chm_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"chm"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.npy"</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">chm_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: missing CHM chip </span><span class="si">{</span><span class="n">chm_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: missing CHM chip </span><span class="si">{</span><span class="n">chm_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">chm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">chm_path</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
     <span class="c1"># --- load json (point + optional box) ---</span>
-    <span class="n">jpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;prompts&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.json&quot;</span>
+    <span class="n">jpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"prompts"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.json"</span>
     <span class="n">j</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">jpath</span><span class="p">))</span>
-    <span class="n">pt</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"point"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">pt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># fallback: centroid of mask</span>
@@ -1972,8 +1994,8 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="c1"># Box: prefer json[&quot;box&quot;], else bbox from mask</span>
-    <span class="n">box</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;box&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># Box: prefer json["box"], else bbox from mask</span>
+    <span class="n">box</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"box"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">box</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">box</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
         <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">box</span><span class="p">)</span>
         <span class="n">box_xyxy</span> <span class="o">=</span> <span class="n">_clamp_box_xyxy</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span><span class="p">)</span>
@@ -2040,7 +2062,14 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">187</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
 <span class="normal">188</span>
 <span class="normal">189</span>
 <span class="normal">190</span>
@@ -2064,14 +2093,7 @@
 <span class="normal">208</span>
 <span class="normal">209</span>
 <span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">chip_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">img_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span>
@@ -2084,11 +2106,11 @@
     <span class="n">chm_ground</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span>
     <span class="n">box_expand</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the instance.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Initialize the instance."""</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">=</span> <span class="n">chip_dir</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">&quot;images&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.npy&quot;</span><span class="p">))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"images"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.npy"</span><span class="p">))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No chips in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No chips in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">img_size</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">resize</span> <span class="o">=</span> <span class="n">ResizeLongestSide</span><span class="p">(</span><span class="n">enc_size</span><span class="p">)</span>
@@ -2125,10 +2147,10 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the number of items.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Return the number of items."""</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2161,7 +2183,14 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">420</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
 <span class="normal">421</span>
 <span class="normal">422</span>
 <span class="normal">423</span>
@@ -2202,47 +2231,40 @@
 <span class="normal">458</span>
 <span class="normal">459</span>
 <span class="normal">460</span>
-<span class="normal">461</span>
-<span class="normal">462</span>
-<span class="normal">463</span>
-<span class="normal">464</span>
-<span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span>
-<span class="normal">468</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the command-line entry point.&quot;&quot;&quot;</span>
-    <span class="n">pa</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Train the proposal decoder from a prepared training-chip directory.&quot;</span><span class="p">)</span>
+<span class="normal">461</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Run the command-line entry point."""</span>
+    <span class="n">pa</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"Train the proposal decoder from a prepared training-chip directory."</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--training-chips-dir&quot;</span><span class="p">,</span>
+        <span class="s2">"--training-chips-dir"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Training-chip directory containing images/, masks/, chm/, and prompts/ subdirectories&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Training-chip directory containing images/, masks/, chm/, and prompts/ subdirectories"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--out-path&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to write the trained decoder checkpoint&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ckpt&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Base SAM ViT-L checkpoint&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--epochs&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of training epochs&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--min-iters&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum training iterations (converted to epochs)&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--device&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Training device&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--scale-stats&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional global imagery scaling stats JSON&quot;</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--out-path"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Path to write the trained decoder checkpoint"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--ckpt"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Base SAM ViT-L checkpoint"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--epochs"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Number of training epochs"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--min-iters"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Minimum training iterations (converted to epochs)"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--device"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Training device"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--scale-stats"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Optional global imagery scaling stats JSON"</span><span class="p">)</span>
 
     <span class="c1"># New knobs (optional)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fg-extra&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">FG_EXTRA_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Additional positive prompt points sampled from CHM&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--neg-max-gnd&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NEG_MAX_GND_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum negative ground prompt points&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--neg-max-can&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NEG_MAX_CAN_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum negative canopy prompt points&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--chm-ground&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;CHM threshold used when sampling prompts&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--box-expand&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Expand bbox about its center (1.0 = no expand)&quot;</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--fg-extra"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">FG_EXTRA_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Additional positive prompt points sampled from CHM"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--neg-max-gnd"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NEG_MAX_GND_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Maximum negative ground prompt points"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--neg-max-can"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NEG_MAX_CAN_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Maximum negative canopy prompt points"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--chm-ground"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"CHM threshold used when sampling prompts"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--box-expand"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Expand bbox about its center (1.0 = no expand)"</span><span class="p">)</span>
 
     <span class="n">args</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 
     <span class="n">rgb_lo_hi</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">scale_stats</span><span class="p">:</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="n">load_scale_stats</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">scale_stats</span><span class="p">)</span>
-        <span class="n">per_channel</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sam_rgb_u8&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;per_channel&quot;</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="n">rgb_lo_hi</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;lo&quot;</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;hi&quot;</span><span class="p">]))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">per_channel</span><span class="p">]</span>
+        <span class="n">per_channel</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sam_rgb_u8"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"per_channel"</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">rgb_lo_hi</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">"lo"</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">"hi"</span><span class="p">]))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">per_channel</span><span class="p">]</span>
 
     <span class="n">chip_dir</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">training_chips_dir</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">chip_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing chips dir: </span><span class="si">{</span><span class="n">chip_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing chips dir: </span><span class="si">{</span><span class="n">chip_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">train_decoder</span><span class="p">(</span>
         <span class="n">chip_dir</span><span class="p">,</span>
@@ -2280,19 +2302,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stretch_u8</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fallback per-array min/max stretch to uint8.&quot;&quot;&quot;</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stretch_u8</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Fallback per-array min/max stretch to uint8."""</span>
     <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">finite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">finite</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
@@ -2313,7 +2335,7 @@
 
 
 <h3 id="samstars.training.sam_training.train_decoder" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">train_decoder</span><span class="p">(</span><span class="n">chip_dir</span><span class="p">,</span> <span class="n">ckpt</span><span class="p">,</span> <span class="n">out_path</span><span class="p">,</span> <span class="n">img_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">enc_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">5e-05</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="n">rgb_lo_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="n">FG_EXTRA_DEFAULT</span><span class="p">,</span> <span class="n">neg_max_gnd</span><span class="o">=</span><span class="n">NEG_MAX_GND_DEFAULT</span><span class="p">,</span> <span class="n">neg_max_can</span><span class="o">=</span><span class="n">NEG_MAX_CAN_DEFAULT</span><span class="p">,</span> <span class="n">chm_ground</span><span class="o">=</span><span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span> <span class="n">box_expand</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">train_decoder</span><span class="p">(</span><span class="n">chip_dir</span><span class="p">,</span> <span class="n">ckpt</span><span class="p">,</span> <span class="n">out_path</span><span class="p">,</span> <span class="n">img_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">enc_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">5e-05</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">rgb_lo_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="n">FG_EXTRA_DEFAULT</span><span class="p">,</span> <span class="n">neg_max_gnd</span><span class="o">=</span><span class="n">NEG_MAX_GND_DEFAULT</span><span class="p">,</span> <span class="n">neg_max_can</span><span class="o">=</span><span class="n">NEG_MAX_CAN_DEFAULT</span><span class="p">,</span> <span class="n">chm_ground</span><span class="o">=</span><span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span> <span class="n">box_expand</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span></code>
 
 <a href="#samstars.training.sam_training.train_decoder" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -2325,7 +2347,14 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">324</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
 <span class="normal">325</span>
 <span class="normal">326</span>
 <span class="normal">327</span>
@@ -2411,14 +2440,7 @@
 <span class="normal">407</span>
 <span class="normal">408</span>
 <span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train_decoder</span><span class="p">(</span>
+<span class="normal">410</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train_decoder</span><span class="p">(</span>
     <span class="n">chip_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">ckpt</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">out_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
@@ -2427,7 +2449,7 @@
     <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
     <span class="n">min_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5e-5</span><span class="p">,</span>
-    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"cpu"</span><span class="p">,</span>
     <span class="n">rgb_lo_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">fg_extra</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">FG_EXTRA_DEFAULT</span><span class="p">,</span>
@@ -2436,7 +2458,7 @@
     <span class="n">chm_ground</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span>
     <span class="n">box_expand</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Train decoder.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Train decoder."""</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">Chips</span><span class="p">(</span>
         <span class="n">chip_dir</span><span class="p">,</span>
         <span class="n">img_size</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span>
@@ -2455,9 +2477,9 @@
         <span class="n">min_epochs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">min_iters</span> <span class="o">+</span> <span class="n">iters_per_epoch</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">iters_per_epoch</span><span class="p">)</span>
         <span class="n">epochs</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">min_epochs</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chip_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: epochs=</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2"> (iters/epoch=</span><span class="si">{</span><span class="n">iters_per_epoch</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">chip_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: epochs=</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2"> (iters/epoch=</span><span class="si">{</span><span class="n">iters_per_epoch</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
 
-    <span class="n">sam</span> <span class="o">=</span> <span class="n">sam_model_registry</span><span class="p">[</span><span class="s2">&quot;vit_l&quot;</span><span class="p">](</span><span class="n">checkpoint</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">ckpt</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">sam</span> <span class="o">=</span> <span class="n">sam_model_registry</span><span class="p">[</span><span class="s2">"vit_l"</span><span class="p">](</span><span class="n">checkpoint</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">ckpt</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
     <span class="n">sam</span><span class="o">.</span><span class="n">image_encoder</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">sam</span><span class="o">.</span><span class="n">prompt_encoder</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
@@ -2465,7 +2487,7 @@
     <span class="n">base_pe</span> <span class="o">=</span> <span class="n">sam</span><span class="o">.</span><span class="n">prompt_encoder</span><span class="o">.</span><span class="n">get_dense_pe</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">loss_fn</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">truth</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loss fn.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Loss fn."""</span>
         <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
         <span class="n">dice</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">score</span> <span class="o">*</span> <span class="n">truth</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="n">truth</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">dice</span> <span class="o">+</span> <span class="n">F</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">truth</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -2498,7 +2520,7 @@
             <span class="p">)</span>
 
             <span class="c1"># supervise against the original 512x512 mask</span>
-            <span class="n">logit</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">logit_low</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">img_size</span><span class="p">,</span> <span class="n">img_size</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;bilinear&quot;</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logit</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">logit_low</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">img_size</span><span class="p">,</span> <span class="n">img_size</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"bilinear"</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="p">(</span><span class="n">logit</span><span class="p">,</span> <span class="n">msk</span><span class="p">)</span>
 
             <span class="n">opt</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
@@ -2507,11 +2529,11 @@
 
             <span class="n">tot</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chip_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> epoch </span><span class="si">{</span><span class="n">ep</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2"> loss=</span><span class="si">{</span><span class="n">tot</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">chip_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> epoch </span><span class="si">{</span><span class="n">ep</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2"> loss=</span><span class="si">{</span><span class="n">tot</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">out_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">sam</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">out_path</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ weights → </span><span class="si">{</span><span class="n">out_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✓ weights → </span><span class="si">{</span><span class="n">out_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

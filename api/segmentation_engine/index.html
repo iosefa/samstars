@@ -453,6 +453,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -467,10 +494,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -488,8 +515,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -541,7 +568,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -569,7 +596,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -597,7 +624,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -638,10 +665,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -659,8 +686,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -755,10 +782,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -776,8 +803,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1347,14 +1374,24 @@
 
 
 <h3 id="samstars.segmentation.engine.run_segmentation" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">run_segmentation</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">sam_ckpt</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="n">stardist_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fast_batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">run_segmentation</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">sam_ckpt</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">stardist_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fast_batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
 
 <a href="#samstars.segmentation.engine.run_segmentation" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Run end-to-end segmentation from prepared tiles or one raw input scene.</p>
+        <p>Run segmentation with separate proposal and refinement model paths.</p>
+<p>Supply tiles_dir for prepared inputs, or img/chm/den for automatic preparation.
+rgb_bands uses one-based red, green, blue indices, defaulting to (1, 2, 3).
+nir_band enables the NDVI cost term; texture_band optionally selects the
+texture source instead of mean RGB intensity.</p>
+<p>sam_ckpt is the trained proposal checkpoint. stardist_model points directly
+to the refinement directory containing config.json and weights.
+out_dir retains intermediates and final crowns. The return dictionary contains
+the run-record, proposal, and crown paths.</p>
+<p>Stage, threshold, resume, and window controls have the meanings documented
+by samstars.segment. Final polygon deduplication is disabled by default.</p>
 
 
             <details class="mkdocstrings-source">
@@ -1583,18 +1620,38 @@
 <span class="normal">336</span>
 <span class="normal">337</span>
 <span class="normal">338</span>
-<span class="normal">339</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run_segmentation</span><span class="p">(</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run_segmentation</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">tiles_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">chm</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">den</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rgb_bands</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">nir_band</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">texture_band</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">out_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">sam_ckpt</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
-    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"cpu"</span><span class="p">,</span>
     <span class="n">stardist_model</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">stardist_input_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span>
+    <span class="n">stardist_input_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"index"</span><span class="p">,</span>
     <span class="n">stardist_use_aux</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">stardist_prob_thr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">stardist_nms_thr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1616,35 +1673,51 @@
     <span class="n">smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span>
     <span class="n">post_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run end-to-end segmentation from prepared tiles or one raw input scene.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Run segmentation with separate proposal and refinement model paths.</span>
+
+<span class="sd">    Supply tiles_dir for prepared inputs, or img/chm/den for automatic preparation.</span>
+<span class="sd">    rgb_bands uses one-based red, green, blue indices, defaulting to (1, 2, 3).</span>
+<span class="sd">    nir_band enables the NDVI cost term; texture_band optionally selects the</span>
+<span class="sd">    texture source instead of mean RGB intensity.</span>
+
+<span class="sd">    sam_ckpt is the trained proposal checkpoint. stardist_model points directly</span>
+<span class="sd">    to the refinement directory containing config.json and weights.</span>
+<span class="sd">    out_dir retains intermediates and final crowns. The return dictionary contains</span>
+<span class="sd">    the run-record, proposal, and crown paths.</span>
+
+<span class="sd">    Stage, threshold, resume, and window controls have the meanings documented</span>
+<span class="sd">    by samstars.segment. Final polygon deduplication is disabled by default.</span>
+<span class="sd">    """</span>
     <span class="n">out_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
     <span class="n">resolved_sam_ckpt</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">resolved_stardist_model</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="n">raw_inputs</span> <span class="o">=</span> <span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">chm</span><span class="p">,</span> <span class="n">den</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">tiles_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw_inputs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide either tiles_dir or img/chm/den, not both.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Provide either tiles_dir or img/chm/den, not both."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">tiles_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw_inputs</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide either tiles_dir or all of img/chm/den.&quot;</span><span class="p">)</span>
-        <span class="n">prepared_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;prep&quot;</span> <span class="o">/</span> <span class="s2">&quot;scene&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Provide either tiles_dir or all of img/chm/den."</span><span class="p">)</span>
+        <span class="n">prepared_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"prep"</span> <span class="o">/</span> <span class="s2">"scene"</span>
         <span class="n">tiles_dir</span> <span class="o">=</span> <span class="n">build_single_tile</span><span class="p">(</span>
             <span class="n">img</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">img</span><span class="p">),</span>
             <span class="n">chm</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">chm</span><span class="p">),</span>
             <span class="n">den</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">den</span><span class="p">),</span>
             <span class="n">rgb_bands</span><span class="o">=</span><span class="n">rgb_bands</span><span class="p">,</span>
+            <span class="n">nir_band</span><span class="o">=</span><span class="n">nir_band</span><span class="p">,</span>
+            <span class="n">texture_band</span><span class="o">=</span><span class="n">texture_band</span><span class="p">,</span>
             <span class="n">out</span><span class="o">=</span><span class="n">prepared_root</span><span class="p">,</span>
             <span class="n">skip_existing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="n">tiles_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tiles_dir</span><span class="p">)</span>
 
-    <span class="n">records_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;run_records&quot;</span>
-    <span class="n">proposals_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;proposals&quot;</span>
-    <span class="n">crowns_dir</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;crowns&quot;</span>
-    <span class="n">proposal_records</span> <span class="o">=</span> <span class="n">proposals_root</span> <span class="o">/</span> <span class="s2">&quot;proposal_records.json&quot;</span>
-    <span class="n">proposal_rasters_dir</span> <span class="o">=</span> <span class="n">proposals_root</span> <span class="o">/</span> <span class="s2">&quot;rasters&quot;</span>
-    <span class="n">tile_records</span> <span class="o">=</span> <span class="n">records_root</span> <span class="o">/</span> <span class="s2">&quot;tiles.json&quot;</span>
-    <span class="n">pending_tile_records_path</span> <span class="o">=</span> <span class="n">records_root</span> <span class="o">/</span> <span class="s2">&quot;tiles.pending.json&quot;</span>
+    <span class="n">records_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"run_records"</span>
+    <span class="n">proposals_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"proposals"</span>
+    <span class="n">crowns_dir</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"crowns"</span>
+    <span class="n">proposal_records</span> <span class="o">=</span> <span class="n">proposals_root</span> <span class="o">/</span> <span class="s2">"proposal_records.json"</span>
+    <span class="n">proposal_rasters_dir</span> <span class="o">=</span> <span class="n">proposals_root</span> <span class="o">/</span> <span class="s2">"rasters"</span>
+    <span class="n">tile_records</span> <span class="o">=</span> <span class="n">records_root</span> <span class="o">/</span> <span class="s2">"tiles.json"</span>
+    <span class="n">pending_tile_records_path</span> <span class="o">=</span> <span class="n">records_root</span> <span class="o">/</span> <span class="s2">"tiles.pending.json"</span>
     <span class="n">recs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">build_tile_records</span><span class="p">(</span>
         <span class="n">tiles_dir</span><span class="o">=</span><span class="n">tiles_dir</span><span class="p">,</span>
         <span class="n">out_root</span><span class="o">=</span><span class="n">records_root</span><span class="p">,</span>
@@ -1684,10 +1757,10 @@
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">run_stardist</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;records_root&quot;</span><span class="p">:</span> <span class="n">records_root</span><span class="p">,</span>
-            <span class="s2">&quot;proposals_root&quot;</span><span class="p">:</span> <span class="n">proposals_root</span><span class="p">,</span>
-            <span class="s2">&quot;crowns_dir&quot;</span><span class="p">:</span> <span class="n">crowns_dir</span><span class="p">,</span>
-            <span class="s2">&quot;proposal_records&quot;</span><span class="p">:</span> <span class="n">proposal_records</span><span class="p">,</span>
+            <span class="s2">"records_root"</span><span class="p">:</span> <span class="n">records_root</span><span class="p">,</span>
+            <span class="s2">"proposals_root"</span><span class="p">:</span> <span class="n">proposals_root</span><span class="p">,</span>
+            <span class="s2">"crowns_dir"</span><span class="p">:</span> <span class="n">crowns_dir</span><span class="p">,</span>
+            <span class="s2">"proposal_records"</span><span class="p">:</span> <span class="n">proposal_records</span><span class="p">,</span>
         <span class="p">}</span>
 
     <span class="k">if</span> <span class="n">proposal_rasters_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
@@ -1695,17 +1768,17 @@
         <span class="n">existing_count</span> <span class="o">=</span> <span class="n">_record_count</span><span class="p">(</span><span class="n">proposal_records</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">partial</span> <span class="ow">and</span> <span class="n">existing_count</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partial</span><span class="p">):</span>
             <span class="n">proposal_records</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">partial</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">proposal_records</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">))</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">partial</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">proposal_records</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">))</span>
             <span class="n">_normalize_record_paths</span><span class="p">(</span><span class="n">proposal_records</span><span class="p">)</span>
             <span class="n">proposal_records_rebuilt</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">proposal_records</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing proposal records: </span><span class="si">{</span><span class="n">proposal_records</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing proposal records: </span><span class="si">{</span><span class="n">proposal_records</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">stardist_model_dir</span><span class="p">,</span> <span class="n">stardist_model_name</span> <span class="o">=</span> <span class="n">_resolve_stardist_model</span><span class="p">(</span><span class="n">stardist_model</span><span class="o">=</span><span class="n">stardist_model</span><span class="p">)</span>
     <span class="n">resolved_stardist_model</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">stardist_model_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">stardist_model_name</span>
 
-    <span class="n">scale_stats</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;proposal_scale_stats.json&quot;</span>
+    <span class="n">scale_stats</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"proposal_scale_stats.json"</span>
     <span class="k">if</span> <span class="n">proposal_records_rebuilt</span> <span class="ow">and</span> <span class="n">scale_stats</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="n">scale_stats</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">scale_stats</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
@@ -1713,100 +1786,100 @@
             <span class="n">proposal_records</span><span class="o">=</span><span class="n">proposal_records</span><span class="p">,</span>
             <span class="n">out</span><span class="o">=</span><span class="n">scale_stats</span><span class="p">,</span>
             <span class="n">percentiles</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">98.0</span><span class="p">),</span>
-            <span class="n">chm_key</span><span class="o">=</span><span class="s2">&quot;chm&quot;</span><span class="p">,</span>
+            <span class="n">chm_key</span><span class="o">=</span><span class="s2">"chm"</span><span class="p">,</span>
             <span class="n">nodata_values</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">9999.0</span><span class="p">,),</span>
         <span class="p">)</span>
 
-    <span class="n">refinement_py</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;refinement.py&quot;</span>
+    <span class="n">refinement_py</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"refinement.py"</span>
     <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span>
         <span class="nb">str</span><span class="p">(</span><span class="n">refinement_py</span><span class="p">),</span>
-        <span class="s2">&quot;--proposal-records&quot;</span><span class="p">,</span>
+        <span class="s2">"--proposal-records"</span><span class="p">,</span>
         <span class="nb">str</span><span class="p">(</span><span class="n">proposal_records</span><span class="p">),</span>
-        <span class="s2">&quot;--model-dir&quot;</span><span class="p">,</span>
+        <span class="s2">"--model-dir"</span><span class="p">,</span>
         <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">stardist_model_dir</span><span class="p">)),</span>
-        <span class="s2">&quot;--model-name&quot;</span><span class="p">,</span>
+        <span class="s2">"--model-name"</span><span class="p">,</span>
         <span class="n">stardist_model_name</span><span class="p">,</span>
-        <span class="s2">&quot;--out-dir&quot;</span><span class="p">,</span>
+        <span class="s2">"--out-dir"</span><span class="p">,</span>
         <span class="nb">str</span><span class="p">(</span><span class="n">crowns_dir</span><span class="p">),</span>
-        <span class="s2">&quot;--input-key&quot;</span><span class="p">,</span>
+        <span class="s2">"--input-key"</span><span class="p">,</span>
         <span class="n">stardist_input_key</span><span class="p">,</span>
-        <span class="s2">&quot;--preds-name&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;crowns.gpkg&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;--write-labels&quot;</span><span class="p">,</span>
+        <span class="s2">"--preds-name"</span><span class="p">,</span>
+        <span class="s2">"crowns.gpkg"</span><span class="p">,</span>
+        <span class="s2">"--write-labels"</span><span class="p">,</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">stardist_use_aux</span><span class="p">:</span>
         <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="s2">&quot;--use-aux&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;--scale-stats&quot;</span><span class="p">,</span>
+                <span class="s2">"--use-aux"</span><span class="p">,</span>
+                <span class="s2">"--scale-stats"</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">scale_stats</span><span class="p">),</span>
             <span class="p">]</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">stardist_prob_thr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">stardist_nms_thr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide both stardist_prob_thr and stardist_nms_thr, or neither.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Provide both stardist_prob_thr and stardist_nms_thr, or neither."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_window_size_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">stardist_window_size_m</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;stardist_window_size_m must be &gt; 0.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"stardist_window_size_m must be &gt; 0."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_window_overlap_m</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;stardist_window_overlap_m must be &gt;= 0.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"stardist_window_overlap_m must be &gt;= 0."</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="n">stardist_window_size_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="ow">and</span> <span class="n">stardist_window_overlap_m</span> <span class="o">&gt;=</span> <span class="n">stardist_window_size_m</span>
     <span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;stardist_window_overlap_m must be smaller than stardist_window_size_m.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"stardist_window_overlap_m must be smaller than stardist_window_size_m."</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">stardist_dedup_iou_thr</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;stardist_dedup_iou_thr must be in [0, 1).&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"stardist_dedup_iou_thr must be in [0, 1)."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_resume_from_labels</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">stardist_resume</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;stardist_resume_from_labels requires stardist_resume.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"stardist_resume_from_labels requires stardist_resume."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_prob_thr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">stardist_nms_thr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="s2">&quot;--prob-thr&quot;</span><span class="p">,</span>
+                <span class="s2">"--prob-thr"</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">stardist_prob_thr</span><span class="p">),</span>
-                <span class="s2">&quot;--nms-thr&quot;</span><span class="p">,</span>
+                <span class="s2">"--nms-thr"</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">stardist_nms_thr</span><span class="p">),</span>
             <span class="p">]</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_window_size_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="s2">&quot;--window-size-m&quot;</span><span class="p">,</span>
+                <span class="s2">"--window-size-m"</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">stardist_window_size_m</span><span class="p">),</span>
-                <span class="s2">&quot;--window-overlap-m&quot;</span><span class="p">,</span>
+                <span class="s2">"--window-overlap-m"</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">stardist_window_overlap_m</span><span class="p">),</span>
             <span class="p">]</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_dedup_iou_thr</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="s2">&quot;--dedup-iou-thr&quot;</span><span class="p">,</span>
+                <span class="s2">"--dedup-iou-thr"</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">stardist_dedup_iou_thr</span><span class="p">),</span>
             <span class="p">]</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">log_refinement</span><span class="p">:</span>
-        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--log&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"--log"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_resume</span><span class="p">:</span>
-        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--resume&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"--resume"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_resume_from_labels</span><span class="p">:</span>
-        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--resume-from-labels&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"--resume-from-labels"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_skip_sources</span><span class="p">:</span>
-        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;--skip-sources&quot;</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="p">])</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">"--skip-sources"</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="p">])</span>
     <span class="k">if</span> <span class="n">stardist_skip_sources_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;--skip-sources-file&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">stardist_skip_sources_file</span><span class="p">)])</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">"--skip-sources-file"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">stardist_skip_sources_file</span><span class="p">)])</span>
     <span class="n">env</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">stardist_cpu</span><span class="p">:</span>
         <span class="n">env</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="o">**</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-        <span class="n">env</span><span class="p">[</span><span class="s2">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">env</span><span class="p">[</span><span class="s2">"CUDA_VISIBLE_DEVICES"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;records_root&quot;</span><span class="p">:</span> <span class="n">records_root</span><span class="p">,</span>
-        <span class="s2">&quot;proposals_root&quot;</span><span class="p">:</span> <span class="n">proposals_root</span><span class="p">,</span>
-        <span class="s2">&quot;crowns_dir&quot;</span><span class="p">:</span> <span class="n">crowns_dir</span><span class="p">,</span>
-        <span class="s2">&quot;proposal_records&quot;</span><span class="p">:</span> <span class="n">proposal_records</span><span class="p">,</span>
-        <span class="s2">&quot;scale_stats&quot;</span><span class="p">:</span> <span class="n">scale_stats</span><span class="p">,</span>
-        <span class="s2">&quot;sam_ckpt&quot;</span><span class="p">:</span> <span class="n">resolved_sam_ckpt</span><span class="p">,</span>
-        <span class="s2">&quot;stardist_model&quot;</span><span class="p">:</span> <span class="n">resolved_stardist_model</span><span class="p">,</span>
+        <span class="s2">"records_root"</span><span class="p">:</span> <span class="n">records_root</span><span class="p">,</span>
+        <span class="s2">"proposals_root"</span><span class="p">:</span> <span class="n">proposals_root</span><span class="p">,</span>
+        <span class="s2">"crowns_dir"</span><span class="p">:</span> <span class="n">crowns_dir</span><span class="p">,</span>
+        <span class="s2">"proposal_records"</span><span class="p">:</span> <span class="n">proposal_records</span><span class="p">,</span>
+        <span class="s2">"scale_stats"</span><span class="p">:</span> <span class="n">scale_stats</span><span class="p">,</span>
+        <span class="s2">"sam_ckpt"</span><span class="p">:</span> <span class="n">resolved_sam_ckpt</span><span class="p">,</span>
+        <span class="s2">"stardist_model"</span><span class="p">:</span> <span class="n">resolved_stardist_model</span><span class="p">,</span>
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
             </details>

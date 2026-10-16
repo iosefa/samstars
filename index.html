@@ -520,6 +520,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -534,10 +561,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -555,8 +582,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -608,7 +635,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -636,7 +663,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -664,7 +691,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -705,10 +732,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -726,8 +753,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -820,10 +847,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -841,8 +868,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1296,16 +1323,17 @@
 <a href="https://samstars.sefa.ai"><img alt="Docs" src="https://img.shields.io/badge/docs-samstars.sefa.ai-0A7F46" /></a>
 <a href="https://github.com/iosefa/samstars"><img alt="Repo" src="https://img.shields.io/badge/github-iosefa%2Fsamstars-black?logo=github" /></a></p>
 <p><strong>Multimodal individual tree crown segmentation from imagery and lidar-derived rasters.</strong></p>
+<p><img alt="SAM-STARS graphical abstract showing satellite imagery and lidar inputs, automatic crown prompts, canopy fusion, individual crown delineation, species classification, and annotation efficiency." src="assets/figures/sam-stars-graphical-abstract.png" /></p>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p><code>samstars</code> is a Python package for individual tree crown segmentation from high-resolution imagery and lidar-derived rasters.</p>
+<p><code>samstars</code> is a Python package for instance segmentation of individual tree crowns from high-resolution imagery and lidar-derived rasters. The resulting crown polygons can be used for downstream <a href="downstream/#species-classification">species classification</a>.</p>
 <p>It combines:</p>
 <ul>
 <li>high-resolution imagery (satellite, aerial, or drone)</li>
 <li>lidar-derived raster layers (e.g., canopy height and density)</li>
 </ul>
-<p>The package prepares canopy-derived seed points, boundary and gap cost rasters, and proposal index rasters before writing crown polygons.</p>
-<p>The workflow was developed with WorldView-3 imagery and airborne lidar-derived rasters, but the library interface accepts any aligned or alignable imagery, canopy-height, and first-return density rasters.</p>
+<p>It automatically derives prompts from lidar structure and spectral cues to segment individual tree crowns with limited training annotations.</p>
 <h2 id="first-segmentation">First Segmentation<a class="headerlink" href="#first-segmentation" title="Permanent link">&para;</a></h2>
+<p>Use the model bundle created by <a href="training/">Training</a> with imagery and lidar rasters prepared as described in <a href="data_preparation/">Data Preparation</a>.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -1325,21 +1353,19 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">samstars</span><span class="w"> </span><span class="kn">import</span> <span class="n">segment</span>
 
 <span class="n">result</span> <span class="o">=</span> <span class="n">segment</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/model_bundle&quot;</span><span class="p">),</span>
-    <span class="n">img</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/image.tif&quot;</span><span class="p">),</span>
-    <span class="n">chm</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/chm.tif&quot;</span><span class="p">),</span>
-    <span class="n">den</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/first_return_density.tif&quot;</span><span class="p">),</span>
-    <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/run_dir/segmentation_run&quot;</span><span class="p">),</span>
-    <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;persistent&quot;</span><span class="p">,</span>
-    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/model_bundle"</span><span class="p">),</span>
+    <span class="n">img</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/image.tif"</span><span class="p">),</span>
+    <span class="n">chm</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/chm.tif"</span><span class="p">),</span>
+    <span class="n">den</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/first_return_density.tif"</span><span class="p">),</span>
+    <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/run_dir/segmentation_run"</span><span class="p">),</span>
+    <span class="n">storage</span><span class="o">=</span><span class="s2">"persistent"</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">crowns</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-<p>CPU is the supported baseline. Use <code>"cuda"</code> or <code>"mps"</code> only after verifying
-the accelerator as described in <a href="installation/">Installation</a>.</p>
 <p>See <a href="installation/">Installation</a> to install the library.
-For a minimal run path, see <a href="quickstart/">Quick Start</a>.
+For a minimal training and segmentation workflow, see <a href="quickstart/">Quick Start</a>.
 For task-focused documentation, see <a href="data_preparation/">Data Preparation</a>, <a href="training/">Training</a>, <a href="segmentation/">Segmentation</a>, and <a href="downstream/">Downstream Analysis</a>.</p>
 
 

@@ -555,6 +555,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -569,10 +596,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -590,8 +617,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -643,7 +670,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -671,7 +698,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -699,7 +726,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -740,10 +767,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -761,8 +788,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -855,10 +882,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -876,8 +903,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1387,26 +1414,21 @@
 stated otherwise. Windows, Linux ARM64, and Intel macOS are not currently
 tested release targets.</p>
 <h2 id="install-the-library-from-pypi">Install the library from PyPI<a class="headerlink" href="#install-the-library-from-pypi" title="Permanent link">&para;</a></h2>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>samstars
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>samstars
 </code></pre></div></td></tr></table></div>
-<p>This installs the geospatial libraries and CPU-capable machine-learning stack
-needed by the documented workflows. Accelerator-specific setup is separate so
-that a normal installation does not require CUDA or Metal.</p>
+<p>For optional GPU support, see <a href="#nvidia-cuda-on-linux">NVIDIA CUDA on Linux</a>
+or <a href="#apple-silicon-acceleration">Apple Silicon acceleration</a>.</p>
 <p>On Linux, use PyTorch's CPU-only package index when you do not want pip to
 install NVIDIA runtime libraries:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;torch&gt;=2.3,&lt;3&quot;</span><span class="w"> </span><span class="s2">&quot;torchvision&gt;=0.18,&lt;1&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"torch&gt;=2.3,&lt;3"</span><span class="w"> </span><span class="s2">"torchvision&gt;=0.18,&lt;1"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--index-url<span class="w"> </span>https://download.pytorch.org/whl/cpu
 python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>samstars
 </code></pre></div></td></tr></table></div>
-<p><code>samstars</code> does not bundle trained model files.
-See <a href="../training/">Training</a> and <a href="../segmentation/">Segmentation</a>.</p>
 <p>Verify:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import samstars, torch, tensorflow as tf; print(&#39;samstars import ok&#39;); print(&#39;torch&#39;, torch.__version__); print(&#39;tensorflow&#39;, tf.__version__)&quot;</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import samstars, torch, tensorflow as tf; print('samstars import ok'); print('torch', torch.__version__); print('tensorflow', tf.__version__)"</span>
 pip<span class="w"> </span>show<span class="w"> </span>samstars
 </code></pre></div></td></tr></table></div>
 <h2 id="nvidia-cuda-on-linux">NVIDIA CUDA on Linux<a class="headerlink" href="#nvidia-cuda-on-linux" title="Permanent link">&para;</a></h2>
@@ -1417,7 +1439,7 @@ to install a pair within the supported ranges (<code>torch&gt;=2.3,&lt;3</code> 
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Run the command produced by the PyTorch selector first.</span>
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;tensorflow[and-cuda]&gt;=2.15,&lt;2.19&quot;</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"tensorflow[and-cuda]&gt;=2.15,&lt;2.19"</span>
 python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>samstars
 </code></pre></div></td></tr></table></div>
 <p>The TensorFlow command follows the
@@ -1425,8 +1447,8 @@ python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </sp
 requires a compatible NVIDIA driver. If TensorFlow GPU support is not needed,
 omit that command and let <code>samstars</code> install standard TensorFlow.
 PyTorch and TensorFlow detect accelerators independently: <code>device="cuda"</code>
-controls the SAM stage, while TensorFlow controls StarDist. Set
-<code>stardist_cpu=True</code> when only the SAM stage should use CUDA.</p>
+controls proposal generation, while TensorFlow controls refinement. Set
+<code>stardist_cpu=True</code> when only proposal generation should use CUDA.</p>
 <p>Check CUDA availability:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
@@ -1438,16 +1460,16 @@ controls the SAM stage, while TensorFlow controls StarDist. Set
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39;</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;'PY'</span>
 <span class="s">import torch</span>
 <span class="s">import tensorflow as tf</span>
 
-<span class="s">print(&quot;torch:&quot;, torch.__version__)</span>
-<span class="s">print(&quot;cuda runtime:&quot;, torch.version.cuda)</span>
-<span class="s">print(&quot;cuda available:&quot;, torch.cuda.is_available())</span>
-<span class="s">print(&quot;device:&quot;, torch.cuda.get_device_name(0) if torch.cuda.is_available() else &quot;none&quot;)</span>
-<span class="s">print(&quot;tensorflow:&quot;, tf.__version__)</span>
-<span class="s">print(&quot;tensorflow GPUs:&quot;, tf.config.list_physical_devices(&quot;GPU&quot;))</span>
+<span class="s">print("torch:", torch.__version__)</span>
+<span class="s">print("cuda runtime:", torch.version.cuda)</span>
+<span class="s">print("cuda available:", torch.cuda.is_available())</span>
+<span class="s">print("device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "none")</span>
+<span class="s">print("tensorflow:", tf.__version__)</span>
+<span class="s">print("tensorflow GPUs:", tf.config.list_physical_devices("GPU"))</span>
 <span class="s">PY</span>
 </code></pre></div></td></tr></table></div>
 <p>Use <code>device="cuda"</code> only when <code>torch.cuda.is_available()</code> returns <code>True</code>.</p>
@@ -1456,11 +1478,9 @@ controls the SAM stage, while TensorFlow controls StarDist. Set
 TensorFlow Metal support is optional; see Apple's
 <a href="https://developer.apple.com/metal/tensorflow-plugin/">TensorFlow acceleration guide</a>
 for host requirements:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;samstars[metal]&quot;</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"samstars[metal]"</span>
 </code></pre></div></td></tr></table></div>
-<p>The <code>metal</code> extra installs <code>tensorflow-metal&gt;=1.2,&lt;2</code>. Because the plug-in does
-not declare a TensorFlow compatibility range in its package metadata, verify
-both frameworks after installation:</p>
+<p>Check both frameworks after installation:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
@@ -1469,14 +1489,14 @@ both frameworks after installation:</p>
 <span class="normal">6</span>
 <span class="normal">7</span>
 <span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39;</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;'PY'</span>
 <span class="s">import torch</span>
 <span class="s">import tensorflow as tf</span>
 
-<span class="s">print(&quot;mps built:&quot;, torch.backends.mps.is_built())</span>
-<span class="s">print(&quot;mps available:&quot;, torch.backends.mps.is_available())</span>
-<span class="s">print(&quot;tensorflow:&quot;, tf.__version__)</span>
-<span class="s">print(&quot;tensorflow GPUs:&quot;, tf.config.list_physical_devices(&quot;GPU&quot;))</span>
+<span class="s">print("mps built:", torch.backends.mps.is_built())</span>
+<span class="s">print("mps available:", torch.backends.mps.is_available())</span>
+<span class="s">print("tensorflow:", tf.__version__)</span>
+<span class="s">print("tensorflow GPUs:", tf.config.list_physical_devices("GPU"))</span>
 <span class="s">PY</span>
 </code></pre></div></td></tr></table></div>
 <p>Use <code>device="mps"</code> only when <code>torch.backends.mps.is_available()</code> returns

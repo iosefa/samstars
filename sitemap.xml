@@ -2,106 +2,110 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://samstars.sefa.ai/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
+    </url>
+    <url>
+         <loc>https://samstars.sefa.ai/advanced_workflows/</loc>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/data_preparation/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/downstream/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/examples/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/installation/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/large_raster_runs/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/quickstart/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/retrain_stardist_one_area/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/segmentation/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/train_and_segment_one_area/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/train_and_segment_tiled_area/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/training/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/data_scaling/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/data_tiling/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/features_cost_surface/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/features_seed_generation/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/segmentation_engine/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/segmentation_proposals/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/segmentation_refinement/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/top_level/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/training_chips/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/training_records/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/training_sam/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/api/training_stardist/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/reference/api_levels/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
     <url>
          <loc>https://samstars.sefa.ai/reference/cli/</loc>
-         <lastmod>2026-07-23</lastmod>
+         <lastmod>2026-10-16</lastmod>
     </url>
 </urlset>

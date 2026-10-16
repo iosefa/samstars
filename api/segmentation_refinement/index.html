@@ -453,6 +453,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -467,10 +494,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -488,8 +515,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -541,7 +568,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -569,7 +596,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -597,7 +624,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -638,10 +665,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -659,8 +686,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -755,10 +782,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -776,8 +803,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1750,114 +1777,114 @@
 <span class="normal">818</span>
 <span class="normal">819</span>
 <span class="normal">820</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the command-line entry point.&quot;&quot;&quot;</span>
-    <span class="n">pa</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Run StarDist refinement from proposal records.&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--proposal-records&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Proposal-record JSON from the proposal stage&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--model-dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory containing the StarDist model subdir&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--model-name&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;stardist&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model subdir name (default: stardist)&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--out-dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Run the command-line entry point."""</span>
+    <span class="n">pa</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"Run StarDist refinement from proposal records."</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--proposal-records"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Proposal-record JSON from the proposal stage"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--model-dir"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Directory containing the StarDist model subdir"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--model-name"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"stardist"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Model subdir name (default: stardist)"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--out-dir"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--prob-thr&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--nms-thr&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--prob-thr"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--nms-thr"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--input-key&quot;</span><span class="p">,</span>
+        <span class="s2">"--input-key"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Proposal-record key to use as StarDist input (default: index). Use file_name for raw SAM prob.&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"index"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Proposal-record key to use as StarDist input (default: index). Use file_name for raw SAM prob."</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--normalize&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Enable csbdeep percentile normalization&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--no-normalize&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Disable csbdeep percentile normalization&quot;</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--normalize"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Enable csbdeep percentile normalization"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--no-normalize"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Disable csbdeep percentile normalization"</span><span class="p">)</span>
 
     <span class="c1"># Aux</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--use-aux&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use CHM aux channel (stacks [primary, chm01])&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--scale-stats&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Global scaling stats JSON (required for --use-aux)&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--chm-key&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;chm&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Proposal-record key for CHM path&quot;</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--use-aux"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Use CHM aux channel (stacks [primary, chm01])"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--scale-stats"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Global scaling stats JSON (required for --use-aux)"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--chm-key"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"chm"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Proposal-record key for CHM path"</span><span class="p">)</span>
 
     <span class="c1"># Outputs</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--write-labels&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Write per-input label rasters under out_dir/labels&quot;</span><span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--preds-name&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;crowns.gpkg&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output GeoPackage filename&quot;</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--write-labels"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Write per-input label rasters under out_dir/labels"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--preds-name"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"crowns.gpkg"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Output GeoPackage filename"</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--resume&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="s2">"--resume"</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Resume from per-record checkpoints under out_dir/record_shards. &quot;</span>
-            <span class="s2">&quot;Completed records are skipped and the final GeoPackage is rebuilt at the end.&quot;</span>
+            <span class="s2">"Resume from per-record checkpoints under out_dir/record_shards. "</span>
+            <span class="s2">"Completed records are skipped and the final GeoPackage is rebuilt at the end."</span>
         <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--resume-from-labels&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="s2">"--resume-from-labels"</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;With --resume and --write-labels, bootstrap missing per-record checkpoints &quot;</span>
-            <span class="s2">&quot;from existing label rasters. Bootstrapped features have NaN scores.&quot;</span>
+            <span class="s2">"With --resume and --write-labels, bootstrap missing per-record checkpoints "</span>
+            <span class="s2">"from existing label rasters. Bootstrapped features have NaN scores."</span>
         <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--skip-sources&quot;</span><span class="p">,</span>
+        <span class="s2">"--skip-sources"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma-separated source names to skip before StarDist inference, for example tile_086_031_0.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Comma-separated source names to skip before StarDist inference, for example tile_086_031_0."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--skip-sources-file&quot;</span><span class="p">,</span>
+        <span class="s2">"--skip-sources-file"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional text file of source names to skip, one per line. Lines may contain # comments.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Optional text file of source names to skip, one per line. Lines may contain # comments."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--print-source-before-run&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Print each source immediately before running or bootstrapping it; useful for native crashes.&quot;</span><span class="p">,</span>
+        <span class="s2">"--print-source-before-run"</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Print each source immediately before running or bootstrapping it; useful for native crashes."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--window-size-m&quot;</span><span class="p">,</span>
+        <span class="s2">"--window-size-m"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional internal StarDist patch size in map units; if omitted, predict on the full tile.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Optional internal StarDist patch size in map units; if omitted, predict on the full tile."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--window-overlap-m&quot;</span><span class="p">,</span>
+        <span class="s2">"--window-overlap-m"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Overlap between internal StarDist patches in map units (default: 0).&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Overlap between internal StarDist patches in map units (default: 0)."</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Polygon filtering (useful when inputs overlap)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--edge-buffer-px&quot;</span><span class="p">,</span>
+        <span class="s2">"--edge-buffer-px"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Drop polygons within this many pixels of the input raster edge (default: 0.5)&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Drop polygons within this many pixels of the input raster edge (default: 0.5)"</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--min-area-m2&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Drop polygons smaller than this area (m^2)&quot;</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--min-area-m2"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Drop polygons smaller than this area (m^2)"</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--dedup-iou-thr&quot;</span><span class="p">,</span>
+        <span class="s2">"--dedup-iou-thr"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional final polygon dedup IoU threshold; keep the higher-score polygon when IoU exceeds this value.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Optional final polygon dedup IoU threshold; keep the higher-score polygon when IoU exceeds this value."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--log&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show verbose refinement logs, including StarDist internal tile progress.&quot;</span><span class="p">,</span>
+        <span class="s2">"--log"</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Show verbose refinement logs, including StarDist internal tile progress."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">normalize</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">no_normalize</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;Use only one of --normalize or --no-normalize.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"Use only one of --normalize or --no-normalize."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">resume_from_labels</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">resume</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;--resume-from-labels requires --resume.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"--resume-from-labels requires --resume."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">resume_from_labels</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">write_labels</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;--resume-from-labels requires --write-labels.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"--resume-from-labels requires --write-labels."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">window_size_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">window_size_m</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;--window-size-m must be &gt; 0&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"--window-size-m must be &gt; 0"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">window_overlap_m</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;--window-overlap-m must be &gt;= 0&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"--window-overlap-m must be &gt;= 0"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">window_size_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">window_overlap_m</span> <span class="o">&gt;=</span> <span class="n">args</span><span class="o">.</span><span class="n">window_size_m</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;--window-overlap-m must be smaller than --window-size-m&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"--window-overlap-m must be smaller than --window-size-m"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">args</span><span class="o">.</span><span class="n">dedup_iou_thr</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;--dedup-iou-thr must be in [0, 1).&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"--dedup-iou-thr must be in [0, 1)."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">normalize</span><span class="p">:</span>
         <span class="n">do_normalize</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">no_normalize</span><span class="p">:</span>
@@ -1867,7 +1894,7 @@
 
     <span class="n">recs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">proposal_records</span><span class="p">))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">recs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">proposal_records</span><span class="si">}</span><span class="s2"> is not a list of records.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">proposal_records</span><span class="si">}</span><span class="s2"> is not a list of records."</span><span class="p">)</span>
     <span class="n">skip_sources</span> <span class="o">=</span> <span class="n">_load_skip_sources</span><span class="p">(</span>
         <span class="n">skip_sources</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">skip_sources</span><span class="p">,</span>
         <span class="n">skip_sources_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">skip_sources_file</span><span class="p">,</span>
@@ -1875,31 +1902,31 @@
 
     <span class="n">scale_stats</span> <span class="o">=</span> <span class="n">load_scale_stats</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">scale_stats</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">scale_stats</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">use_aux</span> <span class="ow">and</span> <span class="n">scale_stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;--scale-stats is required when --use-aux is set&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"--scale-stats is required when --use-aux is set"</span><span class="p">)</span>
 
     <span class="n">chm_lo</span> <span class="o">=</span> <span class="n">chm_hi</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">scale_stats</span><span class="p">:</span>
-        <span class="n">chm_lo</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scale_stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chm_01&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lo&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
-        <span class="n">chm_hi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scale_stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chm_01&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hi&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+        <span class="n">chm_lo</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scale_stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chm_01"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"lo"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="n">chm_hi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scale_stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chm_01"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hi"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">StarDist2D</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span> <span class="n">basedir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model_dir</span><span class="p">))</span>
 
     <span class="n">prob_thr</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">prob_thr</span>
     <span class="n">nms_thr</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">nms_thr</span>
     <span class="k">if</span> <span class="n">prob_thr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">nms_thr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">p1</span><span class="p">,</span> <span class="n">n1</span> <span class="o">=</span> <span class="n">_extract_thresholds</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;thresholds&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="n">p1</span><span class="p">,</span> <span class="n">n1</span> <span class="o">=</span> <span class="n">_extract_thresholds</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"thresholds"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">p1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">n1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">p1</span><span class="p">,</span> <span class="n">n1</span> <span class="o">=</span> <span class="n">_load_thresholds_from_json</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model_dir</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">model_name</span><span class="p">)</span>
         <span class="n">prob_thr</span><span class="p">,</span> <span class="n">nms_thr</span> <span class="o">=</span> <span class="n">p1</span><span class="p">,</span> <span class="n">n1</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">prob_thr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">nms_thr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;Provide both --prob-thr and --nms-thr, or neither to use optimized thresholds.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">"Provide both --prob-thr and --nms-thr, or neither to use optimized thresholds."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">log</span> <span class="ow">and</span> <span class="n">prob_thr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">nms_thr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using effective thresholds: prob_thresh=</span><span class="si">{</span><span class="n">prob_thr</span><span class="si">}</span><span class="s2">, nms_thresh=</span><span class="si">{</span><span class="n">nms_thr</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using effective thresholds: prob_thresh=</span><span class="si">{</span><span class="n">prob_thr</span><span class="si">}</span><span class="s2">, nms_thresh=</span><span class="si">{</span><span class="n">nms_thr</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">out_gpkg</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="n">args</span><span class="o">.</span><span class="n">preds_name</span>
-    <span class="n">labels_dir</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;labels&quot;</span>
-    <span class="n">shards_dir</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;record_shards&quot;</span>
+    <span class="n">labels_dir</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"labels"</span>
+    <span class="n">shards_dir</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"record_shards"</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">resume</span><span class="p">:</span>
         <span class="n">shards_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">write_labels</span><span class="p">:</span>
@@ -1907,7 +1934,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">out_gpkg</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">out_gpkg</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
-        <span class="n">tmp_out_gpkg</span> <span class="o">=</span> <span class="n">out_gpkg</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.tmp.gpkg&quot;</span><span class="p">)</span>
+        <span class="n">tmp_out_gpkg</span> <span class="o">=</span> <span class="n">out_gpkg</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">".tmp.gpkg"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">tmp_out_gpkg</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">tmp_out_gpkg</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">shards_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
@@ -1925,12 +1952,12 @@
 
     <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span>
         <span class="n">recs</span><span class="p">,</span>
-        <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;StarDist refinement&quot;</span><span class="p">,</span>
-        <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;record&quot;</span><span class="p">,</span>
+        <span class="n">desc</span><span class="o">=</span><span class="s2">"StarDist refinement"</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s2">"record"</span><span class="p">,</span>
         <span class="n">dynamic_ncols</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">:</span>
-            <span class="n">x_path</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input_key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">x_path</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input_key</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">x_path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">x_path</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="k">continue</span>
 
@@ -1940,16 +1967,16 @@
                 <span class="n">skipped_by_request</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
             <span class="n">safe_source</span> <span class="o">=</span> <span class="n">_safe_source_name</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-            <span class="n">shard_path</span> <span class="o">=</span> <span class="n">shards_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">safe_source</span><span class="si">}</span><span class="s2">.gpkg&quot;</span>
-            <span class="n">done_marker</span> <span class="o">=</span> <span class="n">shards_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">safe_source</span><span class="si">}</span><span class="s2">.done.json&quot;</span>
-            <span class="n">label_path</span> <span class="o">=</span> <span class="n">labels_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">_labels.tif&quot;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">write_labels</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">shard_path</span> <span class="o">=</span> <span class="n">shards_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">safe_source</span><span class="si">}</span><span class="s2">.gpkg"</span>
+            <span class="n">done_marker</span> <span class="o">=</span> <span class="n">shards_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">safe_source</span><span class="si">}</span><span class="s2">.done.json"</span>
+            <span class="n">label_path</span> <span class="o">=</span> <span class="n">labels_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">_labels.tif"</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">write_labels</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">resume</span> <span class="ow">and</span> <span class="n">_checkpoint_complete</span><span class="p">(</span><span class="n">shard_path</span><span class="p">,</span> <span class="n">done_marker</span><span class="p">,</span> <span class="n">label_path</span><span class="p">):</span>
                 <span class="n">skipped</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
-            <span class="n">current_source_path</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;current_refinement_source.txt&quot;</span>
-            <span class="n">current_source_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">current_source_path</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"current_refinement_source.txt"</span>
+            <span class="n">current_source_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">print_source_before_run</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;processing source: </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"processing source: </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">resume_from_labels</span> <span class="ow">and</span> <span class="n">label_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">label_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">_bootstrap_checkpoint_from_label</span><span class="p">(</span>
@@ -1964,7 +1991,7 @@
                     <span class="k">continue</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">log</span><span class="p">:</span>
-                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not bootstrap checkpoint from </span><span class="si">{</span><span class="n">label_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not bootstrap checkpoint from </span><span class="si">{</span><span class="n">label_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">x_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
                 <span class="n">x</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -1977,7 +2004,7 @@
             <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">neginf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">use_aux</span><span class="p">:</span>
-                <span class="n">chm_path</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">chm_key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">chm_path</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">chm_key</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">chm_path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">chm_path</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                     <span class="k">continue</span>
                 <span class="n">chm</span> <span class="o">=</span> <span class="n">_read_float_raster</span><span class="p">(</span><span class="n">chm_path</span><span class="p">)</span>
@@ -1992,22 +2019,22 @@
                 <span class="n">x_in</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">x_in</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">99.8</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
             <span class="n">predict_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;show_tile_progress&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">log</span><span class="p">),</span>
+                <span class="s2">"show_tile_progress"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">log</span><span class="p">),</span>
             <span class="p">}</span>
             <span class="k">if</span> <span class="n">prob_thr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">nms_thr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">predict_kwargs</span><span class="p">[</span><span class="s2">&quot;prob_thresh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_thr</span>
-                <span class="n">predict_kwargs</span><span class="p">[</span><span class="s2">&quot;nms_thresh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nms_thr</span>
+                <span class="n">predict_kwargs</span><span class="p">[</span><span class="s2">"prob_thresh"</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_thr</span>
+                <span class="n">predict_kwargs</span><span class="p">[</span><span class="s2">"nms_thresh"</span><span class="p">]</span> <span class="o">=</span> <span class="n">nms_thr</span>
 
             <span class="n">windowed</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">window_size_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="n">window_polys</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Polygon</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">windowed</span><span class="p">:</span>
-                <span class="n">predict_kwargs</span><span class="p">[</span><span class="s2">&quot;n_tiles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_guess_n_tiles</span><span class="p">(</span><span class="n">x_in</span><span class="p">)</span>
+                <span class="n">predict_kwargs</span><span class="p">[</span><span class="s2">"n_tiles"</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_guess_n_tiles</span><span class="p">(</span><span class="n">x_in</span><span class="p">)</span>
                 <span class="n">labels</span><span class="p">,</span> <span class="n">details</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_instances</span><span class="p">(</span><span class="n">x_in</span><span class="p">,</span> <span class="o">**</span><span class="n">predict_kwargs</span><span class="p">)</span>
 
                 <span class="n">score_by_label</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">details</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;prob&quot;</span> <span class="ow">in</span> <span class="n">details</span><span class="p">:</span>
-                    <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">&quot;prob&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">details</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"prob"</span> <span class="ow">in</span> <span class="n">details</span><span class="p">:</span>
+                    <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">"prob"</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
                     <span class="n">score_by_label</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">probs</span><span class="p">)}</span>
 
                 <span class="k">for</span> <span class="n">lbl_id</span><span class="p">,</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">_iter_polys_from_labels</span><span class="p">(</span>
@@ -2017,13 +2044,13 @@
                 <span class="p">):</span>
                     <span class="k">if</span> <span class="n">edge_tol_m</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">poly</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">border</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">edge_tol_m</span><span class="p">:</span>
                         <span class="k">continue</span>
-                    <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score_by_label</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)))</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score_by_label</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)))</span>
                     <span class="n">window_polys</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">poly</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span> <span class="n">score</span><span class="p">))</span>
 
                 <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">write_labels</span><span class="p">:</span>
                     <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">x_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
                         <span class="n">meta</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-                    <span class="n">_write_labels_atomic</span><span class="p">(</span><span class="n">label_path</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint16&quot;</span><span class="p">)</span>
+                    <span class="n">_write_labels_atomic</span><span class="p">(</span><span class="n">label_path</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"uint16"</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">patch_size_px</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">window_size_m</span><span class="p">)</span> <span class="o">/</span> <span class="n">res_m</span><span class="p">)))</span>
                 <span class="n">overlap_px</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">window_overlap_m</span><span class="p">)</span> <span class="o">/</span> <span class="n">res_m</span><span class="p">)))</span>
@@ -2039,12 +2066,12 @@
                     <span class="n">w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
                     <span class="n">x_patch</span> <span class="o">=</span> <span class="n">x_in</span><span class="p">[</span><span class="n">row_off</span> <span class="p">:</span> <span class="n">row_off</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">col_off</span> <span class="p">:</span> <span class="n">col_off</span> <span class="o">+</span> <span class="n">w</span><span class="p">]</span>
                     <span class="n">patch_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">predict_kwargs</span><span class="p">)</span>
-                    <span class="n">patch_kwargs</span><span class="p">[</span><span class="s2">&quot;n_tiles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_guess_n_tiles</span><span class="p">(</span><span class="n">x_patch</span><span class="p">)</span>
+                    <span class="n">patch_kwargs</span><span class="p">[</span><span class="s2">"n_tiles"</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_guess_n_tiles</span><span class="p">(</span><span class="n">x_patch</span><span class="p">)</span>
                     <span class="n">labels</span><span class="p">,</span> <span class="n">details</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_instances</span><span class="p">(</span><span class="n">x_patch</span><span class="p">,</span> <span class="o">**</span><span class="n">patch_kwargs</span><span class="p">)</span>
 
                     <span class="n">score_by_label</span> <span class="o">=</span> <span class="p">{}</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">details</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;prob&quot;</span> <span class="ow">in</span> <span class="n">details</span><span class="p">:</span>
-                        <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">&quot;prob&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">details</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"prob"</span> <span class="ow">in</span> <span class="n">details</span><span class="p">:</span>
+                        <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">"prob"</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
                         <span class="n">score_by_label</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">probs</span><span class="p">)}</span>
 
                     <span class="n">patch_tfm</span> <span class="o">=</span> <span class="n">window_transform</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">tfm</span><span class="p">)</span>
@@ -2064,7 +2091,7 @@
                             <span class="k">continue</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="n">poly</span><span class="o">.</span><span class="n">representative_point</span><span class="p">()</span><span class="o">.</span><span class="n">within</span><span class="p">(</span><span class="n">keep_extent</span><span class="p">):</span>
                             <span class="k">continue</span>
-                        <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score_by_label</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)))</span>
+                        <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score_by_label</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)))</span>
                         <span class="n">window_polys</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">poly</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span> <span class="n">score</span><span class="p">))</span>
 
                 <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">write_labels</span><span class="p">:</span>
@@ -2079,16 +2106,16 @@
                         <span class="n">out_shape</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
                         <span class="n">transform</span><span class="o">=</span><span class="n">tfm</span><span class="p">,</span>
                         <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint32&quot;</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="s2">"uint32"</span><span class="p">,</span>
                     <span class="p">)</span>
-                    <span class="n">_write_labels_atomic</span><span class="p">(</span><span class="n">label_path</span><span class="p">,</span> <span class="n">labels_full</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint32&quot;</span><span class="p">)</span>
+                    <span class="n">_write_labels_atomic</span><span class="p">(</span><span class="n">label_path</span><span class="p">,</span> <span class="n">labels_full</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"uint32"</span><span class="p">)</span>
 
             <span class="n">record_features</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="n">poly</span><span class="p">,</span>
-                    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span>
-                    <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span>
-                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">),</span>
+                    <span class="s2">"geometry"</span><span class="p">:</span> <span class="n">poly</span><span class="p">,</span>
+                    <span class="s2">"source"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span>
+                    <span class="s2">"label"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">lbl_id</span><span class="p">),</span>
+                    <span class="s2">"score"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">),</span>
                 <span class="p">}</span>
                 <span class="k">for</span> <span class="n">poly</span><span class="p">,</span> <span class="n">lbl_id</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">window_polys</span>
             <span class="p">]</span>
@@ -2096,15 +2123,15 @@
             <span class="n">_write_json_atomic</span><span class="p">(</span>
                 <span class="n">done_marker</span><span class="p">,</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span>
-                    <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x_path</span><span class="p">),</span>
-                    <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">record_features</span><span class="p">),</span>
+                    <span class="s2">"source"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span>
+                    <span class="s2">"input"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x_path</span><span class="p">),</span>
+                    <span class="s2">"features"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">record_features</span><span class="p">),</span>
                 <span class="p">},</span>
             <span class="p">)</span>
 
     <span class="n">out_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">marker</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">shards_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.done.json&quot;</span><span class="p">)):</span>
-        <span class="n">shard_path</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.gpkg&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">marker</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">shards_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.done.json"</span><span class="p">)):</span>
+        <span class="n">shard_path</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">".gpkg"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">shard_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="k">continue</span>
         <span class="n">out_features</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_read_features_gpkg</span><span class="p">(</span><span class="n">shard_path</span><span class="p">))</span>
@@ -2117,11 +2144,11 @@
     <span class="n">_write_features_gpkg</span><span class="p">(</span><span class="n">out_gpkg</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">crs_wkt</span><span class="o">=</span><span class="n">crs_wkt</span><span class="p">)</span>
     <span class="n">wrote</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_features</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ wrote </span><span class="si">{</span><span class="n">wrote</span><span class="si">}</span><span class="s2"> crown polygons to </span><span class="si">{</span><span class="n">out_gpkg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✓ wrote </span><span class="si">{</span><span class="n">wrote</span><span class="si">}</span><span class="s2"> crown polygons to </span><span class="si">{</span><span class="n">out_gpkg</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">resume</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ skipped </span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> completed refinement records&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✓ skipped </span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> completed refinement records"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">skipped_by_request</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ skipped </span><span class="si">{</span><span class="n">skipped_by_request</span><span class="si">}</span><span class="s2"> requested sources&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✓ skipped </span><span class="si">{</span><span class="n">skipped_by_request</span><span class="si">}</span><span class="s2"> requested sources"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

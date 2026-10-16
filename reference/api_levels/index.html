@@ -453,6 +453,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -467,10 +494,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -488,8 +515,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -541,7 +568,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -569,7 +596,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -597,7 +624,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -640,10 +667,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -661,8 +688,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -846,10 +873,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -867,8 +894,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1366,12 +1393,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">samstars</span><span class="w"> </span><span class="kn">import</span> <span class="n">segment</span>
 
 <span class="n">result</span> <span class="o">=</span> <span class="n">segment</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/model_bundle&quot;</span><span class="p">),</span>
-    <span class="n">img</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/image.tif&quot;</span><span class="p">),</span>
-    <span class="n">chm</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/chm.tif&quot;</span><span class="p">),</span>
-    <span class="n">den</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/first_return_density.tif&quot;</span><span class="p">),</span>
-    <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/segmentation_run&quot;</span><span class="p">),</span>
-    <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;persistent&quot;</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/model_bundle"</span><span class="p">),</span>
+    <span class="n">img</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/image.tif"</span><span class="p">),</span>
+    <span class="n">chm</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/chm.tif"</span><span class="p">),</span>
+    <span class="n">den</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/first_return_density.tif"</span><span class="p">),</span>
+    <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/segmentation_run"</span><span class="p">),</span>
+    <span class="n">storage</span><span class="o">=</span><span class="s2">"persistent"</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 <p>Use the model bundle workflow when you want stored defaults and a single model directory to pass between training and segmentation.</p>
@@ -1400,10 +1427,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.segmentation</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_segmentation</span>
 
 <span class="n">run_segmentation</span><span class="p">(</span>
-    <span class="n">tiles_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/tiles&quot;</span><span class="p">),</span>
-    <span class="n">out_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/segmentation_run&quot;</span><span class="p">),</span>
-    <span class="n">sam_ckpt</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/models/sam_crowns_decoder.pth&quot;</span><span class="p">),</span>
-    <span class="n">stardist_model</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/models/stardist&quot;</span><span class="p">),</span>
+    <span class="n">tiles_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/tiles"</span><span class="p">),</span>
+    <span class="n">out_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/segmentation_run"</span><span class="p">),</span>
+    <span class="n">sam_ckpt</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/models/sam_crowns_decoder.pth"</span><span class="p">),</span>
+    <span class="n">stardist_model</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/models/stardist"</span><span class="p">),</span>
 <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 <p>Use these functions for experiments, partial reruns, and custom training workflows.</p>

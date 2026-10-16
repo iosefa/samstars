@@ -555,6 +555,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -569,10 +596,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -590,8 +617,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -643,7 +670,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -671,7 +698,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -699,7 +726,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -740,10 +767,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -761,8 +788,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -855,10 +882,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -876,8 +903,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1361,8 +1388,7 @@
 <h1 id="downstream-analysis">Downstream Analysis<a class="headerlink" href="#downstream-analysis" title="Permanent link">&para;</a></h1>
 <p><code>samstars</code> writes individual crown polygons.
 Those polygons can be used as crown-level units for later analysis, including species classification, biomass estimation, crown metrics, and change analysis.</p>
-<p>The package does not assign species labels directly.
-It supports downstream species classification by providing crown geometries that can be used for feature extraction, modeling, and map production.</p>
+<p>Species classification is a separate downstream step using these crown geometries.</p>
 <h2 id="crown-output">Crown Output<a class="headerlink" href="#crown-output" title="Permanent link">&para;</a></h2>
 <p>The main segmentation output is:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>out/crowns/crowns.gpkg
@@ -1399,8 +1425,7 @@ It contains one feature per predicted crown:</p>
 </tr>
 </tbody>
 </table>
-<p>Keep these fields unchanged when adding downstream attributes.
-If you combine outputs from multiple runs, add a run identifier before merging files so crown identifiers remain unambiguous.</p>
+<p>If you combine outputs from multiple runs, add a run identifier before merging files so crown identifiers remain unambiguous.</p>
 <h2 id="species-classification">Species Classification<a class="headerlink" href="#species-classification" title="Permanent link">&para;</a></h2>
 <p>A common downstream workflow is:</p>
 <ol>
@@ -1409,11 +1434,9 @@ If you combine outputs from multiple runs, add a run identifier before merging f
 <li>Train or apply a species classifier outside <code>samstars</code>, for example with XGBoost, scikit-learn, or another modeling library.</li>
 <li>Join predicted species labels and confidence scores back to the crown polygons.</li>
 </ol>
-<p>Use a table with one row per crown and a stable key, usually <code>id</code> for one output file or <code>run_id</code> plus <code>id</code> for merged runs.
-<code>samstars</code> does not provide species-classification or feature-extraction functions.</p>
+<p>Use a table with one row per crown and a stable key, usually <code>id</code> for one output file or <code>run_id</code> plus <code>id</code> for merged runs.</p>
 <h2 id="join-species-predictions">Join Species Predictions<a class="headerlink" href="#join-species-predictions" title="Permanent link">&para;</a></h2>
-<p>After classification, read the crown GeoPackage into a GeoPandas <code>GeoDataFrame</code> and join a prediction table to it.
-The <code>.merge(...)</code> call is the standard Pandas table-join method available on GeoPandas data frames.</p>
+<p>After classification, read the crown GeoPackage into a GeoPandas <code>GeoDataFrame</code> and join a prediction table to it.</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -1438,21 +1461,21 @@ The <code>.merge(...)</code> call is the standard Pandas table-join method avail
 <span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="n">crowns_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/segmentation_run/crowns/crowns.gpkg&quot;</span><span class="p">)</span>
-<span class="n">species_table</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/species_predictions.csv&quot;</span><span class="p">)</span>
-<span class="n">out_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/abs/path/segmentation_run/crowns/crowns_with_species.gpkg&quot;</span><span class="p">)</span>
+<span class="n">crowns_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/segmentation_run/crowns/crowns.gpkg"</span><span class="p">)</span>
+<span class="n">species_table</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/species_predictions.csv"</span><span class="p">)</span>
+<span class="n">out_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/abs/path/segmentation_run/crowns/crowns_with_species.gpkg"</span><span class="p">)</span>
 
-<span class="n">crowns</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">crowns_path</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s2">&quot;crowns&quot;</span><span class="p">)</span>
+<span class="n">crowns</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">crowns_path</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s2">"crowns"</span><span class="p">)</span>
 <span class="n">species</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">species_table</span><span class="p">)</span>
 
 <span class="n">classified</span> <span class="o">=</span> <span class="n">crowns</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-    <span class="n">species</span><span class="p">[[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;species&quot;</span><span class="p">,</span> <span class="s2">&quot;species_score&quot;</span><span class="p">]],</span>
-    <span class="n">on</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
-    <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
-    <span class="n">validate</span><span class="o">=</span><span class="s2">&quot;one_to_one&quot;</span><span class="p">,</span>
+    <span class="n">species</span><span class="p">[[</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"species"</span><span class="p">,</span> <span class="s2">"species_score"</span><span class="p">]],</span>
+    <span class="n">on</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span>
+    <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span>
+    <span class="n">validate</span><span class="o">=</span><span class="s2">"one_to_one"</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">classified</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s2">&quot;crowns&quot;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
+<span class="n">classified</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s2">"crowns"</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">"GPKG"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 <p>Recommended downstream fields:</p>
 <table>
@@ -1492,8 +1515,6 @@ The crown polygons can be used with any raster or vector processing library that
 <li>texture metrics computed from imagery or canopy-height rasters</li>
 <li>crown geometry metrics, such as area and perimeter</li>
 </ul>
-<p>Store feature tables separately from the segmentation output when they are intermediate modeling data.
-Write joined GeoPackages only for outputs intended for mapping, review, or downstream analysis.</p>
 <h2 id="quality-checks">Quality Checks<a class="headerlink" href="#quality-checks" title="Permanent link">&para;</a></h2>
 <p>Before using crown polygons for classification or other analyses, check:</p>
 <ul>

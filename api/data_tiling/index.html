@@ -453,6 +453,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../advanced_workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -467,10 +494,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -488,8 +515,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -541,7 +568,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment one area
+    Train and Segment One Area
   
 
     
@@ -569,7 +596,7 @@
   <span class="md-ellipsis">
     
   
-    Retrain polygon refinement for one area
+    Retrain Refinement for One Area
   
 
     
@@ -597,7 +624,7 @@
   <span class="md-ellipsis">
     
   
-    Train and segment a tiled area
+    Train and Segment a Tiled Area
   
 
     
@@ -638,10 +665,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -659,8 +686,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -755,10 +782,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -776,8 +803,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1343,8 +1370,7 @@
 
     <div class="doc doc-contents first">
 
-        <p>make_tiles.py – split IMG / CHM / COST / SEEDS into 500 m tiles (+20 m overlap)
-               <em>with optional spatial thinning of seeds (0.7 m)</em></p>
+        <p>Prepare aligned imagery, canopy heights, cost rasters, and crown seeds.</p>
 
 
 
@@ -1370,48 +1396,22 @@
 
 
 <h3 id="samstars.data.tiling.build_single_tile" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">build_single_tile</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">chm</span><span class="p">,</span> <span class="n">den</span><span class="p">,</span> <span class="n">crowns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;tiles&#39;</span><span class="p">),</span> <span class="n">tile_name</span><span class="o">=</span><span class="s1">&#39;tile_000_000&#39;</span><span class="p">,</span> <span class="n">cost_weights</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">seed_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">write_den</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_existing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">build_single_tile</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">chm</span><span class="p">,</span> <span class="n">den</span><span class="p">,</span> <span class="n">crowns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s1">'tiles'</span><span class="p">),</span> <span class="n">tile_name</span><span class="o">=</span><span class="s1">'tile_000_000'</span><span class="p">,</span> <span class="n">cost_weights</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">seed_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">write_den</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_existing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 <a href="#samstars.data.tiling.build_single_tile" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Prepare a single tile-style input directory from one scene.</p>
+        <p>Prepare one scene as a tile and return its parent directory.</p>
+<p>Uses the same band selection, alignment, and seed controls as <code>build_tiles</code>.
+<code>crowns</code>, when supplied, is copied into the tile as <code>crowns.gpkg</code> for training.
+The entire scene is processed as one tile; use <code>build_tiles</code> for larger areas.</p>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/data/tiling.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">332</span>
 <span class="normal">333</span>
 <span class="normal">334</span>
 <span class="normal">335</span>
@@ -1475,16 +1475,52 @@
 <span class="normal">393</span>
 <span class="normal">394</span>
 <span class="normal">395</span>
-<span class="normal">396</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_single_tile</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_single_tile</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
                       <span class="n">img</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
                       <span class="n">chm</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
                       <span class="n">den</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
                       <span class="n">crowns</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                       <span class="n">rgb_bands</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                      <span class="n">nir_band</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                      <span class="n">texture_band</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                       <span class="n">slic</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                      <span class="n">out</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;tiles&quot;</span><span class="p">),</span>
-                      <span class="n">tile_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;tile_000_000&quot;</span><span class="p">,</span>
-                      <span class="n">cost_weights</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+                      <span class="n">out</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"tiles"</span><span class="p">),</span>
+                      <span class="n">tile_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"tile_000_000"</span><span class="p">,</span>
+                      <span class="n">cost_weights</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
                       <span class="n">seed_params</span><span class="p">:</span> <span class="n">SeedParams</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                       <span class="n">thin_seeds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                       <span class="n">thin_dist</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">,</span>
@@ -1496,25 +1532,26 @@
                       <span class="n">seed_min_canopy_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
                       <span class="n">write_den</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                       <span class="n">skip_existing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare a single tile-style input directory from one scene.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Prepare one scene as a tile and return its parent directory.</span>
+
+<span class="sd">    Uses the same band selection, alignment, and seed controls as `build_tiles`.</span>
+<span class="sd">    `crowns`, when supplied, is copied into the tile as `crowns.gpkg` for training.</span>
+<span class="sd">    The entire scene is processed as one tile; use `build_tiles` for larger areas.</span>
+<span class="sd">    """</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
     <span class="n">out</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img</span><span class="p">)</span> <span class="k">as</span> <span class="n">img_ds</span><span class="p">:</span>
         <span class="n">res</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">e</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s2">&quot;non-square pixels&quot;</span>
+        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">e</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s2">"non-square pixels"</span>
 
-        <span class="n">rgb_bands</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">rgb_bands</span><span class="p">)</span> <span class="k">if</span> <span class="n">rgb_bands</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">((</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">if</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="mi">7</span> <span class="k">else</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rgb_bands</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rgb_bands must contain exactly 3 band indices.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">b</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">count</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">rgb_bands</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rgb_bands must be between 1 and </span><span class="si">{</span><span class="n">img_ds</span><span class="o">.</span><span class="n">count</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">rgb_bands</span> <span class="o">=</span> <span class="n">_resolve_image_bands</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">count</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="p">,</span> <span class="n">nir_band</span><span class="p">,</span> <span class="n">texture_band</span><span class="p">)</span>
         <span class="n">base_meta</span> <span class="o">=</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">profile</span> <span class="o">|</span> <span class="p">{</span>
-            <span class="s2">&quot;driver&quot;</span><span class="p">:</span> <span class="s2">&quot;GTiff&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-            <span class="s2">&quot;compress&quot;</span><span class="p">:</span> <span class="s2">&quot;deflate&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;predictor&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="s2">&quot;zlevel&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s2">"driver"</span><span class="p">:</span> <span class="s2">"GTiff"</span><span class="p">,</span>
+            <span class="s2">"count"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">"compress"</span><span class="p">:</span> <span class="s2">"deflate"</span><span class="p">,</span>
+            <span class="s2">"predictor"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">"zlevel"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">img_tfm</span><span class="p">,</span> <span class="n">img_crs</span> <span class="o">=</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">crs</span>
         <span class="n">chm_ds</span><span class="p">,</span> <span class="n">chm_raw</span> <span class="o">=</span> <span class="n">_align_to_img</span><span class="p">(</span><span class="n">chm</span><span class="p">,</span> <span class="n">img_ds</span><span class="p">)</span>
@@ -1530,6 +1567,8 @@
                 <span class="n">img_tfm</span><span class="o">=</span><span class="n">img_tfm</span><span class="p">,</span>
                 <span class="n">img_crs</span><span class="o">=</span><span class="n">img_crs</span><span class="p">,</span>
                 <span class="n">rgb_bands</span><span class="o">=</span><span class="n">rgb_bands</span><span class="p">,</span>
+                <span class="n">nir_band</span><span class="o">=</span><span class="n">nir_band</span><span class="p">,</span>
+                <span class="n">texture_band</span><span class="o">=</span><span class="n">texture_band</span><span class="p">,</span>
                 <span class="n">base_meta</span><span class="o">=</span><span class="n">base_meta</span><span class="p">,</span>
                 <span class="n">win</span><span class="o">=</span><span class="n">win</span><span class="p">,</span>
                 <span class="n">h</span><span class="o">=</span><span class="n">img_ds</span><span class="o">.</span><span class="n">height</span><span class="p">,</span>
@@ -1558,16 +1597,16 @@
                 <span class="n">den_raw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">written</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No valid tile outputs generated from the provided inputs.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"No valid tile outputs generated from the provided inputs."</span><span class="p">)</span>
 
     <span class="n">tile_dir</span> <span class="o">=</span> <span class="n">out</span> <span class="o">/</span> <span class="n">tile_name</span>
     <span class="k">if</span> <span class="n">crowns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">crowns</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">crowns</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">crowns</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing crowns file: </span><span class="si">{</span><span class="n">crowns</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">crowns</span><span class="p">,</span> <span class="n">tile_dir</span> <span class="o">/</span> <span class="s2">&quot;crowns.gpkg&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing crowns file: </span><span class="si">{</span><span class="n">crowns</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">crowns</span><span class="p">,</span> <span class="n">tile_dir</span> <span class="o">/</span> <span class="s2">"crowns.gpkg"</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Single-tile inputs written to&quot;</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Single-tile inputs written to"</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">out</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1579,21 +1618,361 @@
 
 
 <h3 id="samstars.data.tiling.build_tiles" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">build_tiles</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">chm</span><span class="p">,</span> <span class="n">den</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;tiles&#39;</span><span class="p">),</span> <span class="n">tile</span><span class="o">=</span><span class="mf">500.0</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">cost_weights</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">seed_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">write_den</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_existing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">build_tiles</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">chm</span><span class="p">,</span> <span class="n">den</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s1">'tiles'</span><span class="p">),</span> <span class="n">tile</span><span class="o">=</span><span class="mf">500.0</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">cost_weights</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">seed_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">write_den</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_existing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 <a href="#samstars.data.tiling.build_tiles" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Build tiles.</p>
+        <p>Align lidar rasters to imagery and prepare overlapping segmentation tiles.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>img</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Three-band RGB or multiband imagery with square pixels.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chm</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Canopy heights in meters; resampled to the imagery grid if needed.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>den</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>First-return counts or density, using the same units as training.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rgb_bands</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>, <span title="int">int</span>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One-based red, green, blue indices; defaults to <code>(1, 2, 3)</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>nir_band</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional near-infrared band for the NDVI cost term.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>texture_band</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional texture band; otherwise use the mean RGB intensity.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>out</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Parent directory for <code>tile_000_000</code> and subsequent tile folders.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span>(&#39;tiles&#39;)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tile</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tile width and height in imagery CRS units, normally meters.</p>
+              </div>
+            </td>
+            <td>
+                  <code>500.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>overlap</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Overlap between neighboring tiles, in the same units as <code>tile</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>20.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cost_weights</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="float">float</span>, <span title="float">float</span>, <span title="float">float</span>, <span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Height-edge, NDVI-gap, texture, and experimental SLIC weights.</p>
+              </div>
+            </td>
+            <td>
+                  <code>(0.4, 0.3, 0.3, 0.0)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seed_params</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            SeedParams
+
+
+  
+      dataclass
+   (samstars.features.SeedParams)" href="../features_seed_generation/#samstars.features.seed_generation.SeedParams">SeedParams</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional complete seed configuration; overrides seed controls.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>thin_seeds</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reduce closely spaced seed points after detection.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>thin_dist</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum seed spacing in projected CRS units.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.8</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seed_d_min</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum peak value in the CHM and density rasters.</p>
+              </div>
+            </td>
+            <td>
+                  <code>4.5</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seed_min_dist_px</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Peak-search radius in pixels.</p>
+              </div>
+            </td>
+            <td>
+                  <code>4</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seed_gauss_sigma</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Gaussian smoothing scale in pixels.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seed_merge_radius</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Candidate grouping distance in projected CRS units.</p>
+              </div>
+            </td>
+            <td>
+                  <code>3.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seed_min_canopy_height</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum canopy height in meters.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>write_den</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Also save the aligned density raster in each tile.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>skip_existing</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reuse complete tile folders. Set to False after changing inputs
+or preparation settings, or use a new output directory.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Each nonempty tile contains <code>img.tif</code>, <code>chm.tif</code>, <code>cost.tif</code>, and <code>seeds.gpkg</code>.</p>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/data/tiling.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">213</span>
 <span class="normal">214</span>
 <span class="normal">215</span>
 <span class="normal">216</span>
@@ -1680,18 +2059,49 @@
 <span class="normal">297</span>
 <span class="normal">298</span>
 <span class="normal">299</span>
-<span class="normal">300</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_tiles</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_tiles</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
                 <span class="n">img</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
                 <span class="n">chm</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
                 <span class="n">den</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
                 <span class="n">rgb_bands</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">nir_band</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">texture_band</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">slic</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">out</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;tiles&quot;</span><span class="p">),</span>
+                <span class="n">out</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"tiles"</span><span class="p">),</span>
                 <span class="n">tile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">500.0</span><span class="p">,</span>
                 <span class="n">overlap</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
-                <span class="n">cost_weights</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+                <span class="n">cost_weights</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
                 <span class="n">seed_params</span><span class="p">:</span> <span class="n">SeedParams</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">thin_seeds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>                    <span class="c1"># ← NEW</span>
+                <span class="n">thin_seeds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="n">thin_dist</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">,</span>
                 <span class="n">seed_d_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.5</span><span class="p">,</span>
                 <span class="n">seed_min_dist_px</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
@@ -1699,26 +2109,49 @@
                 <span class="n">seed_min_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
                 <span class="n">seed_merge_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
                 <span class="n">seed_min_canopy_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
-                <span class="n">write_den</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>                    <span class="c1"># ← NEW</span>
+                <span class="n">write_den</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                 <span class="n">skip_existing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build tiles.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Align lidar rasters to imagery and prepare overlapping segmentation tiles.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        img: Three-band RGB or multiband imagery with square pixels.</span>
+<span class="sd">        chm: Canopy heights in meters; resampled to the imagery grid if needed.</span>
+<span class="sd">        den: First-return counts or density, using the same units as training.</span>
+<span class="sd">        rgb_bands: One-based red, green, blue indices; defaults to `(1, 2, 3)`.</span>
+<span class="sd">        nir_band: Optional near-infrared band for the NDVI cost term.</span>
+<span class="sd">        texture_band: Optional texture band; otherwise use the mean RGB intensity.</span>
+<span class="sd">        out: Parent directory for `tile_000_000` and subsequent tile folders.</span>
+<span class="sd">        tile: Tile width and height in imagery CRS units, normally meters.</span>
+<span class="sd">        overlap: Overlap between neighboring tiles, in the same units as `tile`.</span>
+<span class="sd">        cost_weights: Height-edge, NDVI-gap, texture, and experimental SLIC weights.</span>
+<span class="sd">        seed_params: Optional complete seed configuration; overrides seed controls.</span>
+<span class="sd">        thin_seeds: Reduce closely spaced seed points after detection.</span>
+<span class="sd">        thin_dist: Minimum seed spacing in projected CRS units.</span>
+<span class="sd">        seed_d_min: Minimum peak value in the CHM and density rasters.</span>
+<span class="sd">        seed_min_dist_px: Peak-search radius in pixels.</span>
+<span class="sd">        seed_gauss_sigma: Gaussian smoothing scale in pixels.</span>
+<span class="sd">        seed_merge_radius: Candidate grouping distance in projected CRS units.</span>
+<span class="sd">        seed_min_canopy_height: Minimum canopy height in meters.</span>
+<span class="sd">        write_den: Also save the aligned density raster in each tile.</span>
+<span class="sd">        skip_existing: Reuse complete tile folders. Set to False after changing inputs</span>
+<span class="sd">            or preparation settings, or use a new output directory.</span>
+
+<span class="sd">    Each nonempty tile contains `img.tif`, `chm.tif`, `cost.tif`, and `seeds.gpkg`.</span>
+<span class="sd">    """</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
     <span class="n">out</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img</span><span class="p">)</span> <span class="k">as</span> <span class="n">img_ds</span><span class="p">:</span>
         <span class="n">res</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">e</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s2">&quot;non‑square pixels&quot;</span>
+        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">res</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">e</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s2">"non‑square pixels"</span>
 
         <span class="n">img_h</span><span class="p">,</span> <span class="n">img_w</span> <span class="o">=</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">width</span>
         <span class="n">img_tfm</span><span class="p">,</span> <span class="n">img_crs</span> <span class="o">=</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">crs</span>
-        <span class="n">rgb_bands</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">rgb_bands</span><span class="p">)</span> <span class="k">if</span> <span class="n">rgb_bands</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">((</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">if</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="mi">7</span> <span class="k">else</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rgb_bands</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rgb_bands must contain exactly 3 band indices.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">b</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">count</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">rgb_bands</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rgb_bands must be between 1 and </span><span class="si">{</span><span class="n">img_ds</span><span class="o">.</span><span class="n">count</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">rgb_bands</span> <span class="o">=</span> <span class="n">_resolve_image_bands</span><span class="p">(</span><span class="n">img_ds</span><span class="o">.</span><span class="n">count</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="p">,</span> <span class="n">nir_band</span><span class="p">,</span> <span class="n">texture_band</span><span class="p">)</span>
 
-        <span class="n">base_meta</span> <span class="o">=</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">profile</span> <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;driver&quot;</span><span class="p">:</span> <span class="s2">&quot;GTiff&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-                                      <span class="s2">&quot;compress&quot;</span><span class="p">:</span> <span class="s2">&quot;deflate&quot;</span><span class="p">,</span> <span class="s2">&quot;predictor&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-                                      <span class="s2">&quot;zlevel&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+        <span class="n">base_meta</span> <span class="o">=</span> <span class="n">img_ds</span><span class="o">.</span><span class="n">profile</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"driver"</span><span class="p">:</span> <span class="s2">"GTiff"</span><span class="p">,</span> <span class="s2">"count"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                                      <span class="s2">"compress"</span><span class="p">:</span> <span class="s2">"deflate"</span><span class="p">,</span> <span class="s2">"predictor"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                      <span class="s2">"zlevel"</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
 
         <span class="n">chm_ds</span><span class="p">,</span> <span class="n">chm_raw</span> <span class="o">=</span> <span class="n">_align_to_img</span><span class="p">(</span><span class="n">chm</span><span class="p">,</span> <span class="n">img_ds</span><span class="p">)</span>
         <span class="n">den_ds</span><span class="p">,</span> <span class="n">den_raw</span> <span class="o">=</span> <span class="n">_align_to_img</span><span class="p">(</span><span class="n">den</span><span class="p">,</span> <span class="n">img_ds</span><span class="p">)</span>
@@ -1732,9 +2165,9 @@
                  <span class="k">for</span> <span class="n">tx</span><span class="p">,</span> <span class="n">c0</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">img_w</span><span class="p">,</span> <span class="n">stride_px</span><span class="p">))</span>
                  <span class="k">if</span> <span class="n">r0</span> <span class="o">&lt;</span> <span class="n">img_h</span> <span class="ow">and</span> <span class="n">c0</span> <span class="o">&lt;</span> <span class="n">img_w</span><span class="p">]</span>
 
-        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tiles</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Tiling&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;tile&quot;</span><span class="p">)</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tiles</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Tiling"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"tile"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">ty</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">c0</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
-            <span class="n">tile_dir</span> <span class="o">=</span> <span class="n">out</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;tile_</span><span class="si">{</span><span class="n">ty</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">tx</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">tile_dir</span> <span class="o">=</span> <span class="n">out</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"tile_</span><span class="si">{</span><span class="n">ty</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">tx</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">win</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="n">c0</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
             <span class="n">_prepare_tile</span><span class="p">(</span>
                 <span class="n">tile_dir</span><span class="o">=</span><span class="n">tile_dir</span><span class="p">,</span>
@@ -1744,6 +2177,8 @@
                 <span class="n">img_tfm</span><span class="o">=</span><span class="n">img_tfm</span><span class="p">,</span>
                 <span class="n">img_crs</span><span class="o">=</span><span class="n">img_crs</span><span class="p">,</span>
                 <span class="n">rgb_bands</span><span class="o">=</span><span class="n">rgb_bands</span><span class="p">,</span>
+                <span class="n">nir_band</span><span class="o">=</span><span class="n">nir_band</span><span class="p">,</span>
+                <span class="n">texture_band</span><span class="o">=</span><span class="n">texture_band</span><span class="p">,</span>
                 <span class="n">base_meta</span><span class="o">=</span><span class="n">base_meta</span><span class="p">,</span>
                 <span class="n">win</span><span class="o">=</span><span class="n">win</span><span class="p">,</span>
                 <span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span>
@@ -1769,7 +2204,7 @@
         <span class="n">chm_ds</span><span class="o">.</span><span class="n">close</span><span class="p">();</span> <span class="n">den_ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">chm_raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">chm_ds</span><span class="p">:</span> <span class="n">chm_raw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">den_raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">den_ds</span><span class="p">:</span> <span class="n">den_raw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Tiles written to&quot;</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Tiles written to"</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
