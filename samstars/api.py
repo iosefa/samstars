@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
+from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
+
 _BUNDLE_MANIFEST = "manifest.json"
 _BUNDLE_FORMAT = "samstars_model_bundle"
 _BUNDLE_VERSION = 1
@@ -381,6 +383,7 @@ class SamStars:
         sam_epochs: int = 15,
         sam_min_iters: int = 0,
         sam_lr: float = 5e-5,
+        fg_extra: int = DEFAULT_FG_EXTRA,
         stardist_epochs: int = 50,
         stardist_min_iters: int = 0,
         val_fraction: float = 0.2,
@@ -405,7 +408,8 @@ class SamStars:
         stardist_cpu: bool = False,
         fast: bool = False,
     ) -> SamStars:
-        """Train a samstars model bundle from one labeled area or prepared labeled tiles."""
+        """Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""
+        fg_extra = validate_fg_extra(fg_extra)
         from samstars.data import build_scale_stats_from_proposal_records
         from samstars.segmentation.engine import run_segmentation
         from samstars.training.chips import build_training_chips
@@ -470,6 +474,7 @@ class SamStars:
                 min_iters=sam_min_iters,
                 lr=sam_lr,
                 device=device,
+                fg_extra=fg_extra,
             )
 
             proposal_result = run_segmentation(
@@ -480,6 +485,7 @@ class SamStars:
                 run_sam=True,
                 run_stardist=False,
                 fast=fast,
+                fg_extra=fg_extra,
                 crop_smooth_sigma=crop_smooth_sigma,
                 smooth_sigma=smooth_sigma,
                 post_smooth_sigma=post_smooth_sigma,
@@ -573,6 +579,7 @@ class SamStars:
                 "smooth_sigma": smooth_sigma,
                 "post_smooth_sigma": post_smooth_sigma,
                 "fast": fast,
+                "fg_extra": fg_extra,
             },
         )
         return cls(out)
@@ -607,11 +614,15 @@ class SamStars:
         skip_existing_sam: bool = True,
         log_refinement: bool = False,
         fast: bool | None = None,
+        fg_extra: int | None = None,
         crop_smooth_sigma: float | None = None,
         smooth_sigma: float | None = None,
         post_smooth_sigma: float | None = None,
     ) -> SamStarsResult:
-        """Run segmentation using this model bundle."""
+        """Run segmentation; fg_extra=None reuses the bundle count (80 for older bundles)."""
+        resolved_fg_extra = validate_fg_extra(
+            self.defaults.get("fg_extra", DEFAULT_FG_EXTRA) if fg_extra is None else fg_extra
+        )
         from samstars.segmentation.engine import run_segmentation
 
         storage = _normalize_storage(storage)
@@ -698,6 +709,7 @@ class SamStars:
                     skip_existing_sam=skip_existing_sam,
                     log_refinement=log_refinement,
                     fast=resolved_fast,
+                    fg_extra=resolved_fg_extra,
                     crop_smooth_sigma=resolved_crop_sigma,
                     smooth_sigma=resolved_smooth_sigma,
                     post_smooth_sigma=resolved_post_sigma,
@@ -744,6 +756,7 @@ def train(
     sam_epochs: int = 15,
     sam_min_iters: int = 0,
     sam_lr: float = 5e-5,
+    fg_extra: int = DEFAULT_FG_EXTRA,
     stardist_epochs: int = 50,
     stardist_min_iters: int = 0,
     val_fraction: float = 0.2,
@@ -791,6 +804,10 @@ def train(
         sam_epochs: Number of proposal-decoder training epochs.
         sam_min_iters: Minimum proposal training iterations; may increase epochs.
         sam_lr: Proposal-decoder learning rate.
+        fg_extra: Maximum additional foreground points per seed, a nonnegative
+            integer. Zero keeps only the seed as foreground; the default is 80.
+            Used for decoder training and the proposals that train refinement,
+            and stored in the bundle for later segmentation.
         stardist_epochs: Number of refinement training epochs.
         stardist_min_iters: Minimum refinement training iterations.
         val_fraction: Fraction of refinement records assigned to validation.
@@ -841,6 +858,7 @@ def train(
         sam_epochs=sam_epochs,
         sam_min_iters=sam_min_iters,
         sam_lr=sam_lr,
+        fg_extra=fg_extra,
         stardist_epochs=stardist_epochs,
         stardist_min_iters=stardist_min_iters,
         val_fraction=val_fraction,
@@ -897,6 +915,7 @@ def segment(
     skip_existing_sam: bool = True,
     log_refinement: bool = False,
     fast: bool | None = None,
+    fg_extra: int | None = None,
     crop_smooth_sigma: float | None = None,
     smooth_sigma: float | None = None,
     post_smooth_sigma: float | None = None,
@@ -937,6 +956,9 @@ def segment(
         skip_existing_sam: Skip complete proposal outputs already present under out.
         log_refinement: Show detailed refinement logs.
         fast: Override the bundle's batched proposal-decoding setting.
+        fg_extra: Override the maximum additional foreground points per seed.
+            None reuses the bundle setting, or 80 for older bundles. Zero keeps
+            only the seed as foreground. Negative points and boxes are unchanged.
         crop_smooth_sigma: Override per-crop proposal smoothing, in pixels.
         smooth_sigma: Override proposal mosaic smoothing, in pixels.
         post_smooth_sigma: Override smoothing after canopy-index fusion, in pixels.
@@ -979,6 +1001,7 @@ def segment(
         skip_existing_sam=skip_existing_sam,
         log_refinement=log_refinement,
         fast=fast,
+        fg_extra=fg_extra,
         crop_smooth_sigma=crop_smooth_sigma,
         smooth_sigma=smooth_sigma,
         post_smooth_sigma=post_smooth_sigma,

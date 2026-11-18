@@ -108,6 +108,10 @@ python -m samstars.segmentation.proposals \
   --fast
 ```
 
+Add `--fg-extra 0` to use only each seed as foreground, or a positive integer
+to limit extra foreground points. The default is `80`; both normal and `--fast`
+proposal generation honor this option. Negative points and box prompts remain.
+
 Run polygon refinement:
 
 ```bash
@@ -139,6 +143,10 @@ python -m samstars.training.sam_training \
   --ckpt /abs/path/sam_vit_l_0b3195.pth \
   --device cpu
 ```
+
+The decoder-training CLI also accepts `--fg-extra` (default `80`, `0` keeps only
+the seed as foreground). When using the separate training and proposal CLIs,
+pass the same foreground count to both; a standalone checkpoint does not store it.
 
 Build refinement training records:
 

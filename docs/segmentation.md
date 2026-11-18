@@ -37,6 +37,20 @@ The bundle supplies the band settings used during training.
 If source bands have been reordered, pass the corresponding `rgb_bands`, and any `nir_band` or `texture_band`, explicitly while retaining the same channel content.
 Omitted band settings reuse the bundle defaults.
 
+## Foreground Prompts
+
+`segment(...)` and `model.segment(...)` reuse the bundle's `fg_extra` setting
+when it is omitted or `None`. Bundles created before this setting was added
+continue to use `80` extra foreground points per seed.
+
+Pass `fg_extra=0` to use only each seed as foreground, or a positive integer
+to cap the additional foreground points. This works in both normal crop mode
+and fast batched mode. Negative-point sampling and box prompts are unchanged;
+other seeds are not automatically turned into background points.
+
+Use a new output directory when changing the count so existing proposals are
+not reused. An override affects that run and does not modify the model bundle.
+
 ## Outputs
 
 The main output is `runs/segmentation/crowns/crowns.gpkg`, returned as `result.crowns`.

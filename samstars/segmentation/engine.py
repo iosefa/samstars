@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
 from samstars.data import (
     build_pending_tile_records,
     build_single_tile,
@@ -143,6 +144,7 @@ def run_segmentation(
     log_refinement: bool = False,
     fast: bool = True,
     fast_batch_size: int = 32,
+    fg_extra: int = DEFAULT_FG_EXTRA,
     crop_smooth_sigma: float = 2.0,
     smooth_sigma: float = 4.0,
     post_smooth_sigma: float = 0.0,
@@ -161,7 +163,10 @@ def run_segmentation(
 
     Stage, threshold, resume, and window controls have the meanings documented
     by samstars.segment. Final polygon deduplication is disabled by default.
+    fg_extra is the maximum extra foreground points per seed; 0 uses only the
+    seed as foreground. It must be a nonnegative integer and defaults to 80.
     """
+    fg_extra = validate_fg_extra(fg_extra)
     out_dir = Path(out_dir)
     resolved_sam_ckpt: Path | None = None
     resolved_stardist_model: Path | None = None
@@ -221,6 +226,7 @@ def run_segmentation(
             rgb_lo_hi=None,
             fast=fast,
             fast_batch=fast_batch_size,
+            fg_extra=fg_extra,
             crop_smooth_sigma=crop_smooth_sigma,
             smooth_sigma=smooth_sigma,
             post_smooth_sigma=post_smooth_sigma,
