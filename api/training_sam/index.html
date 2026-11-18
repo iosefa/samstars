@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1542,8 +1542,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">179</span>
-<span class="normal">180</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">180</span>
 <span class="normal">181</span>
 <span class="normal">182</span>
 <span class="normal">183</span>
@@ -1677,7 +1676,8 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Chips</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="normal">314</span>
+<span class="normal">315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Chips</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">chip_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
@@ -1692,6 +1692,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
         <span class="n">box_expand</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Initialize the instance."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fg_extra</span> <span class="o">=</span> <span class="n">validate_fg_extra</span><span class="p">(</span><span class="n">fg_extra</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">=</span> <span class="n">chip_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"images"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.npy"</span><span class="p">))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">:</span>
@@ -1701,7 +1702,6 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
         <span class="bp">self</span><span class="o">.</span><span class="n">resize</span> <span class="o">=</span> <span class="n">ResizeLongestSide</span><span class="p">(</span><span class="n">enc_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rgb_lo_hi</span> <span class="o">=</span> <span class="n">rgb_lo_hi</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">fg_extra</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fg_extra</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">neg_max_gnd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">neg_max_gnd</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">neg_max_can</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">neg_max_can</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chm_ground</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">chm_ground</span><span class="p">)</span>
@@ -1845,8 +1845,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">217</span>
-<span class="normal">218</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">218</span>
 <span class="normal">219</span>
 <span class="normal">220</span>
 <span class="normal">221</span>
@@ -1942,7 +1941,8 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="normal">314</span>
+<span class="normal">315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Return one item by index."""</span>
     <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">stem</span>
 
@@ -2062,8 +2062,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">180</span>
-<span class="normal">181</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">181</span>
 <span class="normal">182</span>
 <span class="normal">183</span>
 <span class="normal">184</span>
@@ -2093,7 +2092,8 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 <span class="normal">208</span>
 <span class="normal">209</span>
 <span class="normal">210</span>
-<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">211</span>
+<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">chip_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">img_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span>
@@ -2107,6 +2107,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
     <span class="n">box_expand</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Initialize the instance."""</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">fg_extra</span> <span class="o">=</span> <span class="n">validate_fg_extra</span><span class="p">(</span><span class="n">fg_extra</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">=</span> <span class="n">chip_dir</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">chip_dir</span> <span class="o">/</span> <span class="s2">"images"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.npy"</span><span class="p">))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">:</span>
@@ -2116,7 +2117,6 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
     <span class="bp">self</span><span class="o">.</span><span class="n">resize</span> <span class="o">=</span> <span class="n">ResizeLongestSide</span><span class="p">(</span><span class="n">enc_size</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">rgb_lo_hi</span> <span class="o">=</span> <span class="n">rgb_lo_hi</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">fg_extra</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fg_extra</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">neg_max_gnd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">neg_max_gnd</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">neg_max_can</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">neg_max_can</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">chm_ground</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">chm_ground</span><span class="p">)</span>
@@ -2147,9 +2147,9 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Return the number of items."""</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2183,12 +2183,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">418</span>
 <span class="normal">419</span>
 <span class="normal">420</span>
 <span class="normal">421</span>
@@ -2231,7 +2226,12 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 <span class="normal">458</span>
 <span class="normal">459</span>
 <span class="normal">460</span>
-<span class="normal">461</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">"""Run the command-line entry point."""</span>
     <span class="n">pa</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"Train the proposal decoder from a prepared training-chip directory."</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
@@ -2248,7 +2248,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--scale-stats"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Optional global imagery scaling stats JSON"</span><span class="p">)</span>
 
     <span class="c1"># New knobs (optional)</span>
-    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--fg-extra"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">FG_EXTRA_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Additional positive prompt points sampled from CHM"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--fg-extra"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">FG_EXTRA_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Maximum additional positive points sampled from CHM (0 = seed only; default: 80)"</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--neg-max-gnd"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NEG_MAX_GND_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Maximum negative ground prompt points"</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--neg-max-can"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NEG_MAX_CAN_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Maximum negative canopy prompt points"</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--chm-ground"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"CHM threshold used when sampling prompts"</span><span class="p">)</span>
@@ -2302,8 +2302,7 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
-<span class="normal">41</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">41</span>
 <span class="normal">42</span>
 <span class="normal">43</span>
 <span class="normal">44</span>
@@ -2313,7 +2312,8 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 <span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
-<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stretch_u8</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="normal">51</span>
+<span class="normal">52</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stretch_u8</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Fallback per-array min/max stretch to uint8."""</span>
     <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">finite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
@@ -2342,13 +2342,14 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 
     <div class="doc doc-contents ">
 
-        <p>Train decoder.</p>
+        <p>Train a decoder with up to fg_extra additional foreground points per seed.</p>
+<p>fg_extra must be a nonnegative integer. Zero keeps only the seed as foreground;
+negative-point sampling and box prompts are unchanged. The default is 80.</p>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/sam_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">317</span>
-<span class="normal">318</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">318</span>
 <span class="normal">319</span>
 <span class="normal">320</span>
 <span class="normal">321</span>
@@ -2440,7 +2441,12 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
 <span class="normal">407</span>
 <span class="normal">408</span>
 <span class="normal">409</span>
-<span class="normal">410</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train_decoder</span><span class="p">(</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train_decoder</span><span class="p">(</span>
     <span class="n">chip_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">ckpt</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">out_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
@@ -2458,7 +2464,11 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
     <span class="n">chm_ground</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CHM_GROUND_DEFAULT</span><span class="p">,</span>
     <span class="n">box_expand</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Train decoder."""</span>
+<span class="w">    </span><span class="sd">"""Train a decoder with up to fg_extra additional foreground points per seed.</span>
+
+<span class="sd">    fg_extra must be a nonnegative integer. Zero keeps only the seed as foreground;</span>
+<span class="sd">    negative-point sampling and box prompts are unchanged. The default is 80.</span>
+<span class="sd">    """</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">Chips</span><span class="p">(</span>
         <span class="n">chip_dir</span><span class="p">,</span>
         <span class="n">img_size</span><span class="o">=</span><span class="n">img_size</span><span class="p">,</span>
@@ -2596,11 +2606,118 @@ optimized. Inputs are scaled to uint8 using supplied limits or per-chip scaling.
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
-  </body>
+  <script data-mkdocs-jupyter-mathjax="{&quot;url&quot;: &quot;https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js&quot;, &quot;version&quot;: 4}">
+/* Shared by full pages and Material's instant navigation. */
+(() => {
+  const config = JSON.parse(document.currentScript.dataset.mkdocsJupyterMathjax);
+  if (window.mkdocsJupyterMathJax) return;
+
+  let loading;
+  let queue = Promise.resolve();
+  let previous = [];
+
+  const ready = async () => {
+    if (!loading) {
+      loading = (async () => {
+        let math = window.MathJax;
+        if (!math?.typesetPromise) {
+          const url = new URL(config.url, document.baseURI).href;
+          const existing = Array.from(document.scripts).find(script =>
+            script.src && (script.src === url || script.id === 'MathJax-script' ||
+              (/mathjax/i.test(script.src) &&
+               /\/(?:MathJax|latest|(?:tex|mml)(?:-mml)?-(?:chtml|svg))\.js(?:[?#]|$)/i.test(script.src))));
+          if (existing) {
+            if (!math?.startup?.promise) {
+              await new Promise((resolve, reject) => {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+              });
+            }
+          } else {
+            // Keep site macros, delimiters and startup hooks when supplied.
+            const options = math || {};
+            window.MathJax = {
+              ...options,
+              loader: {
+                ...options.loader,
+                load: Array.from(new Set(['ui/safe', ...(options.loader?.load || [])]))
+              },
+              startup: { typeset: false, ...options.startup },
+              tex: {
+                tags: 'ams',
+                useLabelIds: true,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                ...options.tex
+              }
+            };
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = config.url;
+              script.id = 'MathJax-script';
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+        }
+        math = window.MathJax;
+        await math.startup.promise;
+        return math;
+      })();
+    }
+    const math = await loading;
+    // A site owner can extend the v3 queue again on each navigation.
+    await math.startup.promise;
+    return math;
+  };
+
+  const unrendered = node => {
+    if (node.matches('mjx-container')) return [];
+    if (!node.querySelector('mjx-container')) return [node];
+    // In v3, scanning generated assistive MathML again produces nested output.
+    return Array.from(node.children).flatMap(unrendered);
+  };
+
+  const refresh = () => {
+    // A separate chain also serializes v3, without changing v4's startup promise.
+    queue = queue.then(async () => {
+      const notebooks = Array.from(document.querySelectorAll('.jupyter-wrapper'));
+      if (!notebooks.length && !previous.length) return;
+      if (notebooks.length === previous.length &&
+          notebooks.every((node, index) => node === previous[index])) return;
+      const math = await ready();
+      if (previous.length) {
+        math.typesetClear(previous);
+        math.texReset();
+      }
+      previous = notebooks.filter(node => node.isConnected);
+      const pending = previous.flatMap(unrendered);
+      if (pending.length) await math.typesetPromise(pending);
+    }).catch(error => console.error('mkdocs-jupyter: MathJax rendering failed', error));
+    return queue;
+  };
+
+  window.mkdocsJupyterMathJax = { refresh };
+  const start = () => {
+    if (typeof document$ !== 'undefined') document$.subscribe(refresh);
+    else refresh();
+  };
+  // Theme bundles and user-provided MathJax scripts can follow notebook content.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else start();
+})();
+
+</script>
+</body>
 </html>

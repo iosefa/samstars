@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1607,9 +1607,7 @@ the top-level functions.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>samstars/api.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">217</span>
 <span class="normal">218</span>
 <span class="normal">219</span>
 <span class="normal">220</span>
@@ -2117,7 +2115,19 @@ the top-level functions.</p>
 <span class="normal">722</span>
 <span class="normal">723</span>
 <span class="normal">724</span>
-<span class="normal">725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SamStars</span><span class="p">:</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SamStars</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Load a trained bundle and reuse its model files and stored defaults.</span>
 
 <span class="sd">    Args:</span>
@@ -2286,6 +2296,7 @@ the top-level functions.</p>
         <span class="n">sam_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
         <span class="n">sam_min_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">sam_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5e-5</span><span class="p">,</span>
+        <span class="n">fg_extra</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_FG_EXTRA</span><span class="p">,</span>
         <span class="n">stardist_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
         <span class="n">stardist_min_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">val_fraction</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
@@ -2310,7 +2321,8 @@ the top-level functions.</p>
         <span class="n">stardist_cpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SamStars</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Train a samstars model bundle from one labeled area or prepared labeled tiles."""</span>
+<span class="w">        </span><span class="sd">"""Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""</span>
+        <span class="n">fg_extra</span> <span class="o">=</span> <span class="n">validate_fg_extra</span><span class="p">(</span><span class="n">fg_extra</span><span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_scale_stats_from_proposal_records</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.segmentation.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_segmentation</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.training.chips</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_training_chips</span>
@@ -2375,6 +2387,7 @@ the top-level functions.</p>
                 <span class="n">min_iters</span><span class="o">=</span><span class="n">sam_min_iters</span><span class="p">,</span>
                 <span class="n">lr</span><span class="o">=</span><span class="n">sam_lr</span><span class="p">,</span>
                 <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">fg_extra</span><span class="o">=</span><span class="n">fg_extra</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="n">proposal_result</span> <span class="o">=</span> <span class="n">run_segmentation</span><span class="p">(</span>
@@ -2385,6 +2398,7 @@ the top-level functions.</p>
                 <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">run_stardist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">fast</span><span class="o">=</span><span class="n">fast</span><span class="p">,</span>
+                <span class="n">fg_extra</span><span class="o">=</span><span class="n">fg_extra</span><span class="p">,</span>
                 <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="n">crop_smooth_sigma</span><span class="p">,</span>
                 <span class="n">smooth_sigma</span><span class="o">=</span><span class="n">smooth_sigma</span><span class="p">,</span>
                 <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="n">post_smooth_sigma</span><span class="p">,</span>
@@ -2478,6 +2492,7 @@ the top-level functions.</p>
                 <span class="s2">"smooth_sigma"</span><span class="p">:</span> <span class="n">smooth_sigma</span><span class="p">,</span>
                 <span class="s2">"post_smooth_sigma"</span><span class="p">:</span> <span class="n">post_smooth_sigma</span><span class="p">,</span>
                 <span class="s2">"fast"</span><span class="p">:</span> <span class="n">fast</span><span class="p">,</span>
+                <span class="s2">"fg_extra"</span><span class="p">:</span> <span class="n">fg_extra</span><span class="p">,</span>
             <span class="p">},</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
@@ -2512,11 +2527,15 @@ the top-level functions.</p>
         <span class="n">skip_existing_sam</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">log_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">fg_extra</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">crop_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">post_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SamStarsResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Run segmentation using this model bundle."""</span>
+<span class="w">        </span><span class="sd">"""Run segmentation; fg_extra=None reuses the bundle count (80 for older bundles)."""</span>
+        <span class="n">resolved_fg_extra</span> <span class="o">=</span> <span class="n">validate_fg_extra</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fg_extra"</span><span class="p">,</span> <span class="n">DEFAULT_FG_EXTRA</span><span class="p">)</span> <span class="k">if</span> <span class="n">fg_extra</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fg_extra</span>
+        <span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.segmentation.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_segmentation</span>
 
         <span class="n">storage</span> <span class="o">=</span> <span class="n">_normalize_storage</span><span class="p">(</span><span class="n">storage</span><span class="p">)</span>
@@ -2603,6 +2622,7 @@ the top-level functions.</p>
                     <span class="n">skip_existing_sam</span><span class="o">=</span><span class="n">skip_existing_sam</span><span class="p">,</span>
                     <span class="n">log_refinement</span><span class="o">=</span><span class="n">log_refinement</span><span class="p">,</span>
                     <span class="n">fast</span><span class="o">=</span><span class="n">resolved_fast</span><span class="p">,</span>
+                    <span class="n">fg_extra</span><span class="o">=</span><span class="n">resolved_fg_extra</span><span class="p">,</span>
                     <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="n">resolved_crop_sigma</span><span class="p">,</span>
                     <span class="n">smooth_sigma</span><span class="o">=</span><span class="n">resolved_smooth_sigma</span><span class="p">,</span>
                     <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="n">resolved_post_sigma</span><span class="p">,</span>
@@ -2664,12 +2684,12 @@ the top-level functions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">251</span>
-<span class="normal">252</span>
-<span class="normal">253</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">253</span>
 <span class="normal">254</span>
 <span class="normal">255</span>
-<span class="normal">256</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">SamStars</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SamStars</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Load a model bundle or return an existing SamStars object."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
@@ -2685,26 +2705,19 @@ the top-level functions.</p>
 
 
 <h4 id="samstars.api.SamStars.segment" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">segment</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">segment</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#samstars.api.SamStars.segment" class="headerlink" title="Permanent link">&para;</a></h4>
 
 
     <div class="doc doc-contents ">
 
-        <p>Run segmentation using this model bundle.</p>
+        <p>Run segmentation; fg_extra=None reuses the bundle count (80 for older bundles).</p>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">580</span>
-<span class="normal">581</span>
-<span class="normal">582</span>
-<span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span>
-<span class="normal">586</span>
-<span class="normal">587</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">587</span>
 <span class="normal">588</span>
 <span class="normal">589</span>
 <span class="normal">590</span>
@@ -2842,7 +2855,19 @@ the top-level functions.</p>
 <span class="normal">722</span>
 <span class="normal">723</span>
 <span class="normal">724</span>
-<span class="normal">725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">segment</span><span class="p">(</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">segment</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">out</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
@@ -2872,11 +2897,15 @@ the top-level functions.</p>
     <span class="n">skip_existing_sam</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">log_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fg_extra</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">crop_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">post_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SamStarsResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Run segmentation using this model bundle."""</span>
+<span class="w">    </span><span class="sd">"""Run segmentation; fg_extra=None reuses the bundle count (80 for older bundles)."""</span>
+    <span class="n">resolved_fg_extra</span> <span class="o">=</span> <span class="n">validate_fg_extra</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fg_extra"</span><span class="p">,</span> <span class="n">DEFAULT_FG_EXTRA</span><span class="p">)</span> <span class="k">if</span> <span class="n">fg_extra</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fg_extra</span>
+    <span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.segmentation.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_segmentation</span>
 
     <span class="n">storage</span> <span class="o">=</span> <span class="n">_normalize_storage</span><span class="p">(</span><span class="n">storage</span><span class="p">)</span>
@@ -2963,6 +2992,7 @@ the top-level functions.</p>
                 <span class="n">skip_existing_sam</span><span class="o">=</span><span class="n">skip_existing_sam</span><span class="p">,</span>
                 <span class="n">log_refinement</span><span class="o">=</span><span class="n">log_refinement</span><span class="p">,</span>
                 <span class="n">fast</span><span class="o">=</span><span class="n">resolved_fast</span><span class="p">,</span>
+                <span class="n">fg_extra</span><span class="o">=</span><span class="n">resolved_fg_extra</span><span class="p">,</span>
                 <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="n">resolved_crop_sigma</span><span class="p">,</span>
                 <span class="n">smooth_sigma</span><span class="o">=</span><span class="n">resolved_smooth_sigma</span><span class="p">,</span>
                 <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="n">resolved_post_sigma</span><span class="p">,</span>
@@ -2998,7 +3028,7 @@ the top-level functions.</p>
 
 
 <h4 id="samstars.api.SamStars.train" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">train</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crowns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sam_base_ckpt</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">chip_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">chip_stride</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">sam_epochs</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">sam_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sam_lr</span><span class="o">=</span><span class="mf">5e-05</span><span class="p">,</span> <span class="n">stardist_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">stardist_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">val_fraction</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_normalize_inputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_augment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">train</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crowns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sam_base_ckpt</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">chip_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">chip_stride</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">sam_epochs</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">sam_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sam_lr</span><span class="o">=</span><span class="mf">5e-05</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="n">DEFAULT_FG_EXTRA</span><span class="p">,</span> <span class="n">stardist_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">stardist_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">val_fraction</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_normalize_inputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_augment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -3009,14 +3039,12 @@ the top-level functions.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Train a samstars model bundle from one labeled area or prepared labeled tiles.</p>
+        <p>Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only).</p>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">363</span>
-<span class="normal">364</span>
-<span class="normal">365</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">365</span>
 <span class="normal">366</span>
 <span class="normal">367</span>
 <span class="normal">368</span>
@@ -3229,7 +3257,14 @@ the top-level functions.</p>
 <span class="normal">575</span>
 <span class="normal">576</span>
 <span class="normal">577</span>
-<span class="normal">578</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3250,6 +3285,7 @@ the top-level functions.</p>
     <span class="n">sam_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
     <span class="n">sam_min_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">sam_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5e-5</span><span class="p">,</span>
+    <span class="n">fg_extra</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_FG_EXTRA</span><span class="p">,</span>
     <span class="n">stardist_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">stardist_min_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">val_fraction</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
@@ -3274,7 +3310,8 @@ the top-level functions.</p>
     <span class="n">stardist_cpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SamStars</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Train a samstars model bundle from one labeled area or prepared labeled tiles."""</span>
+<span class="w">    </span><span class="sd">"""Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""</span>
+    <span class="n">fg_extra</span> <span class="o">=</span> <span class="n">validate_fg_extra</span><span class="p">(</span><span class="n">fg_extra</span><span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_scale_stats_from_proposal_records</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.segmentation.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_segmentation</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">samstars.training.chips</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_training_chips</span>
@@ -3339,6 +3376,7 @@ the top-level functions.</p>
             <span class="n">min_iters</span><span class="o">=</span><span class="n">sam_min_iters</span><span class="p">,</span>
             <span class="n">lr</span><span class="o">=</span><span class="n">sam_lr</span><span class="p">,</span>
             <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">fg_extra</span><span class="o">=</span><span class="n">fg_extra</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">proposal_result</span> <span class="o">=</span> <span class="n">run_segmentation</span><span class="p">(</span>
@@ -3349,6 +3387,7 @@ the top-level functions.</p>
             <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">run_stardist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">fast</span><span class="o">=</span><span class="n">fast</span><span class="p">,</span>
+            <span class="n">fg_extra</span><span class="o">=</span><span class="n">fg_extra</span><span class="p">,</span>
             <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="n">crop_smooth_sigma</span><span class="p">,</span>
             <span class="n">smooth_sigma</span><span class="o">=</span><span class="n">smooth_sigma</span><span class="p">,</span>
             <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="n">post_smooth_sigma</span><span class="p">,</span>
@@ -3442,6 +3481,7 @@ the top-level functions.</p>
             <span class="s2">"smooth_sigma"</span><span class="p">:</span> <span class="n">smooth_sigma</span><span class="p">,</span>
             <span class="s2">"post_smooth_sigma"</span><span class="p">:</span> <span class="n">post_smooth_sigma</span><span class="p">,</span>
             <span class="s2">"fast"</span><span class="p">:</span> <span class="n">fast</span><span class="p">,</span>
+            <span class="s2">"fg_extra"</span><span class="p">:</span> <span class="n">fg_extra</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
@@ -3558,9 +3598,7 @@ the top-level functions.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>samstars/api.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
 <span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
@@ -3584,7 +3622,9 @@ the top-level functions.</p>
 <span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span>
-<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SamStarsResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Paths returned by a segmentation run.</span>
 
@@ -3643,15 +3683,15 @@ the top-level functions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">206</span>
 <span class="normal">207</span>
 <span class="normal">208</span>
 <span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span>
-<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Return a JSON-serializable summary."""</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">"out"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="p">),</span>
@@ -3679,7 +3719,7 @@ the top-level functions.</p>
 
 
 <h3 id="samstars.api.segment" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">segment</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">segment</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#samstars.api.segment" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -4155,6 +4195,24 @@ stardist_resume. Recovered polygons have no confidence score.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
+                <code>fg_extra</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Override the maximum additional foreground points per seed.
+None reuses the bundle setting, or 80 for older bundles. Zero keeps
+only the seed as foreground. Negative points and boxes are unchanged.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
                 <code>crop_smooth_sigma</code>
             </td>
             <td>
@@ -4268,122 +4326,127 @@ prepared tile channels are used as supplied.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">870</span>
-<span class="normal">871</span>
-<span class="normal">872</span>
-<span class="normal">873</span>
-<span class="normal">874</span>
-<span class="normal">875</span>
-<span class="normal">876</span>
-<span class="normal">877</span>
-<span class="normal">878</span>
-<span class="normal">879</span>
-<span class="normal">880</span>
-<span class="normal">881</span>
-<span class="normal">882</span>
-<span class="normal">883</span>
-<span class="normal">884</span>
-<span class="normal">885</span>
-<span class="normal">886</span>
-<span class="normal">887</span>
-<span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
-<span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span>
-<span class="normal">899</span>
-<span class="normal">900</span>
-<span class="normal">901</span>
-<span class="normal">902</span>
-<span class="normal">903</span>
-<span class="normal">904</span>
-<span class="normal">905</span>
-<span class="normal">906</span>
-<span class="normal">907</span>
-<span class="normal">908</span>
-<span class="normal">909</span>
-<span class="normal">910</span>
-<span class="normal">911</span>
-<span class="normal">912</span>
-<span class="normal">913</span>
-<span class="normal">914</span>
-<span class="normal">915</span>
-<span class="normal">916</span>
-<span class="normal">917</span>
-<span class="normal">918</span>
-<span class="normal">919</span>
-<span class="normal">920</span>
-<span class="normal">921</span>
-<span class="normal">922</span>
-<span class="normal">923</span>
-<span class="normal">924</span>
-<span class="normal">925</span>
-<span class="normal">926</span>
-<span class="normal">927</span>
-<span class="normal">928</span>
-<span class="normal">929</span>
-<span class="normal">930</span>
-<span class="normal">931</span>
-<span class="normal">932</span>
-<span class="normal">933</span>
-<span class="normal">934</span>
-<span class="normal">935</span>
-<span class="normal">936</span>
-<span class="normal">937</span>
-<span class="normal">938</span>
-<span class="normal">939</span>
-<span class="normal">940</span>
-<span class="normal">941</span>
-<span class="normal">942</span>
-<span class="normal">943</span>
-<span class="normal">944</span>
-<span class="normal">945</span>
-<span class="normal">946</span>
-<span class="normal">947</span>
-<span class="normal">948</span>
-<span class="normal">949</span>
-<span class="normal">950</span>
-<span class="normal">951</span>
-<span class="normal">952</span>
-<span class="normal">953</span>
-<span class="normal">954</span>
-<span class="normal">955</span>
-<span class="normal">956</span>
-<span class="normal">957</span>
-<span class="normal">958</span>
-<span class="normal">959</span>
-<span class="normal">960</span>
-<span class="normal">961</span>
-<span class="normal">962</span>
-<span class="normal">963</span>
-<span class="normal">964</span>
-<span class="normal">965</span>
-<span class="normal">966</span>
-<span class="normal">967</span>
-<span class="normal">968</span>
-<span class="normal">969</span>
-<span class="normal">970</span>
-<span class="normal">971</span>
-<span class="normal">972</span>
-<span class="normal">973</span>
-<span class="normal">974</span>
-<span class="normal">975</span>
-<span class="normal">976</span>
-<span class="normal">977</span>
-<span class="normal">978</span>
-<span class="normal">979</span>
-<span class="normal">980</span>
-<span class="normal">981</span>
-<span class="normal">982</span>
-<span class="normal">983</span>
-<span class="normal">984</span>
-<span class="normal">985</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">segment</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 888</span>
+<span class="normal"> 889</span>
+<span class="normal"> 890</span>
+<span class="normal"> 891</span>
+<span class="normal"> 892</span>
+<span class="normal"> 893</span>
+<span class="normal"> 894</span>
+<span class="normal"> 895</span>
+<span class="normal"> 896</span>
+<span class="normal"> 897</span>
+<span class="normal"> 898</span>
+<span class="normal"> 899</span>
+<span class="normal"> 900</span>
+<span class="normal"> 901</span>
+<span class="normal"> 902</span>
+<span class="normal"> 903</span>
+<span class="normal"> 904</span>
+<span class="normal"> 905</span>
+<span class="normal"> 906</span>
+<span class="normal"> 907</span>
+<span class="normal"> 908</span>
+<span class="normal"> 909</span>
+<span class="normal"> 910</span>
+<span class="normal"> 911</span>
+<span class="normal"> 912</span>
+<span class="normal"> 913</span>
+<span class="normal"> 914</span>
+<span class="normal"> 915</span>
+<span class="normal"> 916</span>
+<span class="normal"> 917</span>
+<span class="normal"> 918</span>
+<span class="normal"> 919</span>
+<span class="normal"> 920</span>
+<span class="normal"> 921</span>
+<span class="normal"> 922</span>
+<span class="normal"> 923</span>
+<span class="normal"> 924</span>
+<span class="normal"> 925</span>
+<span class="normal"> 926</span>
+<span class="normal"> 927</span>
+<span class="normal"> 928</span>
+<span class="normal"> 929</span>
+<span class="normal"> 930</span>
+<span class="normal"> 931</span>
+<span class="normal"> 932</span>
+<span class="normal"> 933</span>
+<span class="normal"> 934</span>
+<span class="normal"> 935</span>
+<span class="normal"> 936</span>
+<span class="normal"> 937</span>
+<span class="normal"> 938</span>
+<span class="normal"> 939</span>
+<span class="normal"> 940</span>
+<span class="normal"> 941</span>
+<span class="normal"> 942</span>
+<span class="normal"> 943</span>
+<span class="normal"> 944</span>
+<span class="normal"> 945</span>
+<span class="normal"> 946</span>
+<span class="normal"> 947</span>
+<span class="normal"> 948</span>
+<span class="normal"> 949</span>
+<span class="normal"> 950</span>
+<span class="normal"> 951</span>
+<span class="normal"> 952</span>
+<span class="normal"> 953</span>
+<span class="normal"> 954</span>
+<span class="normal"> 955</span>
+<span class="normal"> 956</span>
+<span class="normal"> 957</span>
+<span class="normal"> 958</span>
+<span class="normal"> 959</span>
+<span class="normal"> 960</span>
+<span class="normal"> 961</span>
+<span class="normal"> 962</span>
+<span class="normal"> 963</span>
+<span class="normal"> 964</span>
+<span class="normal"> 965</span>
+<span class="normal"> 966</span>
+<span class="normal"> 967</span>
+<span class="normal"> 968</span>
+<span class="normal"> 969</span>
+<span class="normal"> 970</span>
+<span class="normal"> 971</span>
+<span class="normal"> 972</span>
+<span class="normal"> 973</span>
+<span class="normal"> 974</span>
+<span class="normal"> 975</span>
+<span class="normal"> 976</span>
+<span class="normal"> 977</span>
+<span class="normal"> 978</span>
+<span class="normal"> 979</span>
+<span class="normal"> 980</span>
+<span class="normal"> 981</span>
+<span class="normal"> 982</span>
+<span class="normal"> 983</span>
+<span class="normal"> 984</span>
+<span class="normal"> 985</span>
+<span class="normal"> 986</span>
+<span class="normal"> 987</span>
+<span class="normal"> 988</span>
+<span class="normal"> 989</span>
+<span class="normal"> 990</span>
+<span class="normal"> 991</span>
+<span class="normal"> 992</span>
+<span class="normal"> 993</span>
+<span class="normal"> 994</span>
+<span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span>
+<span class="normal">1001</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">segment</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">SamStars</span><span class="p">,</span>
     <span class="n">out</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
@@ -4413,6 +4476,7 @@ prepared tile channels are used as supplied.</p>
     <span class="n">skip_existing_sam</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">log_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fg_extra</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">crop_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">post_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4453,6 +4517,9 @@ prepared tile channels are used as supplied.</p>
 <span class="sd">        skip_existing_sam: Skip complete proposal outputs already present under out.</span>
 <span class="sd">        log_refinement: Show detailed refinement logs.</span>
 <span class="sd">        fast: Override the bundle's batched proposal-decoding setting.</span>
+<span class="sd">        fg_extra: Override the maximum additional foreground points per seed.</span>
+<span class="sd">            None reuses the bundle setting, or 80 for older bundles. Zero keeps</span>
+<span class="sd">            only the seed as foreground. Negative points and boxes are unchanged.</span>
 <span class="sd">        crop_smooth_sigma: Override per-crop proposal smoothing, in pixels.</span>
 <span class="sd">        smooth_sigma: Override proposal mosaic smoothing, in pixels.</span>
 <span class="sd">        post_smooth_sigma: Override smoothing after canopy-index fusion, in pixels.</span>
@@ -4495,6 +4562,7 @@ prepared tile channels are used as supplied.</p>
         <span class="n">skip_existing_sam</span><span class="o">=</span><span class="n">skip_existing_sam</span><span class="p">,</span>
         <span class="n">log_refinement</span><span class="o">=</span><span class="n">log_refinement</span><span class="p">,</span>
         <span class="n">fast</span><span class="o">=</span><span class="n">fast</span><span class="p">,</span>
+        <span class="n">fg_extra</span><span class="o">=</span><span class="n">fg_extra</span><span class="p">,</span>
         <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="n">crop_smooth_sigma</span><span class="p">,</span>
         <span class="n">smooth_sigma</span><span class="o">=</span><span class="n">smooth_sigma</span><span class="p">,</span>
         <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="n">post_smooth_sigma</span><span class="p">,</span>
@@ -4509,7 +4577,7 @@ prepared tile channels are used as supplied.</p>
 
 
 <h3 id="samstars.api.train" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">train</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crowns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sam_base_ckpt</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">chip_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">chip_stride</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">sam_epochs</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">sam_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sam_lr</span><span class="o">=</span><span class="mf">5e-05</span><span class="p">,</span> <span class="n">stardist_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">stardist_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">val_fraction</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_normalize_inputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_augment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">train</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crowns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sam_base_ckpt</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">chip_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">chip_stride</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">sam_epochs</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">sam_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sam_lr</span><span class="o">=</span><span class="mf">5e-05</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="n">DEFAULT_FG_EXTRA</span><span class="p">,</span> <span class="n">stardist_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">stardist_min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">val_fraction</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">thin_seeds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">thin_dist</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">seed_d_min</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">seed_min_dist_px</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed_gauss_sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed_min_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_merge_radius</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">seed_min_canopy_height</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_normalize_inputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_augment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#samstars.api.train" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -4803,6 +4871,25 @@ to (1, 2, 3), without inferring a sensor from the band count.</p>
             </td>
             <td>
                   <code>5e-05</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>fg_extra</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum additional foreground points per seed, a nonnegative
+integer. Zero keeps only the seed as foreground; the default is 80.
+Used for decoder training and the proposals that train refinement,
+and stored in the bundle for later segmentation.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="samstars._prompts.DEFAULT_FG_EXTRA">DEFAULT_FG_EXTRA</span></code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -5225,19 +5312,7 @@ zero disables it, positive values below one suppress matching overlaps.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span>
-<span class="normal">733</span>
-<span class="normal">734</span>
-<span class="normal">735</span>
-<span class="normal">736</span>
-<span class="normal">737</span>
-<span class="normal">738</span>
-<span class="normal">739</span>
-<span class="normal">740</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">740</span>
 <span class="normal">741</span>
 <span class="normal">742</span>
 <span class="normal">743</span>
@@ -5364,7 +5439,25 @@ zero disables it, positive values below one suppress matching overlaps.</p>
 <span class="normal">864</span>
 <span class="normal">865</span>
 <span class="normal">866</span>
-<span class="normal">867</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span>
+<span class="normal">867</span>
+<span class="normal">868</span>
+<span class="normal">869</span>
+<span class="normal">870</span>
+<span class="normal">871</span>
+<span class="normal">872</span>
+<span class="normal">873</span>
+<span class="normal">874</span>
+<span class="normal">875</span>
+<span class="normal">876</span>
+<span class="normal">877</span>
+<span class="normal">878</span>
+<span class="normal">879</span>
+<span class="normal">880</span>
+<span class="normal">881</span>
+<span class="normal">882</span>
+<span class="normal">883</span>
+<span class="normal">884</span>
+<span class="normal">885</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">tiles_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5383,6 +5476,7 @@ zero disables it, positive values below one suppress matching overlaps.</p>
     <span class="n">sam_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
     <span class="n">sam_min_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">sam_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5e-5</span><span class="p">,</span>
+    <span class="n">fg_extra</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_FG_EXTRA</span><span class="p">,</span>
     <span class="n">stardist_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">stardist_min_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">val_fraction</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
@@ -5430,6 +5524,10 @@ zero disables it, positive values below one suppress matching overlaps.</p>
 <span class="sd">        sam_epochs: Number of proposal-decoder training epochs.</span>
 <span class="sd">        sam_min_iters: Minimum proposal training iterations; may increase epochs.</span>
 <span class="sd">        sam_lr: Proposal-decoder learning rate.</span>
+<span class="sd">        fg_extra: Maximum additional foreground points per seed, a nonnegative</span>
+<span class="sd">            integer. Zero keeps only the seed as foreground; the default is 80.</span>
+<span class="sd">            Used for decoder training and the proposals that train refinement,</span>
+<span class="sd">            and stored in the bundle for later segmentation.</span>
 <span class="sd">        stardist_epochs: Number of refinement training epochs.</span>
 <span class="sd">        stardist_min_iters: Minimum refinement training iterations.</span>
 <span class="sd">        val_fraction: Fraction of refinement records assigned to validation.</span>
@@ -5480,6 +5578,7 @@ zero disables it, positive values below one suppress matching overlaps.</p>
         <span class="n">sam_epochs</span><span class="o">=</span><span class="n">sam_epochs</span><span class="p">,</span>
         <span class="n">sam_min_iters</span><span class="o">=</span><span class="n">sam_min_iters</span><span class="p">,</span>
         <span class="n">sam_lr</span><span class="o">=</span><span class="n">sam_lr</span><span class="p">,</span>
+        <span class="n">fg_extra</span><span class="o">=</span><span class="n">fg_extra</span><span class="p">,</span>
         <span class="n">stardist_epochs</span><span class="o">=</span><span class="n">stardist_epochs</span><span class="p">,</span>
         <span class="n">stardist_min_iters</span><span class="o">=</span><span class="n">stardist_min_iters</span><span class="p">,</span>
         <span class="n">val_fraction</span><span class="o">=</span><span class="n">val_fraction</span><span class="p">,</span>
@@ -5566,11 +5665,118 @@ zero disables it, positive values below one suppress matching overlaps.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
-  </body>
+  <script data-mkdocs-jupyter-mathjax="{&quot;url&quot;: &quot;https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js&quot;, &quot;version&quot;: 4}">
+/* Shared by full pages and Material's instant navigation. */
+(() => {
+  const config = JSON.parse(document.currentScript.dataset.mkdocsJupyterMathjax);
+  if (window.mkdocsJupyterMathJax) return;
+
+  let loading;
+  let queue = Promise.resolve();
+  let previous = [];
+
+  const ready = async () => {
+    if (!loading) {
+      loading = (async () => {
+        let math = window.MathJax;
+        if (!math?.typesetPromise) {
+          const url = new URL(config.url, document.baseURI).href;
+          const existing = Array.from(document.scripts).find(script =>
+            script.src && (script.src === url || script.id === 'MathJax-script' ||
+              (/mathjax/i.test(script.src) &&
+               /\/(?:MathJax|latest|(?:tex|mml)(?:-mml)?-(?:chtml|svg))\.js(?:[?#]|$)/i.test(script.src))));
+          if (existing) {
+            if (!math?.startup?.promise) {
+              await new Promise((resolve, reject) => {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+              });
+            }
+          } else {
+            // Keep site macros, delimiters and startup hooks when supplied.
+            const options = math || {};
+            window.MathJax = {
+              ...options,
+              loader: {
+                ...options.loader,
+                load: Array.from(new Set(['ui/safe', ...(options.loader?.load || [])]))
+              },
+              startup: { typeset: false, ...options.startup },
+              tex: {
+                tags: 'ams',
+                useLabelIds: true,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                ...options.tex
+              }
+            };
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = config.url;
+              script.id = 'MathJax-script';
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+        }
+        math = window.MathJax;
+        await math.startup.promise;
+        return math;
+      })();
+    }
+    const math = await loading;
+    // A site owner can extend the v3 queue again on each navigation.
+    await math.startup.promise;
+    return math;
+  };
+
+  const unrendered = node => {
+    if (node.matches('mjx-container')) return [];
+    if (!node.querySelector('mjx-container')) return [node];
+    // In v3, scanning generated assistive MathML again produces nested output.
+    return Array.from(node.children).flatMap(unrendered);
+  };
+
+  const refresh = () => {
+    // A separate chain also serializes v3, without changing v4's startup promise.
+    queue = queue.then(async () => {
+      const notebooks = Array.from(document.querySelectorAll('.jupyter-wrapper'));
+      if (!notebooks.length && !previous.length) return;
+      if (notebooks.length === previous.length &&
+          notebooks.every((node, index) => node === previous[index])) return;
+      const math = await ready();
+      if (previous.length) {
+        math.typesetClear(previous);
+        math.texReset();
+      }
+      previous = notebooks.filter(node => node.isConnected);
+      const pending = previous.flatMap(unrendered);
+      if (pending.length) await math.typesetPromise(pending);
+    }).catch(error => console.error('mkdocs-jupyter: MathJax rendering failed', error));
+    return queue;
+  };
+
+  window.mkdocsJupyterMathJax = { refresh };
+  const start = () => {
+    if (typeof document$ !== 'undefined') document$.subscribe(refresh);
+    else refresh();
+  };
+  // Theme bundles and user-provided MathJax scripts can follow notebook content.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else start();
+})();
+
+</script>
+</body>
 </html>
