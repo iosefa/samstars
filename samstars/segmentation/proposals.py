@@ -27,13 +27,14 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
+from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
 from samstars.data.scaling import load_scale_stats, scale_to_u8_per_channel
 
 # ───────────── proposal parameters ────────────────────────────────
 CONTEXT_FCTR = 1.5
 BOX_METRE = 8.0
 
-FG_EXTRA = 80
+FG_EXTRA = DEFAULT_FG_EXTRA
 NEG_MAX_GND = 50
 NEG_MAX_CAN = 0
 
@@ -128,8 +129,10 @@ def process_chip(
     crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
     smooth_sigma: float = SMOOTH_SIGMA,
     post_smooth_sigma: float = POST_SMOOTH_SIGMA,
+    fg_extra: int = FG_EXTRA,
 ):
-    """Process chip."""
+    """Process a chip with up to fg_extra additional positive points per seed."""
+    fg_extra = validate_fg_extra(fg_extra)
     img_path = Path(rec["img_path"])
     name = f"{rec['tile']}_{rec['chip_id']}"
     chm_path = img_path.parent / "chm.tif"
@@ -206,8 +209,8 @@ def process_chip(
             yy, xx = np.where(mask_fg)
             in_box = ((np.abs(xx - cp) <= hb) & (np.abs(yy - rp) <= hb))
             yy, xx = yy[in_box], xx[in_box]
-            if yy.size:
-                keep = min(FG_EXTRA, yy.size)
+            if fg_extra > 0 and yy.size:
+                keep = min(fg_extra, yy.size)
                 top_idx = np.argpartition(chm_patch[yy, xx], -keep)[-keep:]
                 fg_pts = np.column_stack([xx[top_idx], yy[top_idx]])
                 fg_pts = fg_pts + np.array([c0, r0], dtype=np.float32)
@@ -350,8 +353,8 @@ def process_chip(
                 yy, xx = np.where(mask_fg)
                 in_box = ((np.abs(xx - (c - c0)) <= hb) & (np.abs(yy - (r - r0)) <= hb))
                 yy, xx = yy[in_box], xx[in_box]
-                if yy.size:
-                    keep = min(FG_EXTRA, yy.size)
+                if fg_extra > 0 and yy.size:
+                    keep = min(fg_extra, yy.size)
                     top_idx = np.argpartition(chm_patch[yy, xx], -keep)[-keep:]
                     fg_pts = np.column_stack([xx[top_idx], yy[top_idx]])
                 else:
@@ -488,8 +491,15 @@ def run_tile_proposals(
     crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
     smooth_sigma: float = SMOOTH_SIGMA,
     post_smooth_sigma: float = POST_SMOOTH_SIGMA,
+    fg_extra: int = FG_EXTRA,
 ):
-    """Run SAM proposals from one tile-record file."""
+    """Run SAM proposals from one tile-record file.
+
+    fg_extra caps additional foreground points per seed (default 80). Zero keeps
+    only the seed as foreground; negative points and boxes are unchanged.
+    The count must be a nonnegative integer and applies in both inference modes.
+    """
+    fg_extra = validate_fg_extra(fg_extra)
     records_path = Path(records_json)
     if not records_path.exists():
         raise FileNotFoundError(f"Missing records file: {records_path}")
@@ -519,6 +529,7 @@ def run_tile_proposals(
             crop_smooth_sigma=crop_smooth_sigma,
             smooth_sigma=smooth_sigma,
             post_smooth_sigma=post_smooth_sigma,
+            fg_extra=fg_extra,
         )
         if res is None:
             continue
@@ -585,6 +596,8 @@ def main() -> None:
         help="Fast mode: reuse a single SAM embedding per chip and batch prompts.",
     )
     pa.add_argument("--fast-batch-size", type=int, default=32, help="Batch size for fast mode prompts")
+    pa.add_argument("--fg-extra", type=int, default=FG_EXTRA,
+                    help="Maximum additional foreground points per seed (0 = seed only; default: 80)")
     pa.add_argument(
         "--crop-smooth-sigma",
         type=float,
@@ -619,6 +632,7 @@ def main() -> None:
         rgb_lo_hi=rgb_lo_hi,
         fast=args.fast,
         fast_batch=args.fast_batch_size,
+        fg_extra=args.fg_extra,
         crop_smooth_sigma=args.crop_smooth_sigma,
         smooth_sigma=args.smooth_sigma,
         post_smooth_sigma=args.post_smooth_sigma,

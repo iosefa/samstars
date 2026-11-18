@@ -170,13 +170,16 @@ def test_preparation_writes_selected_rgb_cost_and_real_seeds(scene, tiled):
         assert not gpd.read_file(tile / "seeds.gpkg").empty
 
 
-def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch):
+@pytest.mark.parametrize("fg_extra", [None, 0, 4])
+def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra):
     """Run real preparation and record building, replacing only model execution."""
+    expected_fg_extra = 80 if fg_extra is None else fg_extra
     img = _write_raster(scene["root"] / "bgrn.tif", scene["image"][:4])
     crowns = scene["root"] / "crowns.gpkg"
     gpd.GeoDataFrame(geometry=[box(500010, 2199976, 500024, 2199990)], crs="EPSG:32605").to_file(crowns)
 
     def fake_decoder(**kwargs):
+        assert kwargs["fg_extra"] == expected_fg_extra
         kwargs["out_path"].write_bytes(b"test decoder")
 
     def fake_refinement(**kwargs):
@@ -186,6 +189,7 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch):
         (model / "weights.h5").write_bytes(b"test weights")
 
     def fake_proposals(**kwargs):
+        assert kwargs["fg_extra"] == expected_fg_extra
         tile = kwargs["tiles_dir"] / "tile_000_000"
         out = kwargs["out_dir"] / "proposals"
         out.mkdir(parents=True)
@@ -206,10 +210,12 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch):
         sam_base_ckpt=scene["root"] / "base.pth", out=scene["root"] / "model",
         storage="persistent", rgb_bands=(3, 2, 1), nir_band=4, texture_band=2,
         chip_size=32, chip_stride=32,
+        **({} if fg_extra is None else {"fg_extra": fg_extra}),
     )
     assert model.defaults["rgb_bands"] == [3, 2, 1]
     assert model.defaults["nir_band"] == 4
     assert model.defaults["texture_band"] == 2
+    assert model.defaults["fg_extra"] == expected_fg_extra
 
     monkeypatch.setattr(engine, "run_segmentation", original_engine)
     result = segment(

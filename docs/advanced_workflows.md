@@ -127,6 +127,9 @@ run_segmentation(
 ```
 
 `sam_ckpt` is the trained proposal checkpoint.
+This direct interface also accepts `fg_extra` (default `80`); set it to match
+the count used during training. It does not load defaults from a bundle.
+The lower-level `run_tile_proposals(...)` accepts the same option.
 `stardist_model` is the model subdirectory containing `config.json` and its weights.
 This interface also accepts source `img`, `chm`, and `den` rasters with explicit band settings in place of `tiles_dir`.
 

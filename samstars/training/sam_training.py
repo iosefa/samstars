@@ -24,11 +24,12 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
+from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
 from samstars.data.scaling import load_scale_stats, scale_to_u8_per_channel
 
 
 # ───────────── prompt settings (match inference style) ─────────────────────
-FG_EXTRA_DEFAULT = 80
+FG_EXTRA_DEFAULT = DEFAULT_FG_EXTRA
 NEG_MAX_GND_DEFAULT = 150
 NEG_MAX_CAN_DEFAULT = 300
 CHM_GROUND_DEFAULT = 3.0
@@ -191,6 +192,7 @@ class Chips(Dataset):
         box_expand: float = 1.0,
     ):
         """Initialize the instance."""
+        self.fg_extra = validate_fg_extra(fg_extra)
         self.chip_dir = chip_dir
         self.ids = sorted((self.chip_dir / "images").glob("*.npy"))
         if not self.ids:
@@ -200,7 +202,6 @@ class Chips(Dataset):
         self.resize = ResizeLongestSide(enc_size)
         self.rgb_lo_hi = rgb_lo_hi
 
-        self.fg_extra = int(fg_extra)
         self.neg_max_gnd = int(neg_max_gnd)
         self.neg_max_can = int(neg_max_can)
         self.chm_ground = float(chm_ground)
@@ -332,7 +333,11 @@ def train_decoder(
     chm_ground: float = CHM_GROUND_DEFAULT,
     box_expand: float = 1.0,
 ):
-    """Train decoder."""
+    """Train a decoder with up to fg_extra additional foreground points per seed.
+
+    fg_extra must be a nonnegative integer. Zero keeps only the seed as foreground;
+    negative-point sampling and box prompts are unchanged. The default is 80.
+    """
     ds = Chips(
         chip_dir,
         img_size=img_size,
@@ -427,7 +432,7 @@ def main():
     pa.add_argument("--scale-stats", type=Path, default=None, help="Optional global imagery scaling stats JSON")
 
     # New knobs (optional)
-    pa.add_argument("--fg-extra", type=int, default=FG_EXTRA_DEFAULT, help="Additional positive prompt points sampled from CHM")
+    pa.add_argument("--fg-extra", type=int, default=FG_EXTRA_DEFAULT, help="Maximum additional positive points sampled from CHM (0 = seed only; default: 80)")
     pa.add_argument("--neg-max-gnd", type=int, default=NEG_MAX_GND_DEFAULT, help="Maximum negative ground prompt points")
     pa.add_argument("--neg-max-can", type=int, default=NEG_MAX_CAN_DEFAULT, help="Maximum negative canopy prompt points")
     pa.add_argument("--chm-ground", type=float, default=CHM_GROUND_DEFAULT, help="CHM threshold used when sampling prompts")

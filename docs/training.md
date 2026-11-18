@@ -89,12 +89,26 @@ When creating a bundle from prepared tiles, supply the original source `rgb_band
 | `nir_band` | Optional near-infrared band for the NDVI cost term. |
 | `texture_band` | Optional band for image texture; otherwise use the mean RGB intensity. |
 | `sam_epochs`, `sam_lr` | Proposal training duration and learning rate; defaults `15` and `5e-5`. |
+| `fg_extra` | Maximum extra foreground points per seed; nonnegative integer, default `80`. Set `0` to use only the seed as foreground. |
 | `stardist_epochs` | Refinement training duration; default `50`. |
 | `chip_size`, `chip_stride` | Training window size and spacing in pixels; defaults `512` and `384`. |
 | `val_fraction` | Fraction of refinement records used for validation; default `0.2`. |
 
 The record split is not a spatially independent evaluation; use separate held-out areas for that purpose.
 Seed controls are described in [Data Preparation](data_preparation.md#create-seed-points), and the full parameter list is in the [API reference](api/top_level.md#samstars.api.train).
+
+## Foreground Prompts
+
+Pass `fg_extra=0` to `train(...)` or `SamStars.train(...)` to use the seed as
+the only foreground point. Positive values cap the number of extra points
+selected from high CHM pixels within the prompt box; fewer are used when fewer
+pixels qualify. The default remains `80`. Negative-point sampling and box
+prompts are unchanged.
+
+The same count is used for SAM decoder training and for the proposals used to
+train StarDist. It is saved as `defaults.fg_extra` in `manifest.json` and reused
+automatically by subsequent segmentation. The lower-level `train_decoder(...)`
+also accepts `fg_extra`, and its CLI accepts `--fg-extra`.
 
 ## Model Bundle and Saved Outputs
 
