@@ -25,9 +25,10 @@ from shapely.geometry import box
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
+    sys.path.insert(0, str(ROOT))
 
 from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
+from samstars._preprocessing import check_proposal_cache, inspect_images, rgb_to_u8, validate_contract, window_starts
 from samstars.data.scaling import load_scale_stats, scale_to_u8_per_channel
 
 # ───────────── proposal parameters ────────────────────────────────
@@ -101,9 +102,12 @@ def prob_from_logit_seedcenter(logit: np.ndarray, seed_rc: tuple[int, int], res:
     return prob.astype(np.float32)
 
 
-def _norm01(arr: np.ndarray) -> np.ndarray:
+def _norm01(arr: np.ndarray, valid=None) -> np.ndarray:
     """Internal helper function."""
-    lo, hi = np.nanpercentile(arr, PCTL_LOW_HIGH)
+    values = arr if valid is None else arr[valid]
+    if not np.isfinite(values).any():
+        return np.zeros_like(arr, dtype=np.float32)
+    lo, hi = np.nanpercentile(values, PCTL_LOW_HIGH)
     return np.clip((arr - lo) / (hi - lo + 1e-6), 0, 1)
 
 
@@ -124,12 +128,14 @@ def process_chip(
     predictor: SamPredictor,
     device: str,
     rgb_lo_hi=None,
-    fast: bool = False,
+    fast: bool = True,
     fast_batch: int = 32,
     crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
     smooth_sigma: float = SMOOTH_SIGMA,
     post_smooth_sigma: float = POST_SMOOTH_SIGMA,
     fg_extra: int = FG_EXTRA,
+    fixed_window: bool = False,
+    seeds=None,
 ):
     """Process a chip with up to fg_extra additional positive points per seed."""
     fg_extra = validate_fg_extra(fg_extra)
@@ -149,18 +155,34 @@ def process_chip(
                 "Prepared img.tif must contain three selected image channels. "
                 "Prepare source imagery with build_tiles(rgb_bands=...)."
             )
-        rgb = src.read((1, 2, 3), window=win, boundless=True, fill_value=0).astype(np.float32)
+        # An explicit fill_value=0 overrides the source NoData mask in a
+        # boundless read. Preserve that mask, then fill the masked array below.
+        rgb = src.read((1, 2, 3), window=win, boundless=True, fill_value=None if fixed_window else 0,
+                       masked=fixed_window).astype(np.float32)
         tfm = rasterio.windows.transform(win, src.transform)
         crs = src.crs
         res = abs(tfm.a)
         H, W = int(win.height), int(win.width)
+    valid = np.ones((H, W), dtype=bool)
+    if fixed_window:
+        valid &= ~np.ma.getmaskarray(rgb).any(axis=0)
+        rgb = rgb.filled(0)
+        valid &= np.isfinite(rgb).all(axis=0)
 
     with rasterio.open(chm_path) as csrc:
-        CHM = csrc.read(1, window=win, boundless=True, fill_value=0).astype(np.float32)
+        CHM = csrc.read(1, window=win, boundless=True, fill_value=None if fixed_window else 0,
+                        masked=fixed_window).astype(np.float32)
     with rasterio.open(cost_path) as cosrc:
-        COST = cosrc.read(1, window=win, boundless=True, fill_value=0).astype(np.float32)
+        COST = cosrc.read(1, window=win, boundless=True, fill_value=None if fixed_window else 0,
+                          masked=fixed_window).astype(np.float32)
+    if fixed_window:
+        valid &= ~np.ma.getmaskarray(CHM)
+        CHM = CHM.filled(np.nan)
+        valid &= np.isfinite(CHM)
+        CHM[~valid] = np.nan  # Padding must not become negative ground prompts.
+        COST = COST.filled(np.nan)
 
-    seeds = gpd.read_file(seeds_path).to_crs(crs)
+    seeds = (gpd.read_file(seeds_path) if seeds is None else seeds).to_crs(crs)
     bounds_poly = box_from_window(win, tfm)
     seeds = seeds[seeds.intersects(bounds_poly)]
     if seeds.empty:
@@ -169,11 +191,18 @@ def process_chip(
 
     # CHM blur for boost (within this chip window)
     sigma_px = SIGMA_METRE / max(res, 1e-9)
-    chm_blur = gaussian_filter(CHM, sigma_px, mode="nearest")
+    if fixed_window:
+        chm_blur = gaussian_filter(np.where(valid, CHM, 0), sigma_px, mode="nearest")
+        weights = gaussian_filter(valid.astype(np.float32), sigma_px, mode="nearest")
+        chm_blur = np.divide(chm_blur, weights, out=np.zeros_like(chm_blur), where=weights > 0)
+    else:
+        chm_blur = gaussian_filter(CHM, sigma_px, mode="nearest")
 
     # Convert RGB to uint8 for SAM
     rgb_hwc = rgb.transpose(1, 2, 0)  # HWC float32
-    if rgb_lo_hi is not None and len(rgb_lo_hi) >= rgb_hwc.shape[2]:
+    if fixed_window:
+        RGB_u8 = rgb_to_u8(rgb_hwc, valid)
+    elif rgb_lo_hi is not None and len(rgb_lo_hi) >= rgb_hwc.shape[2]:
         RGB_u8 = scale_to_u8_per_channel(rgb_hwc, rgb_lo_hi[: rgb_hwc.shape[2]])
     else:
         RGB_u8 = np.stack([stretch_u8_percentile(rgb_hwc[..., c]) for c in range(rgb_hwc.shape[2])], axis=-1)
@@ -188,14 +217,18 @@ def process_chip(
     hp_px = int(round(CONTEXT_FCTR * BOX_METRE / max(res, 1e-9)))
     hb = BOX_METRE / (2 * max(res, 1e-9))  # half box width in pixels
 
-    if fast:
+    if fast or fixed_window:
         # Fast mode: set image once per chip, batch prompts across seeds.
         predictor.set_image(RGB_u8)
+        if fixed_window and not fast:
+            fast_batch = 1
 
         seed_infos = []
         for _, row in seeds.iterrows():
             r_arr, c_arr = rowcol(tfm, [row.geometry.x], [row.geometry.y])
             r, c = int(r_arr[0]), int(c_arr[0])
+            if not (0 <= r < H and 0 <= c < W and valid[r, c]):
+                continue
             r0, r1 = max(r - hp_px, 0), min(r + hp_px, H)
             c0, c1 = max(c - hp_px, 0), min(c + hp_px, W)
             if r1 <= r0 or c1 <= c0:
@@ -325,6 +358,8 @@ def process_chip(
         for _, row in seeds.iterrows():
             r_arr, c_arr = rowcol(tfm, [row.geometry.x], [row.geometry.y])
             r, c = int(r_arr[0]), int(c_arr[0])
+            if not (0 <= r < H and 0 <= c < W and valid[r, c]):
+                continue
             r0, r1 = max(r - hp_px, 0), min(r + hp_px, H)
             c0, c1 = max(c - hp_px, 0), min(c + hp_px, W)
             buckets.setdefault((r0, r1, c0, c1), []).append((r, c))
@@ -444,13 +479,16 @@ def process_chip(
                 prob_mosaic[r0:r1, c0:c1] = np.maximum(prob_mosaic[r0:r1, c0:c1], prob.astype(np.float32))
 
     # --- Global smoothing and index fusion ---
+    if fixed_window:
+        prob_mosaic[~valid] = 0
     prob_mosaic_out = prob_mosaic.copy()  # debug output (pre-smooth mosaic)
 
     prob_s = smooth_mosaic(prob_mosaic, smooth_sigma)
     prob_s = np.nan_to_num(prob_s, nan=0.0, posinf=1.0, neginf=0.0).astype(np.float32)
     print("prob_s pcts:", np.nanpercentile(prob_s, [0, 50, 90, 99, 100]))
 
-    base = prob_s * (1 - W_CHM + W_CHM * _norm01(CHM)) * (1 - W_COST + W_COST * (1 - _norm01(COST)))
+    fusion_valid = (valid & np.isfinite(COST)) if fixed_window else None
+    base = prob_s * (1 - W_CHM + W_CHM * _norm01(CHM, fusion_valid)) * (1 - W_COST + W_COST * (1 - _norm01(COST, fusion_valid)))
     z = np.clip(-(CHM - GROUND_THRESH) / SIGMA_GROUND, -60, 60)
     ground_w = (1 / (1 + np.exp(z))) ** W_GROUND
 
@@ -461,6 +499,8 @@ def process_chip(
     idx_max = float(np.nanmax(index)) if np.isfinite(index).any() else 1.0
 
     if post_smooth_sigma > 0:
+        if fixed_window:
+            index = np.nan_to_num(index)
         index = gaussian_filter(index, post_smooth_sigma, mode="nearest")
 
     denom = (idx_max - idx_min)
@@ -476,7 +516,48 @@ def process_chip(
     if CHM.shape != prob_s.shape or COST.shape != prob_s.shape:
         raise ValueError("CHM/COST shapes do not match SAM prob shape")
 
+    if fixed_window:
+        prob_s[~valid] = 0
+        index[~fusion_valid] = 0
+        CHM = np.nan_to_num(CHM)
+        COST = np.nan_to_num(COST)
+
     return prob_mosaic_out, prob_s, index, CHM, COST, crs, tfm
+
+
+def process_windowed_tile(rec, predictor, device, preprocessing, **kwargs):
+    """Blend fixed SAM ground windows into the original tile grid."""
+    settings = validate_contract(preprocessing)
+    size, stride = settings["sam_window_size_px"], settings["sam_stride_px"]
+    x0, y0, x1, y1 = map(int, rec["window"])
+    height, width = y1 - y0, x1 - x0
+    sums = np.zeros((3, height, width), dtype=np.float32)
+    weights = np.zeros((height, width), dtype=np.float32)
+    # Feather overlapping windows, retaining nonzero weights at scene edges.
+    axis = np.minimum(np.arange(size) + 1, size - np.arange(size)).astype(np.float32)
+    axis /= axis.max()
+    feather = axis[:, None] * axis[None, :]
+    img_path = Path(rec["img_path"])
+    seeds = gpd.read_file(img_path.parent / "seeds.gpkg")
+    for y in window_starts(height, size, stride):
+        for x in window_starts(width, size, stride):
+            window_rec = dict(rec, window=[x0 + x, y0 + y, x0 + x + size, y0 + y + size])
+            result = process_chip(window_rec, predictor, device, fixed_window=True, seeds=seeds, **kwargs)
+            h, w = min(size, height - y), min(size, width - x)
+            weight = feather[:h, :w]
+            if result is not None:
+                for i in range(3):
+                    sums[i, y:y+h, x:x+w] += result[i][:h, :w] * weight
+            weights[y:y+h, x:x+w] += weight
+    sums /= weights[None]
+    win = Window(x0, y0, width, height)
+    with rasterio.open(img_path) as src:
+        crs, tfm = src.crs, src.window_transform(win)
+    aux = []
+    for name in ("chm", "cost"):
+        with rasterio.open(img_path.parent / f"{name}.tif") as src:
+            aux.append(src.read(1, window=win, boundless=True, masked=True).astype(np.float32).filled(0))
+    return (*sums, *aux, crs, tfm)
 
 
 def run_tile_proposals(
@@ -486,12 +567,13 @@ def run_tile_proposals(
     *,
     device: str = "cpu",
     rgb_lo_hi=None,
-    fast: bool = False,
+    fast: bool = True,
     fast_batch: int = 32,
     crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
     smooth_sigma: float = SMOOTH_SIGMA,
     post_smooth_sigma: float = POST_SMOOTH_SIGMA,
     fg_extra: int = FG_EXTRA,
+    preprocessing: dict | None = None,
 ):
     """Run SAM proposals from one tile-record file.
 
@@ -503,10 +585,17 @@ def run_tile_proposals(
     records_path = Path(records_json)
     if not records_path.exists():
         raise FileNotFoundError(f"Missing records file: {records_path}")
+    recs = json.load(open(records_path))
+    if preprocessing is not None:
+        preprocessing = validate_contract(preprocessing)
+        inspect_images({rec["img_path"] for rec in recs}, expected_resolution=preprocessing["resolution_m"])
+        if rgb_lo_hi is not None:
+            raise ValueError("Saved window preprocessing uses per-window RGB scaling; omit rgb_lo_hi.")
 
     ckpt = Path(ckpt_path)
     if not ckpt.exists():
         raise FileNotFoundError(f"Missing SAM checkpoint: {ckpt}")
+    check_proposal_cache(out_root, preprocessing)
 
     sam = sam_model_registry["vit_l"](checkpoint=str(ckpt))
     sam.to(device).eval()
@@ -515,11 +604,12 @@ def run_tile_proposals(
     out_dir = out_root / "rasters"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    recs = json.load(open(records_path))
     proposal_records = []
 
     for rec in recs:
-        res = process_chip(
+        process = process_chip if preprocessing is None else process_windowed_tile
+        options = {} if preprocessing is None else {"preprocessing": preprocessing}
+        res = process(
             rec,
             predictor,
             device,
@@ -530,6 +620,7 @@ def run_tile_proposals(
             smooth_sigma=smooth_sigma,
             post_smooth_sigma=post_smooth_sigma,
             fg_extra=fg_extra,
+            **options,
         )
         if res is None:
             continue
@@ -590,10 +681,14 @@ def main() -> None:
     pa.add_argument("--out-root", type=Path, required=True)
     pa.add_argument("--device", default="cpu")
     pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON")
-    pa.add_argument(
-        "--fast",
-        action="store_true",
-        help="Fast mode: reuse a single SAM embedding per chip and batch prompts.",
+    batching = pa.add_mutually_exclusive_group()
+    batching.add_argument(
+        "--fast", dest="fast", action="store_true", default=True,
+        help="Batch prompts with a shared SAM embedding (default).",
+    )
+    batching.add_argument(
+        "--slow", dest="fast", action="store_false",
+        help="Disable batching; legacy models use seed-centered image crops.",
     )
     pa.add_argument("--fast-batch-size", type=int, default=32, help="Batch size for fast mode prompts")
     pa.add_argument("--fg-extra", type=int, default=FG_EXTRA,

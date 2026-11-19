@@ -31,6 +31,10 @@ python examples/run_prepared_tiles_inference.py \
 Useful options:
 
 - `--rgb-bands R G B`: source bands for raw training tiles, using one-based indices
+- `--sam-window-size-m M`: SAM ground window for a new model, saved for prediction
+- `--chip-size N`: alternative SAM window in native pixels (default 512); exclusive with `--sam-window-size-m`
+- `--chip-stride N`: window spacing in native pixels (default 75% of the selected size)
+- `--stardist-patch-size N`: refinement training patch, a positive multiple of 16 (default 256)
 - `--nir-band N` and `--texture-band N`: optional cost-surface band choices for raw training tiles
 - `--stardist-cpu`: force polygon refinement to CPU
 - `--stardist-input-key index|file_name|logit`
@@ -40,7 +44,7 @@ Useful options:
 - `--stardist-dedup-iou-thr`
 - `--sam-only`
 - `--stardist-only`
-- `--fast` or `--slow`
+- `--fast` or `--slow`: batched or individual prompt decoding; training defaults to fast, and segmentation inherits the saved bundle setting (falling back to fast). New bundles keep the same saved SAM ground window in either mode.
 
 ## Separate Model Files Wrapper
 
@@ -109,8 +113,9 @@ python -m samstars.segmentation.proposals \
 ```
 
 Add `--fg-extra 0` to use only each seed as foreground, or a positive integer
-to limit extra foreground points. The default is `80`; both normal and `--fast`
-proposal generation honor this option. Negative points and box prompts remain.
+to limit extra foreground points. The default is `80`; both modes honor this
+option. Proposal generation enables `--fast` by default; use `--slow` to disable
+batching. Negative points and box prompts remain.
 
 Run polygon refinement:
 
@@ -163,6 +168,7 @@ Train the refinement model:
 python -m samstars.training.stardist_training \
   --train-records /abs/path/training_records/train_records.json \
   --val-records /abs/path/training_records/val_records.json \
+  --patch-size 256 \
   --out-dir /abs/path/stardist_models \
   --model-name stardist \
   --use-aux \

@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
+from samstars._preprocessing import check_proposal_cache, image_paths, inspect_images, validate_contract
 from samstars.data import (
     build_pending_tile_records,
     build_single_tile,
@@ -128,6 +129,8 @@ def run_segmentation(
     stardist_model: Path | None = None,
     stardist_input_key: str = "index",
     stardist_use_aux: bool = True,
+    stardist_normalize_inputs: bool = True,
+    stardist_scale_stats: Path | None = None,
     stardist_prob_thr: float | None = None,
     stardist_nms_thr: float | None = None,
     stardist_window_size_m: float | None = None,
@@ -148,6 +151,7 @@ def run_segmentation(
     crop_smooth_sigma: float = 2.0,
     smooth_sigma: float = 4.0,
     post_smooth_sigma: float = 0.0,
+    preprocessing: dict | None = None,
 ) -> dict:
     """Run segmentation with separate proposal and refinement model paths.
 
@@ -167,6 +171,9 @@ def run_segmentation(
     seed as foreground. It must be a nonnegative integer and defaults to 80.
     """
     fg_extra = validate_fg_extra(fg_extra)
+    if preprocessing is not None:
+        preprocessing = validate_contract(preprocessing)
+        inspect_images(image_paths(tiles_dir, img), expected_resolution=preprocessing["resolution_m"])
     out_dir = Path(out_dir)
     resolved_sam_ckpt: Path | None = None
     resolved_stardist_model: Path | None = None
@@ -189,9 +196,14 @@ def run_segmentation(
             skip_existing=True,
         )
     tiles_dir = Path(tiles_dir)
+    if preprocessing is not None:
+        # Prepared inputs can be cached, so check their grid as well as source headers.
+        inspect_images(image_paths(tiles_dir), expected_resolution=preprocessing["resolution_m"])
 
     records_root = out_dir / "run_records"
     proposals_root = out_dir / "proposals"
+    resolved_sam_ckpt = _resolve_sam_ckpt(sam_ckpt=sam_ckpt)
+    check_proposal_cache(proposals_root, preprocessing, overwrite=run_sam and not skip_existing_sam)
     crowns_dir = out_dir / "crowns"
     proposal_records = proposals_root / "proposal_records.json"
     proposal_rasters_dir = proposals_root / "rasters"
@@ -204,7 +216,6 @@ def run_segmentation(
 
     pending_count = len(recs)
     active_tile_records = tile_records
-    resolved_sam_ckpt = _resolve_sam_ckpt(sam_ckpt=sam_ckpt)
     if run_sam and skip_existing_sam:
         proposal_rasters_dir.mkdir(parents=True, exist_ok=True)
         _, _, pending_count = build_pending_tile_records(
@@ -230,6 +241,7 @@ def run_segmentation(
             crop_smooth_sigma=crop_smooth_sigma,
             smooth_sigma=smooth_sigma,
             post_smooth_sigma=post_smooth_sigma,
+            preprocessing=preprocessing,
         )
 
     _normalize_record_paths(proposal_records)
@@ -258,17 +270,22 @@ def run_segmentation(
     stardist_model_dir, stardist_model_name = _resolve_stardist_model(stardist_model=stardist_model)
     resolved_stardist_model = Path(stardist_model_dir) / stardist_model_name
 
-    scale_stats = out_dir / "proposal_scale_stats.json"
-    if proposal_records_rebuilt and scale_stats.exists():
-        scale_stats.unlink()
-    if not scale_stats.exists():
-        build_scale_stats_from_proposal_records(
-            proposal_records=proposal_records,
-            out=scale_stats,
-            percentiles=(2.0, 98.0),
-            chm_key="chm",
-            nodata_values=(-9999.0,),
-        )
+    if stardist_scale_stats is not None:
+        scale_stats = Path(stardist_scale_stats)
+        if not scale_stats.is_file():
+            raise FileNotFoundError(f"Missing training scaling statistics: {scale_stats}")
+    else:
+        scale_stats = out_dir / "proposal_scale_stats.json"
+        if proposal_records_rebuilt and scale_stats.exists():
+            scale_stats.unlink()
+        if not scale_stats.exists():
+            build_scale_stats_from_proposal_records(
+                proposal_records=proposal_records,
+                out=scale_stats,
+                percentiles=(2.0, 98.0),
+                chm_key="chm",
+                nodata_values=(-9999.0,),
+            )
 
     refinement_py = Path(__file__).resolve().parent / "refinement.py"
     cmd = [
@@ -288,6 +305,8 @@ def run_segmentation(
         "crowns.gpkg",
         "--write-labels",
     ]
+    if not stardist_normalize_inputs:
+        cmd.append("--no-normalize")
     if stardist_use_aux:
         cmd.extend(
             [

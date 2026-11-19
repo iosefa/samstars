@@ -72,15 +72,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--chip-size",
         type=int,
-        default=512,
-        help="SAM training chip size in pixels for training mode.",
+        default=None,
+        help="SAM ground window in native pixels (default: 512); exclusive with --sam-window-size-m.",
     )
     parser.add_argument(
         "--chip-stride",
         type=int,
-        default=384,
-        help="SAM training chip stride in pixels for training mode.",
+        default=None,
+        help="SAM window spacing in native pixels (default: 75%% of the window size).",
     )
+    parser.add_argument("--sam-window-size-m", type=float, default=None,
+                        help="SAM ground window in metres, saved for prediction; training mode only.")
+    parser.add_argument("--stardist-patch-size", type=int, default=256,
+                        help="StarDist training patch in pixels, a multiple of 16 (default: 256).")
     parser.add_argument(
         "--sam-epochs",
         type=int,
@@ -159,18 +163,19 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional post-fusion index blur sigma.",
     )
-    parser.add_argument(
+    batching = parser.add_mutually_exclusive_group()
+    batching.add_argument(
         "--fast",
         dest="fast",
         action="store_true",
         default=None,
-        help="Force the fast SAM proposal path.",
+        help="Batch SAM prompts (training default); segmentation otherwise inherits the bundle setting.",
     )
-    parser.add_argument(
+    batching.add_argument(
         "--slow",
         dest="fast",
         action="store_false",
-        help="Force the slow SAM proposal path.",
+        help="Decode SAM prompts individually; older bundles use their legacy crop path.",
     )
     parser.add_argument(
         "--use-aux",
@@ -260,6 +265,8 @@ def main() -> None:
         texture_band=args.texture_band,
         chip_size=args.chip_size,
         chip_stride=args.chip_stride,
+        sam_window_size_m=args.sam_window_size_m,
+        stardist_patch_size=args.stardist_patch_size,
         sam_epochs=args.sam_epochs,
         stardist_epochs=args.stardist_epochs,
         val_fraction=args.val_fraction,
@@ -272,7 +279,7 @@ def main() -> None:
         stardist_window_overlap_m=_default_if_none(args.stardist_window_overlap_m, 0.0),
         stardist_dedup_iou_thr=_default_if_none(args.stardist_dedup_iou_thr, 0.0),
         stardist_cpu=args.stardist_cpu,
-        fast=_default_if_none(args.fast, False),
+        fast=_default_if_none(args.fast, True),
     )
     print(model.root)
 
