@@ -347,6 +347,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#experimental-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Experimental releases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#nvidia-cuda-on-linux" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -855,6 +866,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1333,6 +1372,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#experimental-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Experimental releases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#nvidia-cuda-on-linux" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1431,6 +1481,15 @@ python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </sp
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import samstars, torch, tensorflow as tf; print('samstars import ok'); print('torch', torch.__version__); print('tensorflow', tf.__version__)"</span>
 pip<span class="w"> </span>show<span class="w"> </span>samstars
 </code></pre></div></td></tr></table></div>
+<h2 id="experimental-releases">Experimental releases<a class="headerlink" href="#experimental-releases" title="Permanent link">&para;</a></h2>
+<p>To try the first 0.3.0 alpha in a separate Python environment:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">"samstars==0.3.0a1"</span>
+</code></pre></div></td></tr></table></div>
+<p>Pinning the version opts into this alpha without enabling prereleases for every
+other dependency. The same supported Python versions and GPU setup instructions
+apply. Ordinary <code>pip install samstars</code> installations select stable releases by
+default. Alpha releases are intended for testing and may change before the stable
+release. See the <a href="../releases/">release process</a> for how releases are published.</p>
 <h2 id="nvidia-cuda-on-linux">NVIDIA CUDA on Linux<a class="headerlink" href="#nvidia-cuda-on-linux" title="Permanent link">&para;</a></h2>
 <p>CUDA builds of PyTorch and Torchvision must be installed as a matched pair.
 Use the <a href="https://pytorch.org/get-started/locally/">official PyTorch installation selector</a>
