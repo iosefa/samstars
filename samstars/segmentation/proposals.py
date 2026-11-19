@@ -128,7 +128,7 @@ def process_chip(
     predictor: SamPredictor,
     device: str,
     rgb_lo_hi=None,
-    fast: bool = False,
+    fast: bool = True,
     fast_batch: int = 32,
     crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
     smooth_sigma: float = SMOOTH_SIGMA,
@@ -567,7 +567,7 @@ def run_tile_proposals(
     *,
     device: str = "cpu",
     rgb_lo_hi=None,
-    fast: bool = False,
+    fast: bool = True,
     fast_batch: int = 32,
     crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
     smooth_sigma: float = SMOOTH_SIGMA,
@@ -681,10 +681,14 @@ def main() -> None:
     pa.add_argument("--out-root", type=Path, required=True)
     pa.add_argument("--device", default="cpu")
     pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON")
-    pa.add_argument(
-        "--fast",
-        action="store_true",
-        help="Fast mode: reuse a single SAM embedding per chip and batch prompts.",
+    batching = pa.add_mutually_exclusive_group()
+    batching.add_argument(
+        "--fast", dest="fast", action="store_true", default=True,
+        help="Batch prompts with a shared SAM embedding (default).",
+    )
+    batching.add_argument(
+        "--slow", dest="fast", action="store_false",
+        help="Disable batching; legacy models use seed-centered image crops.",
     )
     pa.add_argument("--fast-batch-size", type=int, default=32, help="Batch size for fast mode prompts")
     pa.add_argument("--fg-extra", type=int, default=FG_EXTRA,

@@ -183,13 +183,14 @@ def test_new_bundle_tiles_larger_scenes_and_fast_only_changes_batching(tmp_path,
     fake_sam.eval = lambda: fake_sam
     monkeypatch.setitem(proposals.sam_model_registry, 'vit_l', lambda checkpoint: fake_sam)
     outputs, predictors = [], []
-    for fast in (False, True):
+    for fast in (False, True, None):
         predictor = Predictor()
         predictors.append(predictor)
         monkeypatch.setattr(proposals, 'SamPredictor', lambda sam: predictor)
         np.random.seed(17)
         result = model.segment(tiles_dir=tile.parent, out=tmp_path / str(fast), storage='persistent',
-                               fast=fast, run_stardist=False, fg_extra=0)
+                               run_stardist=False, fg_extra=0,
+                               **({} if fast is None else {'fast': fast}))
         records = json.loads((result.out / 'proposals/proposal_records.json').read_text())
         assert len(records) == 1
         with rasterio.open(records[0]['file_name']) as src, rasterio.open(tile / 'img.tif') as original:
@@ -200,8 +201,10 @@ def test_new_bundle_tiles_larger_scenes_and_fast_only_changes_batching(tmp_path,
         assert len(predictor.images) == 4
         assert all(image.shape == (40, 40, 3) for image in predictor.images)
         assert json.loads((result.out / 'manifest.json').read_text())['preprocessing'] == settings
-    np.testing.assert_allclose(*outputs, atol=1e-7)
+    for values in outputs[1:]:
+        np.testing.assert_allclose(outputs[0], values, atol=1e-7)
     assert len(predictors[0].calls) > len(predictors[1].calls)
+    assert len(predictors[1].calls) == len(predictors[2].calls)
     for slow, fast in zip(predictors[0].images, predictors[1].images):
         np.testing.assert_array_equal(slow, fast)
 

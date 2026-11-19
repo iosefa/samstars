@@ -44,7 +44,7 @@ Useful options:
 - `--stardist-dedup-iou-thr`
 - `--sam-only`
 - `--stardist-only`
-- `--fast` or `--slow`: batched or individual prompt decoding; new bundles keep the same saved SAM ground window in either mode
+- `--fast` or `--slow`: batched or individual prompt decoding; training defaults to fast, and segmentation inherits the saved bundle setting (falling back to fast). New bundles keep the same saved SAM ground window in either mode.
 
 ## Separate Model Files Wrapper
 
@@ -113,8 +113,9 @@ python -m samstars.segmentation.proposals \
 ```
 
 Add `--fg-extra 0` to use only each seed as foreground, or a positive integer
-to limit extra foreground points. The default is `80`; both normal and `--fast`
-proposal generation honor this option. Negative points and box prompts remain.
+to limit extra foreground points. The default is `80`; both modes honor this
+option. Proposal generation enables `--fast` by default; use `--slow` to disable
+batching. Negative points and box prompts remain.
 
 Run polygon refinement:
 

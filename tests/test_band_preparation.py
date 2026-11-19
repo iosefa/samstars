@@ -194,6 +194,7 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
         (model / "weights.h5").write_bytes(b"test weights")
 
     def fake_proposals(**kwargs):
+        assert kwargs["fast"] is True
         assert kwargs["fg_extra"] == expected_fg_extra
         assert kwargs["preprocessing"]["sam_window_size_px"] == 32
         tile = kwargs["tiles_dir"] / "tile_000_000"
@@ -231,6 +232,7 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
     assert model.defaults["nir_band"] == 4
     assert model.defaults["texture_band"] == 2
     assert model.defaults["fg_extra"] == expected_fg_extra
+    assert model.defaults["fast"] is True
     assert model.preprocessing["sam_encoder_size"] == 1024
     assert model.preprocessing["sam_window_size_m"] == 32
     assert model.preprocessing["stardist_patch_size_px"] == 32

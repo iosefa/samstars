@@ -43,7 +43,9 @@ See [training window settings](training.md#window-size-resolution-and-padding).
 For a bundle with `preprocessing` settings, `fast=True` batches prompts within
 each fixed window and `fast=False` processes them individually. It does not
 change how much ground SAM sees. With no override, segmentation uses the saved
-`fast` setting; training defaults to `False`. Older bundles without these settings
+`fast` setting, falling back to `True` when it is absent. Training defaults to
+`True`. An explicit `fast=False` or a saved `False` setting is still honored.
+Older bundles without preprocessing settings
 retain their legacy behavior: fast mode embeds a whole prepared tile, while
 normal mode embeds seed-centered crops.
 

@@ -95,7 +95,7 @@ When creating a bundle from prepared tiles, supply the original source `rgb_band
 | `chip_size` | Alternative to `sam_window_size_m`, in native pixels; default `512` when neither is supplied. |
 | `chip_stride` | SAM window spacing in native pixels; default 75% of the window size (25% overlap). |
 | `stardist_patch_size` | Square StarDist training patch in native pixels; positive multiple of 16, default `256`. |
-| `fast` | Batch SAM prompts within each fixed window; default `False`. |
+| `fast` | Batch SAM prompts within each fixed window; default `True`. Set `False` to reduce batch memory. |
 | `val_fraction` | Fraction of refinement records used for validation; default `0.2`. |
 
 The record split is not a spatially independent evaluation; use separate held-out areas for that purpose.

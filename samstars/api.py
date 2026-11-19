@@ -422,7 +422,7 @@ class SamStars:
         stardist_window_overlap_m: float = 0.0,
         stardist_dedup_iou_thr: float = 0.0,
         stardist_cpu: bool = False,
-        fast: bool = False,
+        fast: bool = True,
     ) -> SamStars:
         """Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""
         fg_extra = validate_fg_extra(fg_extra)
@@ -698,7 +698,7 @@ class SamStars:
             if stardist_dedup_iou_thr is None
             else stardist_dedup_iou_thr
         )
-        resolved_fast = bool(self.defaults.get("fast", False)) if fast is None else fast
+        resolved_fast = bool(self.defaults.get("fast", True)) if fast is None else fast
         resolved_crop_sigma = (
             float(self.defaults.get("crop_smooth_sigma", 2.0))
             if crop_smooth_sigma is None
@@ -822,7 +822,7 @@ def train(
     stardist_window_overlap_m: float = 0.0,
     stardist_dedup_iou_thr: float = 0.0,
     stardist_cpu: bool = False,
-    fast: bool = False,
+    fast: bool = True,
 ) -> SamStars:
     """Train a model bundle from a labeled scene or labeled tile directories.
 
@@ -884,7 +884,7 @@ def train(
         stardist_dedup_iou_thr: Default final polygon deduplication threshold;
             zero disables it, positive values below one suppress matching overlaps.
         stardist_cpu: Run refinement training in a subprocess with CUDA hidden.
-        fast: Batch prompt decoding within each fixed SAM window. Does not
+        fast: Batch prompt decoding within each fixed SAM window (default True). Does not
             change the window size or image scale for newly trained bundles.
 
     Returns:
@@ -1009,7 +1009,8 @@ def segment(
         run_stardist: Run refinement. False stops after proposal generation.
         skip_existing_sam: Skip complete proposal outputs already present under out.
         log_refinement: Show detailed refinement logs.
-        fast: Override the bundle's batched proposal-decoding setting.
+        fast: Override the bundle's batched proposal-decoding setting. None
+            reuses the saved setting, or True when the bundle has no setting.
         fg_extra: Override the maximum additional foreground points per seed.
             None reuses the bundle setting, or 80 for older bundles. Zero keeps
             only the seed as foreground. Negative points and boxes are unchanged.

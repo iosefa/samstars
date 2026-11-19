@@ -163,14 +163,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional post-fusion index blur sigma.",
     )
-    parser.add_argument(
+    batching = parser.add_mutually_exclusive_group()
+    batching.add_argument(
         "--fast",
         dest="fast",
         action="store_true",
         default=None,
-        help="Batch SAM prompts; new bundles retain their saved ground-window size.",
+        help="Batch SAM prompts (training default); segmentation otherwise inherits the bundle setting.",
     )
-    parser.add_argument(
+    batching.add_argument(
         "--slow",
         dest="fast",
         action="store_false",
@@ -278,7 +279,7 @@ def main() -> None:
         stardist_window_overlap_m=_default_if_none(args.stardist_window_overlap_m, 0.0),
         stardist_dedup_iou_thr=_default_if_none(args.stardist_dedup_iou_thr, 0.0),
         stardist_cpu=args.stardist_cpu,
-        fast=_default_if_none(args.fast, False),
+        fast=_default_if_none(args.fast, True),
     )
     print(model.root)
 
