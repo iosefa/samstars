@@ -39,6 +39,20 @@ python -c "import samstars, torch, tensorflow as tf; print('samstars import ok')
 pip show samstars
 ```
 
+## Experimental releases
+
+To try the first 0.3.0 alpha in a separate Python environment:
+
+```bash
+python -m pip install --upgrade "samstars==0.3.0a1"
+```
+
+Pinning the version opts into this alpha without enabling prereleases for every
+other dependency. The same supported Python versions and GPU setup instructions
+apply. Ordinary `pip install samstars` installations select stable releases by
+default. Alpha releases are intended for testing and may change before the stable
+release. See the [release process](releases.md) for how releases are published.
+
 ## NVIDIA CUDA on Linux
 
 CUDA builds of PyTorch and Torchvision must be installed as a matched pair.
