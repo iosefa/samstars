@@ -89,9 +89,10 @@ Final crown polygons can be used independently of these intermediate files.
 `tiles.pending.json` identifies tiles without complete proposal outputs.
 The high-level API creates both files automatically; [CLI Scripts](reference/cli.md#segmentation-run-utilities) provides commands for rebuilding them individually.
 
-When CHM is used as an auxiliary refinement channel, `out/proposal_scale_stats.json` stores the scaling limits used across proposal records.
-Training stores its corresponding statistics under `model_bundle/_training/`.
-These files are generated automatically.
+New bundles save training CHM scaling limits in `model_bundle/scale_stats.json`
+and reuse them during refinement. Older bundles and direct model-file calls
+without saved statistics compute `out/proposal_scale_stats.json` from their
+proposal records. These files are generated automatically.
 
 ## Inspect Training Chips
 
@@ -105,7 +106,8 @@ python -m samstars.training.chips \
 ```
 
 Each input tile needs `img.tif`, `chm.tif`, and `crowns.gpkg`.
-The output contains `images/`, `masks/`, `chm/`, and `prompts/` subdirectories.
+The output contains `images/`, `masks/`, `chm/`, `prompts/`, and `valid/` subdirectories.
+Validity masks distinguish real input pixels from NoData and padding.
 `train(...)` performs this step automatically.
 
 ## Segment With Separate Model Files
@@ -130,6 +132,12 @@ run_segmentation(
 This direct interface also accepts `fg_extra` (default `80`); set it to match
 the count used during training. It does not load defaults from a bundle.
 The lower-level `run_tile_proposals(...)` accepts the same option.
+For a model trained with saved window settings, also pass
+`preprocessing=model.preprocessing` from a loaded `SamStars` bundle to either
+function. For `run_segmentation`, pass `stardist_scale_stats=model.scale_stats_path`
+and the bundle's `stardist_normalize_inputs` default as well. Without these
+arguments, direct model-file calls use legacy preprocessing. The high-level
+`segment(model=...)` API forwards all of these settings automatically.
 `stardist_model` is the model subdirectory containing `config.json` and its weights.
 This interface also accepts source `img`, `chm`, and `den` rasters with explicit band settings in place of `tiles_dir`.
 

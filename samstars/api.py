@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
+from samstars._preprocessing import image_paths, inspect_images, training_contract, validate_contract
 
 _BUNDLE_MANIFEST = "manifest.json"
 _BUNDLE_FORMAT = "samstars_model_bundle"
@@ -240,6 +241,8 @@ class SamStars:
         self.weights_path = self.root / self.manifest["weights"]
         thresholds_name = self.manifest.get("thresholds")
         self.thresholds_path = self.root / thresholds_name if thresholds_name else None
+        stats_name = self.manifest.get("scale_stats")
+        self.scale_stats_path = self.root / stats_name if stats_name else None
 
         if not self.decoder_path.exists():
             raise FileNotFoundError(f"Missing decoder checkpoint: {self.decoder_path}")
@@ -247,8 +250,12 @@ class SamStars:
             raise FileNotFoundError(f"Missing StarDist config: {self.config_path}")
         if not self.weights_path.exists():
             raise FileNotFoundError(f"Missing StarDist weights: {self.weights_path}")
+        if self.scale_stats_path is not None and not self.scale_stats_path.exists():
+            raise FileNotFoundError(f"Missing training scaling statistics: {self.scale_stats_path}")
 
         self.defaults = self.manifest.get("defaults", {})
+        settings = self.manifest.get("preprocessing")
+        self.preprocessing = validate_contract(settings) if settings is not None else None
 
     @classmethod
     def load(cls, model: Path | SamStars) -> SamStars:
@@ -291,6 +298,7 @@ class SamStars:
         *,
         out: Path,
         defaults: dict[str, Any],
+        preprocessing: dict | None = None,
     ) -> Path:
         """Write the model-bundle manifest."""
         thresholds_name = "thresholds.json" if (out / "thresholds.json").exists() else None
@@ -303,6 +311,10 @@ class SamStars:
             "weights": "weights.h5",
             "defaults": defaults,
         }
+        if preprocessing is not None:
+            manifest["preprocessing"] = validate_contract(preprocessing)
+            if (out / "scale_stats.json").exists():
+                manifest["scale_stats"] = "scale_stats.json"
         manifest_path = out / _BUNDLE_MANIFEST
         json.dump(manifest, open(manifest_path, "w"), indent=2)
         return manifest_path
@@ -325,6 +337,8 @@ class SamStars:
             "crowns": str(out / "crowns" / "crowns.gpkg"),
             "labels_dir": str(out / "labels") if (out / "labels").exists() else None,
         }
+        if model.preprocessing is not None:
+            manifest["preprocessing"] = model.preprocessing
         path = out / _BUNDLE_MANIFEST
         json.dump(manifest, open(path, "w"), indent=2)
         return path
@@ -378,8 +392,10 @@ class SamStars:
         nir_band: int | None = None,
         texture_band: int | None = None,
         device: str = "cpu",
-        chip_size: int = 512,
-        chip_stride: int = 384,
+        chip_size: int | None = None,
+        chip_stride: int | None = None,
+        sam_window_size_m: float | None = None,
+        stardist_patch_size: int = 256,
         sam_epochs: int = 15,
         sam_min_iters: int = 0,
         sam_lr: float = 5e-5,
@@ -410,6 +426,12 @@ class SamStars:
     ) -> SamStars:
         """Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""
         fg_extra = validate_fg_extra(fg_extra)
+        preprocessing = training_contract(
+            image_paths(tiles_dir, img), chip_size=chip_size, chip_stride=chip_stride,
+            sam_window_size_m=sam_window_size_m, stardist_patch_size=stardist_patch_size,
+        )
+        chip_size = preprocessing["sam_window_size_px"]
+        chip_stride = preprocessing["sam_stride_px"]
         from samstars.data import build_scale_stats_from_proposal_records
         from samstars.segmentation.engine import run_segmentation
         from samstars.training.chips import build_training_chips
@@ -424,6 +446,7 @@ class SamStars:
             out / "config.json",
             out / "weights.h5",
             out / "thresholds.json",
+            out / "scale_stats.json",
             out / _BUNDLE_MANIFEST,
         ):
             if stale.exists():
@@ -459,6 +482,9 @@ class SamStars:
                 seed_min_canopy_height=seed_min_canopy_height,
             )
 
+            # Discard stale chips from earlier experiments in this working directory.
+            if training_chips_dir.exists():
+                shutil.rmtree(training_chips_dir)
             build_training_chips(
                 tiles_dir=training_tiles_dir,
                 out_dir=training_chips_dir,
@@ -470,6 +496,8 @@ class SamStars:
                 chip_dir=training_chips_dir,
                 ckpt=Path(sam_base_ckpt),
                 out_path=decoder_path,
+                img_size=chip_size,
+                preprocessing=preprocessing,
                 epochs=sam_epochs,
                 min_iters=sam_min_iters,
                 lr=sam_lr,
@@ -484,6 +512,8 @@ class SamStars:
                 device=device,
                 run_sam=True,
                 run_stardist=False,
+                skip_existing_sam=False,
+                preprocessing=preprocessing,
                 fast=fast,
                 fg_extra=fg_extra,
                 crop_smooth_sigma=crop_smooth_sigma,
@@ -522,6 +552,8 @@ class SamStars:
                     str(stardist_epochs),
                     "--min-iters",
                     str(stardist_min_iters),
+                    "--patch-size",
+                    str(stardist_patch_size),
                     "--input-key",
                     stardist_input_key,
                 ]
@@ -549,9 +581,11 @@ class SamStars:
                     scale_stats_path=scale_stats if stardist_use_aux else None,
                     normalize_inputs=stardist_normalize_inputs,
                     augment=stardist_augment,
+                    patch_size=stardist_patch_size,
                 )
 
             stardist_dir = stardist_train_root / "stardist"
+            shutil.copy2(scale_stats, out / "scale_stats.json")
             shutil.copy2(stardist_dir / "config.json", out / "config.json")
             weight_path = _find_stardist_weight(stardist_dir)
             shutil.copy2(weight_path, out / "weights.h5")
@@ -563,12 +597,14 @@ class SamStars:
         prob_thr, nms_thr = cls._load_stardist_thresholds_from_dir(out)
         cls._write_bundle_manifest(
             out=out,
+            preprocessing=preprocessing,
             defaults={
                 "rgb_bands": list(rgb_bands) if rgb_bands is not None else [1, 2, 3],
                 "nir_band": nir_band,
                 "texture_band": texture_band,
                 "stardist_input_key": stardist_input_key,
                 "stardist_use_aux": stardist_use_aux,
+                "stardist_normalize_inputs": stardist_normalize_inputs,
                 "stardist_prob_thr": prob_thr,
                 "stardist_nms_thr": nms_thr,
                 "stardist_window_size_m": stardist_window_size_m,
@@ -623,6 +659,8 @@ class SamStars:
         resolved_fg_extra = validate_fg_extra(
             self.defaults.get("fg_extra", DEFAULT_FG_EXTRA) if fg_extra is None else fg_extra
         )
+        if self.preprocessing is not None:
+            inspect_images(image_paths(tiles_dir, img), expected_resolution=self.preprocessing["resolution_m"])
         from samstars.segmentation.engine import run_segmentation
 
         storage = _normalize_storage(storage)
@@ -709,6 +747,9 @@ class SamStars:
                     skip_existing_sam=skip_existing_sam,
                     log_refinement=log_refinement,
                     fast=resolved_fast,
+                    preprocessing=self.preprocessing,
+                    stardist_normalize_inputs=bool(self.defaults.get("stardist_normalize_inputs", True)),
+                    stardist_scale_stats=self.scale_stats_path,
                     fg_extra=resolved_fg_extra,
                     crop_smooth_sigma=resolved_crop_sigma,
                     smooth_sigma=resolved_smooth_sigma,
@@ -751,8 +792,10 @@ def train(
     nir_band: int | None = None,
     texture_band: int | None = None,
     device: str = "cpu",
-    chip_size: int = 512,
-    chip_stride: int = 384,
+    chip_size: int | None = None,
+    chip_stride: int | None = None,
+    sam_window_size_m: float | None = None,
+    stardist_patch_size: int = 256,
     sam_epochs: int = 15,
     sam_min_iters: int = 0,
     sam_lr: float = 5e-5,
@@ -799,8 +842,16 @@ def train(
         nir_band: Optional source NIR index for the NDVI cost term. Omit for RGB.
         texture_band: Optional source texture index; otherwise use mean RGB intensity.
         device: PyTorch device for proposal training: cpu, cuda, or mps.
-        chip_size: Training chip width and height in pixels.
-        chip_stride: Spacing between training chips in pixels.
+        chip_size: SAM window width and height in native pixels (default 512).
+            Supply this or sam_window_size_m, not both.
+        chip_stride: SAM window spacing in native pixels; defaults to 75% of
+            the window size, giving 25% overlap during training and prediction.
+        sam_window_size_m: SAM ground-window width and height in metres, rounded
+            to the nearest native pixel. Each window is resized to the fixed
+            1024-pixel encoder input. Saved and reused for prediction.
+        stardist_patch_size: Square refinement training patch in native pixels,
+            a positive multiple of 16 (default 256). Every training/validation
+            image must fit this patch. This is independent of the SAM window.
         sam_epochs: Number of proposal-decoder training epochs.
         sam_min_iters: Minimum proposal training iterations; may increase epochs.
         sam_lr: Proposal-decoder learning rate.
@@ -833,7 +884,8 @@ def train(
         stardist_dedup_iou_thr: Default final polygon deduplication threshold;
             zero disables it, positive values below one suppress matching overlaps.
         stardist_cpu: Run refinement training in a subprocess with CUDA hidden.
-        fast: Use batched proposal decoding.
+        fast: Batch prompt decoding within each fixed SAM window. Does not
+            change the window size or image scale for newly trained bundles.
 
     Returns:
         A SamStars instance backed by the saved bundle. Band settings and
@@ -855,6 +907,8 @@ def train(
         device=device,
         chip_size=chip_size,
         chip_stride=chip_stride,
+        sam_window_size_m=sam_window_size_m,
+        stardist_patch_size=stardist_patch_size,
         sam_epochs=sam_epochs,
         sam_min_iters=sam_min_iters,
         sam_lr=sam_lr,

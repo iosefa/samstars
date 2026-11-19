@@ -34,6 +34,21 @@ print(result.crowns)
 ```
 
 The bundle supplies the band settings used during training.
+New bundles also supply their saved SAM ground window, stride, resolution, and
+RGB preprocessing. The scene may be larger or smaller than a training image:
+larger scenes use overlapping windows, and small scenes are padded. Inputs must
+match the saved pixel size; align/resample them before running if necessary.
+See [training window settings](training.md#window-size-resolution-and-padding).
+
+For a bundle with `preprocessing` settings, `fast=True` batches prompts within
+each fixed window and `fast=False` processes them individually. It does not
+change how much ground SAM sees. With no override, segmentation uses the saved
+`fast` setting; training defaults to `False`. Older bundles without these settings
+retain their legacy behavior: fast mode embeds a whole prepared tile, while
+normal mode embeds seed-centered crops.
+
+Cached proposals made with different window settings cannot be reused. Use a new
+output directory or `skip_existing_sam=False` to regenerate those intermediates.
 If source bands have been reordered, pass the corresponding `rgb_bands`, and any `nir_band` or `texture_band`, explicitly while retaining the same channel content.
 Omitted band settings reuse the bundle defaults.
 

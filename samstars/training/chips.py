@@ -13,6 +13,8 @@ import rasterio
 from rasterio.features import rasterize
 from shapely.geometry import box
 
+from samstars._preprocessing import positive_int, window_starts
+
 
 def _clip_annotations(gdf: gpd.GeoDataFrame, bbox_geom) -> gpd.GeoDataFrame:
     """Clip crown polygons to a chip footprint."""
@@ -69,10 +71,13 @@ def build_training_chips(
     skip_tiles: tuple[str, ...] = (),
 ) -> int:
     """Build proposal-decoder training chips from labeled tiles."""
-    stride = chip_size if stride is None else int(stride)
+    chip_size = positive_int(chip_size, "chip_size")
+    stride = chip_size if stride is None else positive_int(stride, "stride")
+    if stride > chip_size:
+        raise ValueError("stride must not exceed chip_size (which would leave gaps).")
     skip_set = set(skip_tiles)
 
-    for subdir in ("images", "masks", "chm", "prompts"):
+    for subdir in ("images", "masks", "chm", "prompts", "valid"):
         (out_dir / subdir).mkdir(parents=True, exist_ok=True)
 
     written = 0
@@ -88,10 +93,18 @@ def build_training_chips(
             height, width = src.height, src.width
             transform = src.transform
             crs = src.crs
-            image = src.read(image_bands).astype(np.float32)
+            image_masked = src.read(image_bands, masked=True).astype(np.float32)
+            image = image_masked.filled(0)
+            valid = ~np.ma.getmaskarray(image_masked).any(axis=0) & np.isfinite(image).all(axis=0)
 
         with rasterio.open(chm_path) as chm_src:
-            chm = chm_src.read(1).astype(np.float32)
+            if (chm_src.shape != (height, width) or chm_src.transform != transform or chm_src.crs != crs):
+                raise ValueError(f"{tile.name}: CHM must be aligned to img.tif before chip creation.")
+            chm_masked = chm_src.read(1, masked=True).astype(np.float32)
+            chm = chm_masked.filled(0)
+            valid &= ~np.ma.getmaskarray(chm_masked) & np.isfinite(chm)
+        image[:, ~valid] = 0
+        chm[~valid] = 0
 
         crowns = gpd.read_file(crowns_path)
         if crowns.empty:
@@ -104,8 +117,8 @@ def build_training_chips(
 
         tile_count = 0
         chip_id = 0
-        for y0 in range(0, height, stride):
-            for x0 in range(0, width, stride):
+        for y0 in window_starts(height, chip_size, stride):
+            for x0 in window_starts(width, chip_size, stride):
                 y1 = min(y0 + chip_size, height)
                 x1 = min(x0 + chip_size, width)
                 if y1 - y0 < 1 or x1 - x0 < 1:
@@ -120,11 +133,13 @@ def build_training_chips(
 
                 image_chip = image[:, y0:y1, x0:x1]
                 chm_chip = chm[y0:y1, x0:x1]
+                valid_chip = valid[y0:y1, x0:x1]
                 pad_h = chip_size - image_chip.shape[1]
                 pad_w = chip_size - image_chip.shape[2]
                 if pad_h or pad_w:
                     image_chip = np.pad(image_chip, ((0, 0), (0, pad_h), (0, pad_w)), mode="constant")
                     chm_chip = np.pad(chm_chip, ((0, pad_h), (0, pad_w)), mode="constant")
+                    valid_chip = np.pad(valid_chip, ((0, pad_h), (0, pad_w)), mode="constant")
 
                 base_image_chip = image_chip.astype(np.float32)
                 base_chm_chip = chm_chip.astype(np.float32)
@@ -132,6 +147,7 @@ def build_training_chips(
                     mask_chip = _rasterize_one_geometry(geom, (y1 - y0, x1 - x0), win_transform)
                     if pad_h or pad_w:
                         mask_chip = np.pad(mask_chip, ((0, pad_h), (0, pad_w)), mode="constant")
+                    mask_chip[~valid_chip] = 0
 
                     prompt = _prompt_from_mask(mask_chip)
                     if prompt is None:
@@ -141,6 +157,7 @@ def build_training_chips(
                     np.save(out_dir / "images" / f"{stem}.npy", base_image_chip)
                     np.save(out_dir / "masks" / f"{stem}.npy", mask_chip.astype(np.uint8))
                     np.save(out_dir / "chm" / f"{stem}.npy", base_chm_chip)
+                    np.save(out_dir / "valid" / f"{stem}.npy", valid_chip)
                     _save_prompt_json(out_dir / "prompts" / f"{stem}.json", prompt)
 
                     chip_id += 1

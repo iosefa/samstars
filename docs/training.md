@@ -91,11 +91,69 @@ When creating a bundle from prepared tiles, supply the original source `rgb_band
 | `sam_epochs`, `sam_lr` | Proposal training duration and learning rate; defaults `15` and `5e-5`. |
 | `fg_extra` | Maximum extra foreground points per seed; nonnegative integer, default `80`. Set `0` to use only the seed as foreground. |
 | `stardist_epochs` | Refinement training duration; default `50`. |
-| `chip_size`, `chip_stride` | Training window size and spacing in pixels; defaults `512` and `384`. |
+| `sam_window_size_m` | SAM ground-window width and height in metres. Saved for prediction. |
+| `chip_size` | Alternative to `sam_window_size_m`, in native pixels; default `512` when neither is supplied. |
+| `chip_stride` | SAM window spacing in native pixels; default 75% of the window size (25% overlap). |
+| `stardist_patch_size` | Square StarDist training patch in native pixels; positive multiple of 16, default `256`. |
+| `fast` | Batch SAM prompts within each fixed window; default `False`. |
 | `val_fraction` | Fraction of refinement records used for validation; default `0.2`. |
 
 The record split is not a spatially independent evaluation; use separate held-out areas for that purpose.
 Seed controls are described in [Data Preparation](data_preparation.md#create-seed-points), and the full parameter list is in the [API reference](api/top_level.md#samstars.api.train).
+
+## Window Size, Resolution, and Padding
+
+Choose the ground area SAM should see using `sam_window_size_m`. For example,
+`sam_window_size_m=20` at 0.5 m resolution creates a 40 × 40 native-pixel window.
+SAM resizes that window to its fixed 1024 × 1024 encoder input; resizing does not
+add new spatial detail. Alternatively, specify `chip_size` in native pixels.
+Supplying both controls is an error. Metre sizes are rounded to the nearest pixel;
+the bundle records the actual size used.
+
+New bundles save the native pixel size, SAM window and stride, encoder size,
+padding policy, and RGB scaling in `manifest.json` under `preprocessing`.
+Prediction automatically reuses those settings. Larger scenes are processed in
+overlapping windows and blended back onto their original raster grid. For these
+bundles, `fast=True` batches prompts within a window and `fast=False` decodes one
+prompt at a time; both use the same ground context and image scaling.
+
+All training imagery must have the same resolution, a projected CRS in metres,
+and north-up square pixels. Prediction checks the saved resolution and asks you
+to align/resample incompatible inputs. It does not silently resample them.
+
+StarDist's patch size is independent of the SAM window. Its current architecture
+requires a multiple of 16 native pixels. Every annotated training and validation
+image must be at least that wide and high. This is checked before SAM training,
+so a tiny input does not fail only after the decoder has finished training.
+For example, a 20 m square at 0.5 m resolution is 40 × 40 pixels: use
+`sam_window_size_m=20, stardist_patch_size=32`. The default StarDist patch of 256
+pixels requires at least 128 m in each dimension at that resolution.
+
+```python
+# Add these to train(...) for a small-window experiment on 0.5 m imagery:
+window_settings = dict(
+    sam_window_size_m=20,
+    stardist_patch_size=32,
+    fg_extra=0,
+)
+# model = train(..., **window_settings)
+```
+
+The SAM window does not impose a minimum scene size. Smaller scenes are padded
+on the bottom and right with zeros; training warns when this is necessary.
+Padding and NoData are excluded from RGB percentile scaling, foreground/background
+prompt sampling, and decoder loss. Real pixels use the same per-channel 2nd–98th
+percentile scaling during training and prediction. Padded pixels stay black.
+Training-chip validity masks are saved under `training_chips/valid/`.
+
+A small patch is technically supported, but it supplies less real context and
+may truncate crowns. Use multiple completely annotated areas and evaluate on
+separate areas; a valid patch size does not establish model accuracy.
+
+Bundles without `preprocessing` retain their legacy whole-scene/crop behavior.
+The saved-window behavior requires this updated library at both training and
+prediction time. Installing a released QGIS engine does not automatically include
+unreleased local library changes.
 
 ## Foreground Prompts
 
@@ -113,6 +171,8 @@ also accepts `fg_extra`, and its CLI accepts `--fg-extra`.
 ## Model Bundle and Saved Outputs
 
 The bundle contains `manifest.json`, `decoder.pth`, `config.json`, `weights.h5`, and, when available, `thresholds.json`.
+New bundles also contain `scale_stats.json`, so refinement reuses the training
+CHM scaling limits. The refinement normalization setting is saved and reused too.
 Pass the bundle directory to `segment(model=...)`; see [Segmentation](segmentation.md).
 
 With `storage="persistent"`, preparation, training samples, and proposal outputs are saved under `models/crowns/_training/`.

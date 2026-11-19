@@ -171,7 +171,8 @@ def test_preparation_writes_selected_rgb_cost_and_real_seeds(scene, tiled):
 
 
 @pytest.mark.parametrize("fg_extra", [None, 0, 4])
-def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra):
+@pytest.mark.parametrize("stardist_cpu", [False, True])
+def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra, stardist_cpu):
     """Run real preparation and record building, replacing only model execution."""
     expected_fg_extra = 80 if fg_extra is None else fg_extra
     img = _write_raster(scene["root"] / "bgrn.tif", scene["image"][:4])
@@ -180,9 +181,13 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra)
 
     def fake_decoder(**kwargs):
         assert kwargs["fg_extra"] == expected_fg_extra
+        assert kwargs["img_size"] == 32
+        assert kwargs["preprocessing"]["sam_window_size_px"] == 32
         kwargs["out_path"].write_bytes(b"test decoder")
 
     def fake_refinement(**kwargs):
+        assert kwargs["patch_size"] == 32
+        assert kwargs["normalize_inputs"] is False
         model = kwargs["out_dir"] / kwargs["model_name"]
         model.mkdir(parents=True)
         (model / "config.json").write_text("{}")
@@ -190,6 +195,7 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra)
 
     def fake_proposals(**kwargs):
         assert kwargs["fg_extra"] == expected_fg_extra
+        assert kwargs["preprocessing"]["sam_window_size_px"] == 32
         tile = kwargs["tiles_dir"] / "tile_000_000"
         out = kwargs["out_dir"] / "proposals"
         out.mkdir(parents=True)
@@ -201,21 +207,36 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra)
         records.write_text(json.dumps([{"index": str(index), "chm": str(tile / "chm.tif")}]))
         return {"proposal_records": records}
 
+    def fake_cpu_training(cmd, **kwargs):
+        assert "--no-normalize" in cmd
+        assert kwargs["env"]["CUDA_VISIBLE_DEVICES"] == ""
+        fake_refinement(out_dir=Path(cmd[cmd.index("--out-dir") + 1]), model_name="stardist",
+                        patch_size=int(cmd[cmd.index("--patch-size") + 1]), normalize_inputs=False)
+
     monkeypatch.setitem(sys.modules, "samstars.training.sam_training", SimpleNamespace(train_decoder=fake_decoder))
     monkeypatch.setitem(sys.modules, "samstars.training.stardist_training", SimpleNamespace(train_stardist_model=fake_refinement))
     original_engine = engine.run_segmentation
     monkeypatch.setattr(engine, "run_segmentation", fake_proposals)
+    if stardist_cpu:
+        monkeypatch.setattr("samstars.api.subprocess.run", fake_cpu_training)
     model = train(
         img=img, chm=scene["chm"], den=scene["den"], crowns=crowns,
         sam_base_ckpt=scene["root"] / "base.pth", out=scene["root"] / "model",
         storage="persistent", rgb_bands=(3, 2, 1), nir_band=4, texture_band=2,
-        chip_size=32, chip_stride=32,
+        chip_size=32, chip_stride=32, stardist_patch_size=32,
+        stardist_cpu=stardist_cpu, stardist_normalize_inputs=False,
         **({} if fg_extra is None else {"fg_extra": fg_extra}),
     )
     assert model.defaults["rgb_bands"] == [3, 2, 1]
     assert model.defaults["nir_band"] == 4
     assert model.defaults["texture_band"] == 2
     assert model.defaults["fg_extra"] == expected_fg_extra
+    assert model.preprocessing["sam_encoder_size"] == 1024
+    assert model.preprocessing["sam_window_size_m"] == 32
+    assert model.preprocessing["stardist_patch_size_px"] == 32
+    assert model.preprocessing["resolution_m"] == 1
+    assert model.defaults["stardist_normalize_inputs"] is False
+    assert model.scale_stats_path.is_file()
 
     monkeypatch.setattr(engine, "run_segmentation", original_engine)
     result = segment(

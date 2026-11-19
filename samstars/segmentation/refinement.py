@@ -36,7 +36,7 @@ from tqdm.auto import tqdm
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
+    sys.path.insert(0, str(ROOT))
 
 from samstars.data.scaling import load_scale_stats, scale_to_01
 

@@ -22,9 +22,10 @@ from segment_anything.utils.transforms import ResizeLongestSide
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
+    sys.path.insert(0, str(ROOT))
 
 from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
+from samstars._preprocessing import SAM_ENCODER_SIZE, positive_int, rgb_to_u8, validate_contract
 from samstars.data.scaling import load_scale_stats, scale_to_u8_per_channel
 
 
@@ -190,6 +191,7 @@ class Chips(Dataset):
         neg_max_can: int = NEG_MAX_CAN_DEFAULT,
         chm_ground: float = CHM_GROUND_DEFAULT,
         box_expand: float = 1.0,
+        preprocessing: dict | None = None,
     ):
         """Initialize the instance."""
         self.fg_extra = validate_fg_extra(fg_extra)
@@ -198,7 +200,15 @@ class Chips(Dataset):
         if not self.ids:
             raise FileNotFoundError(f"No chips in {self.chip_dir}")
 
-        self.img_size = int(img_size)
+        self.img_size = positive_int(img_size, "img_size")
+        self.preprocessing = validate_contract(preprocessing) if preprocessing is not None else None
+        if self.preprocessing is not None and rgb_lo_hi is not None:
+            raise ValueError("Saved window preprocessing uses per-window RGB scaling; omit rgb_lo_hi.")
+        if self.preprocessing is not None and (
+            self.img_size != self.preprocessing["sam_window_size_px"]
+            or enc_size != self.preprocessing["sam_encoder_size"]
+        ):
+            raise ValueError("Training dimensions do not match the saved preprocessing settings.")
         self.resize = ResizeLongestSide(enc_size)
         self.rgb_lo_hi = rgb_lo_hi
 
@@ -225,13 +235,23 @@ class Chips(Dataset):
             raise ValueError(f"{name}: expected img CHW, got {img.shape}")
         C, H, W = img.shape
         if H != self.img_size or W != self.img_size:
-            # if your chips are padded/cropped, this keeps things safe
-            H = min(H, self.img_size)
-            W = min(W, self.img_size)
+            raise ValueError(f"{name}: chip is {W} x {H}; img_size requires {self.img_size} x {self.img_size}.")
+        if C != 3:
+            raise ValueError(f"{name}: SAM requires three image channels, got {C}.")
+
+        valid_path = self.chip_dir / "valid" / f"{name}.npy"
+        if self.preprocessing is not None and not valid_path.exists():
+            raise FileNotFoundError(f"{name}: missing validity mask; rebuild chips with build_training_chips.")
+        valid = np.load(valid_path).astype(bool) if valid_path.exists() else np.ones((H, W), bool)
+        if valid.shape != (H, W):
+            raise ValueError(f"{name}: validity mask does not match the image shape.")
+        valid &= np.isfinite(img).all(axis=0)
 
         # Convert RGB -> uint8 (global scaling if available)
         img_hwc = img.transpose(1, 2, 0).astype(np.float32)
-        if self.rgb_lo_hi is not None and len(self.rgb_lo_hi) >= img_hwc.shape[2]:
+        if self.preprocessing is not None:
+            img_u8 = rgb_to_u8(img_hwc, valid)
+        elif self.rgb_lo_hi is not None and len(self.rgb_lo_hi) >= img_hwc.shape[2]:
             img_u8 = scale_to_u8_per_channel(img_hwc, self.rgb_lo_hi[: img_hwc.shape[2]])
         else:
             img_u8 = np.stack([stretch_u8(img_hwc[..., c]) for c in range(img_hwc.shape[2])], axis=-1)
@@ -249,6 +269,11 @@ class Chips(Dataset):
         if not chm_path.exists():
             raise FileNotFoundError(f"{name}: missing CHM chip {chm_path}")
         chm = np.load(chm_path).astype(np.float32)
+        if msk.shape != (H, W) or chm.shape != (H, W):
+            raise ValueError(f"{name}: mask and CHM must match the image shape.")
+        valid &= np.isfinite(chm)
+        chm[~valid] = np.nan  # Exclude padding/NoData from positive and negative prompts.
+        msk[~valid] = -1  # Ignore these pixels in the decoder loss.
 
         # --- load json (point + optional box) ---
         jpath = self.chip_dir / "prompts" / f"{name}.json"
@@ -266,6 +291,12 @@ class Chips(Dataset):
                 sy = int(np.round(yy.mean()))
         else:
             sx, sy = int(pt[0]), int(pt[1])
+        if not (0 <= sx < W and 0 <= sy < H and valid[sy, sx]):
+            yy, xx = np.where((msk > 0) & valid)
+            if not yy.size:
+                raise ValueError(f"{name}: no valid crown pixels for the foreground seed.")
+            nearest = np.argmin((xx - sx) ** 2 + (yy - sy) ** 2)
+            sx, sy = int(xx[nearest]), int(yy[nearest])
 
         # Box: prefer json["box"], else bbox from mask
         box = j.get("box", None)
@@ -315,6 +346,20 @@ class Chips(Dataset):
         )
 
 
+def decoder_loss(pred, truth):
+    """Dice + BCE, excluding pixels marked -1 (padding or missing input data)."""
+    valid = truth >= 0
+    target = truth.clamp_min(0)
+    score = torch.sigmoid(pred) * valid
+    target = target * valid
+    dice = 1 - (2 * (score * target).sum((2, 3)) + 1) / (
+        score.sum((2, 3)) + target.sum((2, 3)) + 1
+    )
+    bce = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
+    bce = (bce * valid).sum((2, 3)) / valid.sum((2, 3)).clamp_min(1)
+    return (dice + bce).mean()
+
+
 def train_decoder(
     chip_dir: Path,
     ckpt: Path,
@@ -332,12 +377,17 @@ def train_decoder(
     neg_max_can: int = NEG_MAX_CAN_DEFAULT,
     chm_ground: float = CHM_GROUND_DEFAULT,
     box_expand: float = 1.0,
+    preprocessing: dict | None = None,
 ):
     """Train a decoder with up to fg_extra additional foreground points per seed.
 
     fg_extra must be a nonnegative integer. Zero keeps only the seed as foreground;
     negative-point sampling and box prompts are unchanged. The default is 80.
     """
+    validate_fg_extra(fg_extra)
+    img_size = positive_int(img_size, "img_size")
+    if enc_size != SAM_ENCODER_SIZE:
+        raise ValueError("The SAM ViT-L encoder requires enc_size=1024; change img_size for the ground window.")
     ds = Chips(
         chip_dir,
         img_size=img_size,
@@ -348,6 +398,7 @@ def train_decoder(
         neg_max_can=neg_max_can,
         chm_ground=chm_ground,
         box_expand=box_expand,
+        preprocessing=preprocessing,
     )
     loader = DataLoader(ds, batch_size=1, shuffle=True)
 
@@ -364,12 +415,6 @@ def train_decoder(
 
     opt = torch.optim.AdamW(sam.mask_decoder.parameters(), lr=lr)
     base_pe = sam.prompt_encoder.get_dense_pe().to(device)
-
-    def loss_fn(pred, truth):
-        """Loss fn."""
-        score = torch.sigmoid(pred)
-        dice = 1 - (2 * (score * truth).sum((2, 3)) + 1) / (score.sum((2, 3)) + truth.sum((2, 3)) + 1)
-        return (dice + F.binary_cross_entropy_with_logits(pred, truth)).mean()
 
     for ep in range(1, epochs + 1):
         tot = 0.0
@@ -398,9 +443,9 @@ def train_decoder(
                 multimask_output=False,
             )
 
-            # supervise against the original 512x512 mask
+            # Supervise at the selected native ground-window resolution.
             logit = F.interpolate(logit_low, size=(img_size, img_size), mode="bilinear", align_corners=False)
-            loss = loss_fn(logit, msk)
+            loss = decoder_loss(logit, msk)
 
             opt.zero_grad()
             loss.backward()

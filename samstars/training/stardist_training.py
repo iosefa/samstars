@@ -20,9 +20,10 @@ from stardist import fill_label_holes
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
+    sys.path.insert(0, str(ROOT))
 
 from samstars.data.scaling import load_scale_stats, scale_to_01
+from samstars._preprocessing import patch_size as validate_patch_size
 
 
 def _align_to_shape(arr: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
@@ -199,8 +200,10 @@ def train_stardist_model(
     chm_key: str = "chm",
     normalize_inputs: bool = True,
     augment: bool = True,
+    patch_size: int = 256,
 ) -> None:
     """Train a StarDist model from train/val proposal-record files."""
+    patch_size = validate_patch_size(patch_size)
     scale_stats = load_scale_stats(scale_stats_path) if scale_stats_path else None
     if use_aux and scale_stats is None:
         raise ValueError("Provide scale_stats_path when use_aux=True.")
@@ -228,6 +231,15 @@ def train_stardist_model(
     if not Xtr or not Ytr:
         raise RuntimeError("No training data with masks found.")
 
+    for split, images, masks in (("training", Xtr, Ytr), ("validation", Xval, Yval)):
+        for i, (image, mask) in enumerate(zip(images, masks)):
+            if min(mask.shape) < patch_size or image.shape[:2] != mask.shape:
+                raise ValueError(
+                    f"StarDist {split} sample {i} has shape {mask.shape}; "
+                    f"it must fit a {patch_size} x {patch_size} patch. "
+                    "Use a smaller stardist_patch_size or larger training images."
+                )
+
     iters_per_epoch = max(1, len(Xtr))
     if min_iters > 0:
         min_epochs = int((min_iters + iters_per_epoch - 1) // iters_per_epoch)
@@ -235,7 +247,8 @@ def train_stardist_model(
     print(f"epochs={epochs} (iters/epoch={iters_per_epoch})")
 
     n_channels = Xtr[0].shape[-1]
-    conf = Config2D(n_rays=32, grid=(2, 2), use_gpu=False, n_channel_in=n_channels)
+    conf = Config2D(n_rays=32, grid=(2, 2), use_gpu=False, n_channel_in=n_channels,
+                    train_patch_size=(patch_size, patch_size))
     model = StarDist2D(conf, name=model_name, basedir=str(out_dir))
 
     val_data = (Xval, Yval) if (len(Xval) > 0 and len(Yval) > 0) else None
@@ -252,7 +265,7 @@ def train_stardist_model(
         augmenter=aug,
     )
 
-    if val_data is not None:
+    if Xval and Yval:
         try:
             opt = model.optimize_thresholds(Xval, Yval)
             print(f"✓ optimized thresholds: prob={opt.get('prob'):.3f}, nms={opt.get('nms'):.3f}")
@@ -271,6 +284,8 @@ def main() -> None:
     pa.add_argument("--model-name", type=str, default="stardist", help="Model subdir name to create under --out-dir")
     pa.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     pa.add_argument("--min-iters", type=int, default=0, help="Minimum training iterations (converted to epochs)")
+    pa.add_argument("--patch-size", type=int, default=256,
+                    help="Square training patch size in pixels; positive multiple of 16 (default: 256)")
 
     # Original-matching knobs
     pa.add_argument(
@@ -311,6 +326,7 @@ def main() -> None:
         chm_key=args.chm_key,
         normalize_inputs=do_normalize,
         augment=not args.no_augment,
+        patch_size=args.patch_size,
     )
 
 
