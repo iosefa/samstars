@@ -59,6 +59,7 @@ nav:
     - Reference:
         - CLI Scripts: reference/cli.md
         - API Guide: reference/api_levels.md
+        - Release Process: releases.md
     - API Reference:
         - samstars.api: api/top_level.md
         - samstars.features.cost_surface: api/features_cost_surface.md
