@@ -1571,9 +1571,10 @@ Final crown polygons can be used independently of these intermediate files.</p>
 <p><code>out/run_records/tiles.json</code> indexes the prepared tiles.
 <code>tiles.pending.json</code> identifies tiles without complete proposal outputs.
 The high-level API creates both files automatically; <a href="../reference/cli/#segmentation-run-utilities">CLI Scripts</a> provides commands for rebuilding them individually.</p>
-<p>When CHM is used as an auxiliary refinement channel, <code>out/proposal_scale_stats.json</code> stores the scaling limits used across proposal records.
-Training stores its corresponding statistics under <code>model_bundle/_training/</code>.
-These files are generated automatically.</p>
+<p>New bundles save training CHM scaling limits in <code>model_bundle/scale_stats.json</code>
+and reuse them during refinement. Older bundles and direct model-file calls
+without saved statistics compute <code>out/proposal_scale_stats.json</code> from their
+proposal records. These files are generated automatically.</p>
 <h2 id="inspect-training-chips">Inspect Training Chips<a class="headerlink" href="#inspect-training-chips" title="Permanent link">&para;</a></h2>
 <p>Training chips contain imagery arrays, crown masks, CHM arrays, and prompts.
 To rebuild them from labeled tiles independently:</p>
@@ -1584,7 +1585,8 @@ To rebuild them from labeled tiles independently:</p>
 <span class="w">  </span>--out-dir<span class="w"> </span>/abs/path/training_chips
 </code></pre></div></td></tr></table></div>
 <p>Each input tile needs <code>img.tif</code>, <code>chm.tif</code>, and <code>crowns.gpkg</code>.
-The output contains <code>images/</code>, <code>masks/</code>, <code>chm/</code>, and <code>prompts/</code> subdirectories.
+The output contains <code>images/</code>, <code>masks/</code>, <code>chm/</code>, <code>prompts/</code>, and <code>valid/</code> subdirectories.
+Validity masks distinguish real input pixels from NoData and padding.
 <code>train(...)</code> performs this step automatically.</p>
 <h2 id="segment-with-separate-model-files">Segment With Separate Model Files<a class="headerlink" href="#segment-with-separate-model-files" title="Permanent link">&para;</a></h2>
 <p><code>run_segmentation(...)</code> accepts a proposal-decoder checkpoint and a refinement model directory directly:</p>
@@ -1614,6 +1616,12 @@ The output contains <code>images/</code>, <code>masks/</code>, <code>chm/</code>
 This direct interface also accepts <code>fg_extra</code> (default <code>80</code>); set it to match
 the count used during training. It does not load defaults from a bundle.
 The lower-level <code>run_tile_proposals(...)</code> accepts the same option.
+For a model trained with saved window settings, also pass
+<code>preprocessing=model.preprocessing</code> from a loaded <code>SamStars</code> bundle to either
+function. For <code>run_segmentation</code>, pass <code>stardist_scale_stats=model.scale_stats_path</code>
+and the bundle's <code>stardist_normalize_inputs</code> default as well. Without these
+arguments, direct model-file calls use legacy preprocessing. The high-level
+<code>segment(model=...)</code> API forwards all of these settings automatically.
 <code>stardist_model</code> is the model subdirectory containing <code>config.json</code> and its weights.
 This interface also accepts source <code>img</code>, <code>chm</code>, and <code>den</code> rasters with explicit band settings in place of <code>tiles_dir</code>.</p>
 <h2 id="multispectral-cost-settings">Multispectral Cost Settings<a class="headerlink" href="#multispectral-cost-settings" title="Permanent link">&para;</a></h2>

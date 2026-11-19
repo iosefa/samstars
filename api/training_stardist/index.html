@@ -1519,13 +1519,13 @@ and intensity augmentation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/stardist_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">67</span>
-<span class="normal">68</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">68</span>
 <span class="normal">69</span>
 <span class="normal">70</span>
 <span class="normal">71</span>
 <span class="normal">72</span>
-<span class="normal">73</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">augmenter</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="normal">73</span>
+<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">augmenter</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Augmenter."""</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">random_fliprot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">random_intensity_change</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -1554,8 +1554,7 @@ and intensity augmentation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/stardist_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
-<span class="normal">164</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span>
 <span class="normal">167</span>
@@ -1576,7 +1575,8 @@ and intensity augmentation.</p>
 <span class="normal">182</span>
 <span class="normal">183</span>
 <span class="normal">184</span>
-<span class="normal">185</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_pairs</span><span class="p">(</span>
+<span class="normal">185</span>
+<span class="normal">186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_pairs</span><span class="p">(</span>
     <span class="n">records_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">input_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"index"</span><span class="p">,</span>
@@ -1621,8 +1621,7 @@ and intensity augmentation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/stardist_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 95</span>
-<span class="normal"> 96</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 96</span>
 <span class="normal"> 97</span>
 <span class="normal"> 98</span>
 <span class="normal"> 99</span>
@@ -1686,7 +1685,8 @@ and intensity augmentation.</p>
 <span class="normal">157</span>
 <span class="normal">158</span>
 <span class="normal">159</span>
-<span class="normal">160</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_pairs</span><span class="p">(</span>
+<span class="normal">160</span>
+<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_pairs</span><span class="p">(</span>
     <span class="n">records_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">input_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"index"</span><span class="p">,</span>
@@ -1774,20 +1774,7 @@ and intensity augmentation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/stardist_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
 <span class="normal">279</span>
 <span class="normal">280</span>
 <span class="normal">281</span>
@@ -1823,7 +1810,23 @@ and intensity augmentation.</p>
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Run the command-line entry point."""</span>
     <span class="n">pa</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"Train the polygon-refinement model from proposal-record files."</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--train-records"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Training proposal-record JSON with masks"</span><span class="p">)</span>
@@ -1832,6 +1835,8 @@ and intensity augmentation.</p>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--model-name"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"stardist"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Model subdir name to create under --out-dir"</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--epochs"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Number of training epochs"</span><span class="p">)</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--min-iters"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Minimum training iterations (converted to epochs)"</span><span class="p">)</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--patch-size"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">"Square training patch size in pixels; positive multiple of 16 (default: 256)"</span><span class="p">)</span>
 
     <span class="c1"># Original-matching knobs</span>
     <span class="n">pa</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
@@ -1872,6 +1877,7 @@ and intensity augmentation.</p>
         <span class="n">chm_key</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">chm_key</span><span class="p">,</span>
         <span class="n">normalize_inputs</span><span class="o">=</span><span class="n">do_normalize</span><span class="p">,</span>
         <span class="n">augment</span><span class="o">=</span><span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">no_augment</span><span class="p">,</span>
+        <span class="n">patch_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">patch_size</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1895,8 +1901,7 @@ and intensity augmentation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/stardist_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
-<span class="normal">48</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
 <span class="normal">51</span>
@@ -1906,7 +1911,8 @@ and intensity augmentation.</p>
 <span class="normal">55</span>
 <span class="normal">56</span>
 <span class="normal">57</span>
-<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">random_fliprot</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="normal">58</span>
+<span class="normal">59</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">random_fliprot</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Random fliprot."""</span>
     <span class="k">assert</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;=</span> <span class="n">mask</span><span class="o">.</span><span class="n">ndim</span>
     <span class="n">axes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
@@ -1940,10 +1946,10 @@ and intensity augmentation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/stardist_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">61</span>
-<span class="normal">62</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">62</span>
 <span class="normal">63</span>
-<span class="normal">64</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">random_intensity_change</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="normal">64</span>
+<span class="normal">65</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">random_intensity_change</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Random intensity change."""</span>
     <span class="n">img</span> <span class="o">=</span> <span class="n">img</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">img</span>
@@ -1957,7 +1963,7 @@ and intensity augmentation.</p>
 
 
 <h3 id="samstars.training.stardist_training.train_stardist_model" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">train_stardist_model</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">train_records</span><span class="p">,</span> <span class="n">val_records</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">'stardist'</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">use_aux</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_stats_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm_key</span><span class="o">=</span><span class="s1">'chm'</span><span class="p">,</span> <span class="n">normalize_inputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">augment</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">train_stardist_model</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">train_records</span><span class="p">,</span> <span class="n">val_records</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">'stardist'</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">min_iters</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">use_aux</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_stats_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm_key</span><span class="o">=</span><span class="s1">'chm'</span><span class="p">,</span> <span class="n">normalize_inputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">augment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">patch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">)</span></code>
 
 <a href="#samstars.training.stardist_training.train_stardist_model" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1969,8 +1975,7 @@ and intensity augmentation.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/training/stardist_training.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
-<span class="normal">189</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
 <span class="normal">192</span>
@@ -2043,7 +2048,20 @@ and intensity augmentation.</p>
 <span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
-<span class="normal">262</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train_stardist_model</span><span class="p">(</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">train_stardist_model</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">train_records</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">val_records</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
@@ -2057,8 +2075,10 @@ and intensity augmentation.</p>
     <span class="n">chm_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"chm"</span><span class="p">,</span>
     <span class="n">normalize_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">augment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">patch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Train a StarDist model from train/val proposal-record files."""</span>
+    <span class="n">patch_size</span> <span class="o">=</span> <span class="n">validate_patch_size</span><span class="p">(</span><span class="n">patch_size</span><span class="p">)</span>
     <span class="n">scale_stats</span> <span class="o">=</span> <span class="n">load_scale_stats</span><span class="p">(</span><span class="n">scale_stats_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">scale_stats_path</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">use_aux</span> <span class="ow">and</span> <span class="n">scale_stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Provide scale_stats_path when use_aux=True."</span><span class="p">)</span>
@@ -2086,6 +2106,15 @@ and intensity augmentation.</p>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">Xtr</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">Ytr</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"No training data with masks found."</span><span class="p">)</span>
 
+    <span class="k">for</span> <span class="n">split</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">masks</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"training"</span><span class="p">,</span> <span class="n">Xtr</span><span class="p">,</span> <span class="n">Ytr</span><span class="p">),</span> <span class="p">(</span><span class="s2">"validation"</span><span class="p">,</span> <span class="n">Xval</span><span class="p">,</span> <span class="n">Yval</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">masks</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">patch_size</span> <span class="ow">or</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"StarDist </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> has shape </span><span class="si">{</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">; "</span>
+                    <span class="sa">f</span><span class="s2">"it must fit a </span><span class="si">{</span><span class="n">patch_size</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">patch_size</span><span class="si">}</span><span class="s2"> patch. "</span>
+                    <span class="s2">"Use a smaller stardist_patch_size or larger training images."</span>
+                <span class="p">)</span>
+
     <span class="n">iters_per_epoch</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Xtr</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">min_iters</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">min_epochs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">min_iters</span> <span class="o">+</span> <span class="n">iters_per_epoch</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">iters_per_epoch</span><span class="p">)</span>
@@ -2093,7 +2122,8 @@ and intensity augmentation.</p>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"epochs=</span><span class="si">{</span><span class="n">epochs</span><span class="si">}</span><span class="s2"> (iters/epoch=</span><span class="si">{</span><span class="n">iters_per_epoch</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
 
     <span class="n">n_channels</span> <span class="o">=</span> <span class="n">Xtr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">conf</span> <span class="o">=</span> <span class="n">Config2D</span><span class="p">(</span><span class="n">n_rays</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">use_gpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_channel_in</span><span class="o">=</span><span class="n">n_channels</span><span class="p">)</span>
+    <span class="n">conf</span> <span class="o">=</span> <span class="n">Config2D</span><span class="p">(</span><span class="n">n_rays</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">use_gpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_channel_in</span><span class="o">=</span><span class="n">n_channels</span><span class="p">,</span>
+                    <span class="n">train_patch_size</span><span class="o">=</span><span class="p">(</span><span class="n">patch_size</span><span class="p">,</span> <span class="n">patch_size</span><span class="p">))</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">StarDist2D</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span> <span class="n">basedir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">out_dir</span><span class="p">))</span>
 
     <span class="n">val_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">Xval</span><span class="p">,</span> <span class="n">Yval</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Xval</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">Yval</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
@@ -2110,7 +2140,7 @@ and intensity augmentation.</p>
         <span class="n">augmenter</span><span class="o">=</span><span class="n">aug</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">val_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">Xval</span> <span class="ow">and</span> <span class="n">Yval</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">opt</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">optimize_thresholds</span><span class="p">(</span><span class="n">Xval</span><span class="p">,</span> <span class="n">Yval</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✓ optimized thresholds: prob=</span><span class="si">{</span><span class="n">opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'prob'</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, nms=</span><span class="si">{</span><span class="n">opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'nms'</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>

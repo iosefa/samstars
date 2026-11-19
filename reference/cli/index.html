@@ -1398,6 +1398,10 @@
 <p>Useful options:</p>
 <ul>
 <li><code>--rgb-bands R G B</code>: source bands for raw training tiles, using one-based indices</li>
+<li><code>--sam-window-size-m M</code>: SAM ground window for a new model, saved for prediction</li>
+<li><code>--chip-size N</code>: alternative SAM window in native pixels (default 512); exclusive with <code>--sam-window-size-m</code></li>
+<li><code>--chip-stride N</code>: window spacing in native pixels (default 75% of the selected size)</li>
+<li><code>--stardist-patch-size N</code>: refinement training patch, a positive multiple of 16 (default 256)</li>
 <li><code>--nir-band N</code> and <code>--texture-band N</code>: optional cost-surface band choices for raw training tiles</li>
 <li><code>--stardist-cpu</code>: force polygon refinement to CPU</li>
 <li><code>--stardist-input-key index|file_name|logit</code></li>
@@ -1407,7 +1411,7 @@
 <li><code>--stardist-dedup-iou-thr</code></li>
 <li><code>--sam-only</code></li>
 <li><code>--stardist-only</code></li>
-<li><code>--fast</code> or <code>--slow</code></li>
+<li><code>--fast</code> or <code>--slow</code>: batched or individual prompt decoding; training defaults to fast, and segmentation inherits the saved bundle setting (falling back to fast). New bundles keep the same saved SAM ground window in either mode.</li>
 </ul>
 <h2 id="separate-model-files-wrapper">Separate Model Files Wrapper<a class="headerlink" href="#separate-model-files-wrapper" title="Permanent link">&para;</a></h2>
 <p>Use this when you have a SAM decoder checkpoint and a StarDist model directory instead of a model bundle:</p>
@@ -1476,8 +1480,9 @@
 <span class="w">  </span>--fast
 </code></pre></div></td></tr></table></div>
 <p>Add <code>--fg-extra 0</code> to use only each seed as foreground, or a positive integer
-to limit extra foreground points. The default is <code>80</code>; both normal and <code>--fast</code>
-proposal generation honor this option. Negative points and box prompts remain.</p>
+to limit extra foreground points. The default is <code>80</code>; both modes honor this
+option. Proposal generation enables <code>--fast</code> by default; use <code>--slow</code> to disable
+batching. Negative points and box prompts remain.</p>
 <p>Run polygon refinement:</p>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
@@ -1534,9 +1539,11 @@ pass the same foreground count to both; a standalone checkpoint does not store i
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>samstars.training.stardist_training<span class="w"> </span><span class="se">\</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>samstars.training.stardist_training<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--train-records<span class="w"> </span>/abs/path/training_records/train_records.json<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--val-records<span class="w"> </span>/abs/path/training_records/val_records.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--patch-size<span class="w"> </span><span class="m">256</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--out-dir<span class="w"> </span>/abs/path/stardist_models<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--model-name<span class="w"> </span>stardist<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--use-aux<span class="w"> </span><span class="se">\</span>

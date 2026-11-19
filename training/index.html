@@ -478,6 +478,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#window-size-resolution-and-padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window Size, Resolution, and Padding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#foreground-prompts" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1422,6 +1433,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#window-size-resolution-and-padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window Size, Resolution, and Padding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#foreground-prompts" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1601,8 +1623,24 @@ When creating a bundle from prepared tiles, supply the original source <code>rgb
 <td>Refinement training duration; default <code>50</code>.</td>
 </tr>
 <tr>
-<td><code>chip_size</code>, <code>chip_stride</code></td>
-<td>Training window size and spacing in pixels; defaults <code>512</code> and <code>384</code>.</td>
+<td><code>sam_window_size_m</code></td>
+<td>SAM ground-window width and height in metres. Saved for prediction.</td>
+</tr>
+<tr>
+<td><code>chip_size</code></td>
+<td>Alternative to <code>sam_window_size_m</code>, in native pixels; default <code>512</code> when neither is supplied.</td>
+</tr>
+<tr>
+<td><code>chip_stride</code></td>
+<td>SAM window spacing in native pixels; default 75% of the window size (25% overlap).</td>
+</tr>
+<tr>
+<td><code>stardist_patch_size</code></td>
+<td>Square StarDist training patch in native pixels; positive multiple of 16, default <code>256</code>.</td>
+</tr>
+<tr>
+<td><code>fast</code></td>
+<td>Batch SAM prompts within each fixed window; default <code>True</code>. Set <code>False</code> to reduce batch memory.</td>
 </tr>
 <tr>
 <td><code>val_fraction</code></td>
@@ -1612,6 +1650,56 @@ When creating a bundle from prepared tiles, supply the original source <code>rgb
 </table>
 <p>The record split is not a spatially independent evaluation; use separate held-out areas for that purpose.
 Seed controls are described in <a href="../data_preparation/#create-seed-points">Data Preparation</a>, and the full parameter list is in the <a href="../api/top_level/#samstars.api.train">API reference</a>.</p>
+<h2 id="window-size-resolution-and-padding">Window Size, Resolution, and Padding<a class="headerlink" href="#window-size-resolution-and-padding" title="Permanent link">&para;</a></h2>
+<p>Choose the ground area SAM should see using <code>sam_window_size_m</code>. For example,
+<code>sam_window_size_m=20</code> at 0.5 m resolution creates a 40 × 40 native-pixel window.
+SAM resizes that window to its fixed 1024 × 1024 encoder input; resizing does not
+add new spatial detail. Alternatively, specify <code>chip_size</code> in native pixels.
+Supplying both controls is an error. Metre sizes are rounded to the nearest pixel;
+the bundle records the actual size used.</p>
+<p>New bundles save the native pixel size, SAM window and stride, encoder size,
+padding policy, and RGB scaling in <code>manifest.json</code> under <code>preprocessing</code>.
+Prediction automatically reuses those settings. Larger scenes are processed in
+overlapping windows and blended back onto their original raster grid. For these
+bundles, <code>fast=True</code> batches prompts within a window and <code>fast=False</code> decodes one
+prompt at a time; both use the same ground context and image scaling.</p>
+<p>All training imagery must have the same resolution, a projected CRS in metres,
+and north-up square pixels. Prediction checks the saved resolution and asks you
+to align/resample incompatible inputs. It does not silently resample them.</p>
+<p>StarDist's patch size is independent of the SAM window. Its current architecture
+requires a multiple of 16 native pixels. Every annotated training and validation
+image must be at least that wide and high. This is checked before SAM training,
+so a tiny input does not fail only after the decoder has finished training.
+For example, a 20 m square at 0.5 m resolution is 40 × 40 pixels: use
+<code>sam_window_size_m=20, stardist_patch_size=32</code>. The default StarDist patch of 256
+pixels requires at least 128 m in each dimension at that resolution.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Add these to train(...) for a small-window experiment on 0.5 m imagery:</span>
+<span class="n">window_settings</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">sam_window_size_m</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">stardist_patch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">fg_extra</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># model = train(..., **window_settings)</span>
+</code></pre></div></td></tr></table></div>
+<p>The SAM window does not impose a minimum scene size. Smaller scenes are padded
+on the bottom and right with zeros; training warns when this is necessary.
+Padding and NoData are excluded from RGB percentile scaling, foreground/background
+prompt sampling, and decoder loss. Real pixels use the same per-channel 2nd–98th
+percentile scaling during training and prediction. Padded pixels stay black.
+Training-chip validity masks are saved under <code>training_chips/valid/</code>.</p>
+<p>A small patch is technically supported, but it supplies less real context and
+may truncate crowns. Use multiple completely annotated areas and evaluate on
+separate areas; a valid patch size does not establish model accuracy.</p>
+<p>Bundles without <code>preprocessing</code> retain their legacy whole-scene/crop behavior.
+The saved-window behavior requires this updated library at both training and
+prediction time. Installing a released QGIS engine does not automatically include
+unreleased local library changes.</p>
 <h2 id="foreground-prompts">Foreground Prompts<a class="headerlink" href="#foreground-prompts" title="Permanent link">&para;</a></h2>
 <p>Pass <code>fg_extra=0</code> to <code>train(...)</code> or <code>SamStars.train(...)</code> to use the seed as
 the only foreground point. Positive values cap the number of extra points
@@ -1624,6 +1712,8 @@ automatically by subsequent segmentation. The lower-level <code>train_decoder(..
 also accepts <code>fg_extra</code>, and its CLI accepts <code>--fg-extra</code>.</p>
 <h2 id="model-bundle-and-saved-outputs">Model Bundle and Saved Outputs<a class="headerlink" href="#model-bundle-and-saved-outputs" title="Permanent link">&para;</a></h2>
 <p>The bundle contains <code>manifest.json</code>, <code>decoder.pth</code>, <code>config.json</code>, <code>weights.h5</code>, and, when available, <code>thresholds.json</code>.
+New bundles also contain <code>scale_stats.json</code>, so refinement reuses the training
+CHM scaling limits. The refinement normalization setting is saved and reused too.
 Pass the bundle directory to <code>segment(model=...)</code>; see <a href="../segmentation/">Segmentation</a>.</p>
 <p>With <code>storage="persistent"</code>, preparation, training samples, and proposal outputs are saved under <code>models/crowns/_training/</code>.
 Use <code>storage="temp"</code> to retain only the finished bundle.

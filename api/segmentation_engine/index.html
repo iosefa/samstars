@@ -1374,7 +1374,7 @@
 
 
 <h3 id="samstars.segmentation.engine.run_segmentation" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">run_segmentation</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">sam_ckpt</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">stardist_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fast_batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="n">DEFAULT_FG_EXTRA</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">run_segmentation</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">tiles_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb_bands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nir_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">texture_band</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">sam_ckpt</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="n">stardist_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_input_key</span><span class="o">=</span><span class="s1">'index'</span><span class="p">,</span> <span class="n">stardist_use_aux</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_normalize_inputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stardist_scale_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_prob_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_nms_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_size_m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_window_overlap_m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_dedup_iou_thr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stardist_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_resume_from_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stardist_skip_sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stardist_skip_sources_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_stardist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_existing_sam</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_refinement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fast_batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">fg_extra</span><span class="o">=</span><span class="n">DEFAULT_FG_EXTRA</span><span class="p">,</span> <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">preprocessing</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#samstars.segmentation.engine.run_segmentation" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -1398,8 +1398,7 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>samstars/segmentation/engine.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">116</span>
-<span class="normal">117</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
@@ -1645,7 +1644,26 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
 <span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
-<span class="normal">363</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run_segmentation</span><span class="p">(</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run_segmentation</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">tiles_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1660,6 +1678,8 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
     <span class="n">stardist_model</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">stardist_input_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"index"</span><span class="p">,</span>
     <span class="n">stardist_use_aux</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">stardist_normalize_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">stardist_scale_stats</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">stardist_prob_thr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">stardist_nms_thr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">stardist_window_size_m</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1680,6 +1700,7 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
     <span class="n">crop_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
     <span class="n">smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span>
     <span class="n">post_smooth_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">preprocessing</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Run segmentation with separate proposal and refinement model paths.</span>
 
@@ -1699,6 +1720,9 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
 <span class="sd">    seed as foreground. It must be a nonnegative integer and defaults to 80.</span>
 <span class="sd">    """</span>
     <span class="n">fg_extra</span> <span class="o">=</span> <span class="n">validate_fg_extra</span><span class="p">(</span><span class="n">fg_extra</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">preprocessing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">preprocessing</span> <span class="o">=</span> <span class="n">validate_contract</span><span class="p">(</span><span class="n">preprocessing</span><span class="p">)</span>
+        <span class="n">inspect_images</span><span class="p">(</span><span class="n">image_paths</span><span class="p">(</span><span class="n">tiles_dir</span><span class="p">,</span> <span class="n">img</span><span class="p">),</span> <span class="n">expected_resolution</span><span class="o">=</span><span class="n">preprocessing</span><span class="p">[</span><span class="s2">"resolution_m"</span><span class="p">])</span>
     <span class="n">out_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
     <span class="n">resolved_sam_ckpt</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">resolved_stardist_model</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1721,9 +1745,14 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
             <span class="n">skip_existing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="n">tiles_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tiles_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">preprocessing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Prepared inputs can be cached, so check their grid as well as source headers.</span>
+        <span class="n">inspect_images</span><span class="p">(</span><span class="n">image_paths</span><span class="p">(</span><span class="n">tiles_dir</span><span class="p">),</span> <span class="n">expected_resolution</span><span class="o">=</span><span class="n">preprocessing</span><span class="p">[</span><span class="s2">"resolution_m"</span><span class="p">])</span>
 
     <span class="n">records_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"run_records"</span>
     <span class="n">proposals_root</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"proposals"</span>
+    <span class="n">resolved_sam_ckpt</span> <span class="o">=</span> <span class="n">_resolve_sam_ckpt</span><span class="p">(</span><span class="n">sam_ckpt</span><span class="o">=</span><span class="n">sam_ckpt</span><span class="p">)</span>
+    <span class="n">check_proposal_cache</span><span class="p">(</span><span class="n">proposals_root</span><span class="p">,</span> <span class="n">preprocessing</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">run_sam</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">skip_existing_sam</span><span class="p">)</span>
     <span class="n">crowns_dir</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"crowns"</span>
     <span class="n">proposal_records</span> <span class="o">=</span> <span class="n">proposals_root</span> <span class="o">/</span> <span class="s2">"proposal_records.json"</span>
     <span class="n">proposal_rasters_dir</span> <span class="o">=</span> <span class="n">proposals_root</span> <span class="o">/</span> <span class="s2">"rasters"</span>
@@ -1736,7 +1765,6 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
 
     <span class="n">pending_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">recs</span><span class="p">)</span>
     <span class="n">active_tile_records</span> <span class="o">=</span> <span class="n">tile_records</span>
-    <span class="n">resolved_sam_ckpt</span> <span class="o">=</span> <span class="n">_resolve_sam_ckpt</span><span class="p">(</span><span class="n">sam_ckpt</span><span class="o">=</span><span class="n">sam_ckpt</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">run_sam</span> <span class="ow">and</span> <span class="n">skip_existing_sam</span><span class="p">:</span>
         <span class="n">proposal_rasters_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">pending_count</span> <span class="o">=</span> <span class="n">build_pending_tile_records</span><span class="p">(</span>
@@ -1762,6 +1790,7 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
             <span class="n">crop_smooth_sigma</span><span class="o">=</span><span class="n">crop_smooth_sigma</span><span class="p">,</span>
             <span class="n">smooth_sigma</span><span class="o">=</span><span class="n">smooth_sigma</span><span class="p">,</span>
             <span class="n">post_smooth_sigma</span><span class="o">=</span><span class="n">post_smooth_sigma</span><span class="p">,</span>
+            <span class="n">preprocessing</span><span class="o">=</span><span class="n">preprocessing</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="n">_normalize_record_paths</span><span class="p">(</span><span class="n">proposal_records</span><span class="p">)</span>
@@ -1790,17 +1819,22 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
     <span class="n">stardist_model_dir</span><span class="p">,</span> <span class="n">stardist_model_name</span> <span class="o">=</span> <span class="n">_resolve_stardist_model</span><span class="p">(</span><span class="n">stardist_model</span><span class="o">=</span><span class="n">stardist_model</span><span class="p">)</span>
     <span class="n">resolved_stardist_model</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">stardist_model_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">stardist_model_name</span>
 
-    <span class="n">scale_stats</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"proposal_scale_stats.json"</span>
-    <span class="k">if</span> <span class="n">proposal_records_rebuilt</span> <span class="ow">and</span> <span class="n">scale_stats</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">scale_stats</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">scale_stats</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">build_scale_stats_from_proposal_records</span><span class="p">(</span>
-            <span class="n">proposal_records</span><span class="o">=</span><span class="n">proposal_records</span><span class="p">,</span>
-            <span class="n">out</span><span class="o">=</span><span class="n">scale_stats</span><span class="p">,</span>
-            <span class="n">percentiles</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">98.0</span><span class="p">),</span>
-            <span class="n">chm_key</span><span class="o">=</span><span class="s2">"chm"</span><span class="p">,</span>
-            <span class="n">nodata_values</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">9999.0</span><span class="p">,),</span>
-        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">stardist_scale_stats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">scale_stats</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">stardist_scale_stats</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">scale_stats</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing training scaling statistics: </span><span class="si">{</span><span class="n">scale_stats</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">scale_stats</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">"proposal_scale_stats.json"</span>
+        <span class="k">if</span> <span class="n">proposal_records_rebuilt</span> <span class="ow">and</span> <span class="n">scale_stats</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">scale_stats</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">scale_stats</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">build_scale_stats_from_proposal_records</span><span class="p">(</span>
+                <span class="n">proposal_records</span><span class="o">=</span><span class="n">proposal_records</span><span class="p">,</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">scale_stats</span><span class="p">,</span>
+                <span class="n">percentiles</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">98.0</span><span class="p">),</span>
+                <span class="n">chm_key</span><span class="o">=</span><span class="s2">"chm"</span><span class="p">,</span>
+                <span class="n">nodata_values</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">9999.0</span><span class="p">,),</span>
+            <span class="p">)</span>
 
     <span class="n">refinement_py</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"refinement.py"</span>
     <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
@@ -1820,6 +1854,8 @@ seed as foreground. It must be a nonnegative integer and defaults to 80.</p>
         <span class="s2">"crowns.gpkg"</span><span class="p">,</span>
         <span class="s2">"--write-labels"</span><span class="p">,</span>
     <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stardist_normalize_inputs</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"--no-normalize"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">stardist_use_aux</span><span class="p">:</span>
         <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
             <span class="p">[</span>
