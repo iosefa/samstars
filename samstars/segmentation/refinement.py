@@ -29,6 +29,7 @@ from csbdeep.utils import normalize
 from rasterio import features
 from rasterio.windows import Window
 from rasterio.windows import transform as window_transform
+from shapely import make_valid
 from shapely.geometry import MultiPolygon, Polygon, box, shape
 from shapely.strtree import STRtree
 from stardist.models import StarDist2D
@@ -288,8 +289,10 @@ def _iter_polys_from_labels(
         g = shape(geom_ras)
         if g.is_empty:
             continue
+        if not g.is_valid:
+            g = make_valid(g)
 
-        parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
+        parts = list(g.geoms) if hasattr(g, 'geoms') else [g]
         for p in parts:
             if not isinstance(p, Polygon):
                 continue
@@ -664,6 +667,7 @@ def main() -> None:
 
             with rasterio.open(x_path) as src:
                 x = src.read(1).astype(np.float32)
+                valid_pixels = (src.read_masks(1) > 0) & np.isfinite(x)
                 tfm = src.transform
                 res_m = float(max(abs(tfm.a), abs(tfm.e)))
                 edge_tol_m = float(max(0.0, args.edge_buffer_px) * res_m)
@@ -700,6 +704,7 @@ def main() -> None:
             if not windowed:
                 predict_kwargs["n_tiles"] = model._guess_n_tiles(x_in)
                 labels, details = model.predict_instances(x_in, **predict_kwargs)
+                labels[~valid_pixels] = 0
 
                 score_by_label = {}
                 if isinstance(details, dict) and "prob" in details:
@@ -737,6 +742,8 @@ def main() -> None:
                     patch_kwargs = dict(predict_kwargs)
                     patch_kwargs["n_tiles"] = model._guess_n_tiles(x_patch)
                     labels, details = model.predict_instances(x_patch, **patch_kwargs)
+                    row0, col0 = int(window.row_off), int(window.col_off)
+                    labels[~valid_pixels[row0:row0+labels.shape[0], col0:col0+labels.shape[1]]] = 0
 
                     score_by_label = {}
                     if isinstance(details, dict) and "prob" in details:

@@ -31,12 +31,24 @@ def test_smoothing_keeps_valid_background_and_nodata_separate():
     np.testing.assert_array_equal(smooth_probabilities(values, 0, valid), values)
 
 
-
 def test_short_tree_seed_cannot_also_be_a_negative_prompt():
     points, labels, _ = sample_seed_prompts(np.ones((5,5)), (2,2), .5, fg_extra=0)
     assert labels[0] == 1
     assert not np.any(np.all(points[labels == 0] == (2,2), axis=1))
 
+
+@pytest.mark.parametrize('values', [[[1,0],[0,1]], [[1,1,1],[1,0,1],[1,1,0]]])
+def test_diagonal_pixels_export_valid_polygons_without_changing_coverage(values):
+    from samstars.segmentation.refinement import _iter_polys_from_labels
+    from rasterio.features import rasterize
+    from rasterio.transform import from_origin
+    labels = np.asarray(values, np.int32)
+    transform = from_origin(500000,2200000,.5,.5)
+    polygons = list(_iter_polys_from_labels(labels, transform=transform))
+    assert polygons and all(p.is_valid for _,p in polygons)
+    assert sum(p.area for _,p in polygons) == np.count_nonzero(labels)*.25
+    rebuilt = rasterize([(p,i) for i,p in polygons], out_shape=labels.shape, transform=transform)
+    np.testing.assert_array_equal(rebuilt, labels)
 
 
 def test_new_training_and_inference_use_identical_prompts(tmp_path):
@@ -61,14 +73,12 @@ def test_new_training_and_inference_use_identical_prompts(tmp_path):
     torch.testing.assert_close(train_box, call['boxes'][0])
 
 
-
 def test_simple_masks_are_not_multiplied_by_a_radial_prior(tmp_path):
     tile = make_tile(tmp_path, shape=(32,32))
     result = proposals.process_chip(dict(img_path=str(tile/'img.tif'), tile=tile.name,
         chip_id=0, window=[0,0,32,32]), Predictor(), 'cpu', pipeline_mode='simple',
         crop_smooth_sigma=0, smooth_sigma=0)
     np.testing.assert_allclose(result[1], .5)
-
 
 
 def test_optional_smoothing_runs_once_on_the_completed_mosaic(tmp_path, monkeypatch):
@@ -87,7 +97,6 @@ def test_optional_smoothing_runs_once_on_the_completed_mosaic(tmp_path, monkeypa
     assert calls == [0,0]
     np.testing.assert_allclose(result[1], smooth_probabilities(result[0], 2, np.ones((32,48), bool)))
     np.testing.assert_array_equal(result[1], result[2])
-
 
 
 def test_changed_smoothing_cannot_reuse_proposals(tmp_path, monkeypatch):
@@ -111,7 +120,6 @@ def test_changed_smoothing_cannot_reuse_proposals(tmp_path, monkeypatch):
     assert len(predictor.calls) > count
 
 
-
 def test_checkpoint_content_is_part_of_cache_identity(tmp_path):
     weights = tmp_path/'weights'
     weights.write_bytes(b'first')
@@ -123,7 +131,6 @@ def test_checkpoint_content_is_part_of_cache_identity(tmp_path):
         check_cache(root, file_identity(weights))
 
 
-
 def test_single_area_is_not_presented_as_held_out_validation(tmp_path):
     tile = make_tile(tmp_path)
     with pytest.warns(UserWarning, match='no held-out validation'):
@@ -132,7 +139,6 @@ def test_single_area_is_not_presented_as_held_out_validation(tmp_path):
     assert len(list(train.iterdir())) == 1
     with pytest.raises(ValueError, match='overlap'):
         split_training_tiles(tile.parent, tmp_path/'invalid', validation_tiles_dir=tile.parent)
-
 
 
 def test_shared_windows_cache_frozen_embeddings(tmp_path, monkeypatch):
@@ -179,7 +185,6 @@ def test_shared_windows_cache_frozen_embeddings(tmp_path, monkeypatch):
     assert summary['epochs'] == 2 and summary['steps_per_epoch'] == 2
 
 
-
 @pytest.mark.parametrize(('records', 'minimum', 'expected'), [(1,100,1), (200,1000,10)])
 def test_stardist_budget_uses_optimizer_steps(tmp_path, monkeypatch, records, minimum, expected):
     from samstars.training import stardist_training as training
@@ -194,7 +199,6 @@ def test_stardist_budget_uses_optimizer_steps(tmp_path, monkeypatch, records, mi
         out_dir=tmp_path, patch_size=16, epochs=1, min_iters=minimum, steps_per_epoch=100)
     assert calls[0]['epochs'] == expected
     assert calls[0]['steps_per_epoch'] == 100
-
 
 
 def test_disjoint_groups_are_split_before_decoder_training(tmp_path, monkeypatch):
