@@ -203,6 +203,7 @@ def train_stardist_model(
     patch_size: int = 256,
     steps_per_epoch: int = 100,
     random_seed: int = 0,
+    intensity_augmentation: bool = True,
 ) -> None:
     """Train a StarDist model from train/val proposal-record files."""
     patch_size = validate_patch_size(patch_size)
@@ -262,7 +263,7 @@ def train_stardist_model(
     model = StarDist2D(conf, name=model_name, basedir=str(out_dir))
 
     val_data = (Xval, Yval) if (len(Xval) > 0 and len(Yval) > 0) else None
-    aug = augmenter if augment else None
+    aug = (augmenter if intensity_augmentation else random_fliprot) if augment else None
     if val_data is None:
         print('No held-out validation: validation metrics below are training-only monitoring.')
         val_data = (Xtr, Ytr)
@@ -277,6 +278,7 @@ def train_stardist_model(
         augmenter=aug,
     )
     metrics = {'epochs': epochs, 'steps_per_epoch': steps_per_epoch, 'seed': random_seed,
+               'augmentation': ('intensity_and_geometric' if intensity_augmentation else 'geometric') if augment else 'none',
                'training_records': len(Xtr), 'validation_records': len(Xval),
                'validation': 'held_out' if Xval else 'training_monitor_only',
                'history': {key: [float(v) for v in values] for key, values in
@@ -306,6 +308,7 @@ def main() -> None:
     pa.add_argument("--min-iters", type=int, default=0, help="Minimum training iterations (converted to epochs)")
     pa.add_argument('--steps-per-epoch', type=int, default=100)
     pa.add_argument('--seed', type=int, default=0)
+    pa.add_argument('--geometric-only', action='store_true')
     pa.add_argument("--patch-size", type=int, default=256,
                     help="Square training patch size in pixels; positive multiple of 16 (default: 256)")
 
@@ -344,6 +347,7 @@ def main() -> None:
         min_iters=args.min_iters,
         steps_per_epoch=args.steps_per_epoch,
         random_seed=args.seed,
+        intensity_augmentation=not args.geometric_only,
         input_key=args.input_key,
         use_aux=args.use_aux,
         scale_stats_path=args.scale_stats,

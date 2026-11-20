@@ -154,6 +154,7 @@ def run_segmentation(
     preprocessing: dict | None = None,
     pipeline_mode: str = 'legacy',
     random_seed: int = 0,
+    min_canopy_height: float | None = None,
     seed_settings: dict | None = None,
 ) -> dict:
     """Run segmentation with separate proposal and refinement model paths.
@@ -226,7 +227,7 @@ def run_segmentation(
     )
     options = dict(fast=fast, fg_extra=fg_extra, crop_smooth_sigma=crop_smooth_sigma,
                    smooth_sigma=smooth_sigma, post_smooth_sigma=post_smooth_sigma,
-                   pipeline_mode=pipeline_mode, random_seed=random_seed)
+                   pipeline_mode=pipeline_mode, random_seed=random_seed, min_canopy_height=min_canopy_height)
     identity = proposal_identity(tile_records, resolved_sam_ckpt, preprocessing, options)
     check_cache(proposals_root, identity, overwrite=run_sam and not skip_existing_sam)
     check_proposal_cache(proposals_root, preprocessing, overwrite=run_sam and not skip_existing_sam)
@@ -261,6 +262,7 @@ def run_segmentation(
             preprocessing=preprocessing,
             pipeline_mode=pipeline_mode,
             random_seed=random_seed,
+            min_canopy_height=min_canopy_height,
             _cache_contract=identity,
         )
 

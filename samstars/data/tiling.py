@@ -128,6 +128,7 @@ def _prepare_tile(
     seed_min_samples: int,
     seed_merge_radius: float,
     seed_min_canopy_height: float,
+    seed_rule_version: int,
     thin_seeds: bool,
     thin_dist: float,
     write_den: bool,
@@ -176,6 +177,7 @@ def _prepare_tile(
             min_samples=seed_min_samples,
             merge_radius=seed_merge_radius,
             min_canopy_height=seed_min_canopy_height,
+            rule_version=seed_rule_version,
         )
         try:
             seeds = canonical_seeds(sp)
@@ -231,6 +233,7 @@ def build_tiles(*,
                 seed_min_samples: int = 1,
                 seed_merge_radius: float = 3.0,
                 seed_min_canopy_height: float = 2.0,
+                seed_rule_version: int = 1,
                 write_den: bool = False,
                 skip_existing: bool = True) -> None:
 
@@ -315,6 +318,7 @@ def build_tiles(*,
                 seed_min_samples=seed_min_samples,
                 seed_merge_radius=seed_merge_radius,
                 seed_min_canopy_height=seed_min_canopy_height,
+                seed_rule_version=seed_rule_version,
                 thin_seeds=thin_seeds,
                 thin_dist=thin_dist,
                 write_den=write_den,
@@ -350,6 +354,7 @@ def build_single_tile(*,
                       seed_min_samples: int = 1,
                       seed_merge_radius: float = 3.0,
                       seed_min_canopy_height: float = 2.0,
+                      seed_rule_version: int = 1,
                       write_den: bool = False,
                       skip_existing: bool = True) -> Path:
     """Prepare one scene as a tile and return its parent directory.
@@ -403,6 +408,7 @@ def build_single_tile(*,
                 seed_min_samples=seed_min_samples,
                 seed_merge_radius=seed_merge_radius,
                 seed_min_canopy_height=seed_min_canopy_height,
+                seed_rule_version=seed_rule_version,
                 thin_seeds=thin_seeds,
                 thin_dist=thin_dist,
                 write_den=write_den,

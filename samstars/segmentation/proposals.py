@@ -139,6 +139,7 @@ def process_chip(
     seeds=None,
     pipeline_mode: str = 'legacy',
     random_seed: int = 0,
+    min_canopy_height: float | None = None,
 ):
     """Process a chip with up to fg_extra additional positive points per seed."""
     fg_extra = validate_fg_extra(fg_extra)
@@ -146,7 +147,7 @@ def process_chip(
         from samstars.segmentation.simple import process_simple_window
         return process_simple_window(rec, predictor, device, fg_extra=fg_extra,
             random_seed=random_seed, smooth_sigma=smooth_sigma, fast=fast,
-            fast_batch=fast_batch, seeds=seeds)
+            fast_batch=fast_batch, seeds=seeds, min_canopy_height=min_canopy_height)
     img_path = Path(rec["img_path"])
     name = f"{rec['tile']}_{rec['chip_id']}"
     chm_path = img_path.parent / "chm.tif"
@@ -599,6 +600,7 @@ def run_tile_proposals(
     preprocessing: dict | None = None,
     pipeline_mode: str = 'legacy',
     random_seed: int = 0,
+    min_canopy_height: float | None = None,
     _cache_contract: dict | None = None,
 ):
     """Run SAM proposals from one tile-record file.
@@ -626,7 +628,7 @@ def run_tile_proposals(
         raise FileNotFoundError(f"Missing SAM checkpoint: {ckpt}")
     options = dict(fast=fast, fg_extra=fg_extra, crop_smooth_sigma=crop_smooth_sigma,
                    smooth_sigma=smooth_sigma, post_smooth_sigma=post_smooth_sigma,
-                   pipeline_mode=pipeline_mode, random_seed=random_seed)
+                   pipeline_mode=pipeline_mode, random_seed=random_seed, min_canopy_height=min_canopy_height)
     identity = _cache_contract or proposal_identity(records_path, ckpt, preprocessing, options)
     check_cache(out_root, identity)
     check_proposal_cache(out_root, preprocessing)
@@ -657,6 +659,7 @@ def run_tile_proposals(
             fg_extra=fg_extra,
             pipeline_mode=pipeline_mode,
             random_seed=random_seed,
+            min_canopy_height=min_canopy_height,
             **options,
         )
         if res is None:

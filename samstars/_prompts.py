@@ -1,6 +1,7 @@
 """Shared prompt defaults and validation without scientific dependencies."""
 
-from numbers import Integral
+import math
+from numbers import Integral, Real
 
 DEFAULT_FG_EXTRA = 80
 
@@ -12,7 +13,15 @@ def validate_fg_extra(value: int) -> int:
     return int(value)
 
 
-def sample_seed_prompts(chm, seed_xy, resolution, *, fg_extra=80, random_seed=0):
+def validate_canopy_height(value):
+    """A single finite height cutoff, in metres, for seeds and prompts."""
+    if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value) or value < 0:
+        raise ValueError('seed_min_canopy_height must be a finite nonnegative height in metres.')
+    return float(value)
+
+
+def sample_seed_prompts(chm, seed_xy, resolution, *, fg_extra=80, random_seed=0,
+                        min_canopy_height=None):
     """One deterministic prompt policy for training and simple prediction."""
     import numpy as np
 
@@ -22,6 +31,9 @@ def sample_seed_prompts(chm, seed_xy, resolution, *, fg_extra=80, random_seed=0)
     sx, sy = map(int, seed_xy)
     if not (0 <= sx < width and 0 <= sy < height and np.isfinite(chm[sy, sx])):
         raise ValueError('The foreground seed must lie on a valid CHM pixel.')
+    cutoff = 3.0 if min_canopy_height is None else validate_canopy_height(min_canopy_height)
+    if min_canopy_height is not None and chm[sy, sx] < cutoff:
+        raise ValueError('The foreground seed lies below seed_min_canopy_height.')
     half_box = 4.0 / resolution
     context = int(round(12.0 / resolution))
     box = np.array([max(0, sx-half_box), max(0, sy-half_box),
@@ -29,13 +41,14 @@ def sample_seed_prompts(chm, seed_xy, resolution, *, fg_extra=80, random_seed=0)
     yy, xx = np.indices(chm.shape)
     inside = (xx >= box[0]) & (xx <= box[2]) & (yy >= box[1]) & (yy <= box[3])
     valid = np.isfinite(chm)
-    foreground = valid & inside & (chm > 3)
+    canopy = chm > cutoff if min_canopy_height is None else chm >= cutoff
+    foreground = valid & inside & canopy
     foreground[sy, sx] = False
     fy, fx = np.where(foreground)
     order = np.lexsort((fx, fy, -chm[fy, fx]))[:fg_extra]
     fg = np.column_stack((fx[order], fy[order])).astype(np.float32)
     nearby = (np.abs(xx-sx) < context) & (np.abs(yy-sy) < context)
-    background = valid & nearby & (chm < 3)
+    background = valid & nearby & (chm < cutoff)
     background[sy, sx] = False
     gy, gx = np.where(background)
     keep = min(50, len(gy))

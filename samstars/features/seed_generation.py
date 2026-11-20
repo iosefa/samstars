@@ -12,13 +12,14 @@ from scipy.ndimage import gaussian_filter, maximum_filter
 from scipy.spatial import cKDTree
 from scipy.sparse import coo_matrix
 from sklearn.cluster import DBSCAN
+from samstars._prompts import validate_canopy_height
 
 
 def detect_peaks(raster_path: Path | str,
                  origin: str,
                  d_min: float,
                  min_dist_px: int,
-                 sigma: int = 0) -> gpd.GeoDataFrame:
+                 sigma: int = 0, *, threshold_on_raw: bool = False) -> gpd.GeoDataFrame:
     """Detect peaks."""
     raster_path = Path(raster_path)
     if not raster_path.exists():
@@ -28,14 +29,23 @@ def detect_peaks(raster_path: Path | str,
         arr = src.read(1, masked=True).astype(np.float32).filled(np.nan)
         tfm, crs = src.transform, src.crs
 
+    raw = arr.copy()
+    valid = np.isfinite(raw)
     if sigma > 0:
-        arr = gaussian_filter(arr, sigma=sigma)
+        if threshold_on_raw:
+            weights = gaussian_filter(valid.astype(np.float32), sigma=sigma)
+            values = gaussian_filter(np.where(valid, raw, 0), sigma=sigma)
+            arr = np.divide(values, weights, out=np.zeros_like(values), where=weights > 0)
+        else:
+            arr = gaussian_filter(arr, sigma=sigma)
+    if threshold_on_raw:
+        arr[~valid] = -np.inf
 
     mask_local_max = arr == maximum_filter(arr, size=2 * min_dist_px + 1)
-    peaks = np.logical_and(mask_local_max, arr >= d_min)
+    peaks = mask_local_max & valid & ((raw if threshold_on_raw else arr) >= d_min)
     rows, cols = np.where(peaks)
     xs, ys = xy(tfm, rows, cols, offset="center")
-    heights = arr[rows, cols]
+    heights = (raw if threshold_on_raw else arr)[rows, cols]
 
     return gpd.GeoDataFrame(
         dict(id=np.arange(rows.size),
@@ -50,14 +60,18 @@ def _sample_raster_values(
     raster_path: Path | str,
     xs: np.ndarray,
     ys: np.ndarray,
+    *, legacy_round: bool = False,
 ) -> np.ndarray:
     """Sample raster values at world-coordinate point locations."""
     with rasterio.open(raster_path) as src:
         arr = src.read(1, masked=True).astype(np.float32).filled(np.nan)
         rr, cc = rowcol(src.transform, xs, ys, op=float)
 
-    rr = np.rint(rr).astype(int)
-    cc = np.rint(cc).astype(int)
+    # Pixel centres have fractional coordinates n + 0.5: rounding can select
+    # the neighbouring cell (or leave the raster at its last row/column).
+    sample_index = np.rint if legacy_round else np.floor
+    rr = sample_index(rr).astype(int)
+    cc = sample_index(cc).astype(int)
     valid = (
         (rr >= 0) & (rr < arr.shape[0]) &
         (cc >= 0) & (cc < arr.shape[1])
@@ -145,6 +159,14 @@ class SeedParams:
     dz_merge: float = 1.0
     min_canopy_height: float = 2.0
     debug_dist: bool = False
+    rule_version: int = 1
+
+    def __post_init__(self):
+        self.min_canopy_height = validate_canopy_height(self.min_canopy_height)
+        if self.rule_version not in (1, 2):
+            raise ValueError('Unknown seed rule version.')
+        if isinstance(self.min_samples, bool) or not isinstance(self.min_samples, int) or self.min_samples < 1:
+            raise ValueError('min_samples must be a positive integer.')
 
 
 def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
@@ -159,8 +181,10 @@ def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
         with to_file to create seeds.gpkg. Raises SystemExit if no candidates
         survive detection and canopy-height filtering.
     """
+    consistent = params.rule_version == 2
     chm_peaks = detect_peaks(params.chm_raster, "chm",
-                             params.d_min, params.min_dist_px, params.gauss_sigma)
+                             params.min_canopy_height if consistent else params.d_min,
+                             params.min_dist_px, params.gauss_sigma, threshold_on_raw=consistent)
     den_peaks = detect_peaks(params.den_raster, "den",
                              params.d_min, params.min_dist_px, params.gauss_sigma)
 
@@ -174,6 +198,7 @@ def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
         params.chm_raster,
         seeds["x"].to_numpy(),
         seeds["y"].to_numpy(),
+        legacy_round=not consistent,
     )
     seeds = seeds[np.isfinite(seeds["canopy_height"])]
     seeds = seeds[seeds["canopy_height"] >= params.min_canopy_height].reset_index(drop=True)
@@ -183,23 +208,11 @@ def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
             f"(min_canopy_height={params.min_canopy_height})."
         )
 
-    pts_xy = seeds[["x", "y"]].values
-
-    kd = cKDTree(pts_xy)
-    cluster = -np.ones(len(seeds), dtype=int)
-    cid = 0
-    for i in range(len(seeds)):
-        if cluster[i] != -1:
-            continue
-        eps = float(np.clip(params.eps_scale * seeds.height.iloc[i],
-                            params.min_eps, params.max_eps))
-        idx = kd.query_ball_point(pts_xy[i], eps)
-        if params.z_thresh >= 0 and np.ptp(seeds.height.iloc[idx]) > params.z_thresh:
-            continue
-        if len(idx) >= params.min_samples:
-            cluster[idx] = cid
-            cid += 1
-    seeds["cluster1"] = cluster
+    if consistent:
+        # Density values are counts, never tree heights. All height-based
+        # comparisons use the CHM sampled at the same physical candidate.
+        seeds['height'] = seeds['canopy_height']
+        seeds = seeds.drop_duplicates(['x', 'y']).reset_index(drop=True)
 
     with rasterio.open(params.cost_raster) as src:
         cost = src.read(1).astype(np.float32)
@@ -218,9 +231,13 @@ def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
         print(f"d_eff  min/median/max = "
               f"{G.data.min():.2f} / {np.median(G.data):.2f} / {G.data.max():.2f}")
 
-    db2 = DBSCAN(eps=params.merge_radius, min_samples=1,
+    db2 = DBSCAN(eps=params.merge_radius, min_samples=params.min_samples if consistent else 1,
                  metric="precomputed", n_jobs=-1).fit(G)
     seeds["cluster"] = db2.labels_
+    if consistent:
+        seeds = seeds[seeds['cluster'] >= 0].reset_index(drop=True)
+        if seeds.empty:
+            sys.exit('No seeds after candidate grouping.')
 
     # optional height‑based split inside a cluster
     if params.dz_merge > 0:
@@ -241,11 +258,14 @@ def canonical_seeds(params: SeedParams) -> gpd.GeoDataFrame:
         seeds["cluster"] = new_cl
 
 
-    centres = (seeds
-               .groupby("cluster", as_index=False)
-               .agg(x=("x", "mean"),
-                    y=("y", "mean"),
-                    height=("height", "max")))
+    if consistent:
+        # Keep an observed canopy peak; averaging positions can put a seed
+        # between trees or below the very height cutoff used to accept it.
+        selected = seeds.groupby('cluster', sort=True)['canopy_height'].idxmax()
+        centres = seeds.loc[selected, ['x', 'y', 'height']].reset_index(drop=True)
+    else:
+        centres = (seeds.groupby("cluster", as_index=False)
+                   .agg(x=("x", "mean"), y=("y", "mean"), height=("height", "max")))
     centres["id"] = np.arange(len(centres))
 
     gdf_centres = gpd.GeoDataFrame(

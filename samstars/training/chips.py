@@ -70,9 +70,13 @@ def build_training_chips(
     image_bands: tuple[int, ...] = (1, 2, 3),
     skip_tiles: tuple[str, ...] = (),
     shared_windows: bool = False,
+    min_canopy_height: float | None = None,
 ) -> int:
     """Build proposal-decoder training chips from labeled tiles."""
     chip_size = positive_int(chip_size, "chip_size")
+    if min_canopy_height is not None:
+        from samstars._prompts import validate_canopy_height
+        min_canopy_height = validate_canopy_height(min_canopy_height)
     stride = chip_size if stride is None else positive_int(stride, "stride")
     if stride > chip_size:
         raise ValueError("stride must not exceed chip_size (which would leave gaps).")
@@ -159,7 +163,12 @@ def build_training_chips(
                     if prompt is None:
                         continue
                     if shared_windows:
-                        candidates = np.where((mask_chip > 0) & valid_chip, base_chm_chip, -np.inf)
+                        eligible = (mask_chip > 0) & valid_chip
+                        if min_canopy_height is not None:
+                            eligible &= base_chm_chip >= min_canopy_height
+                        if not eligible.any():
+                            continue
+                        candidates = np.where(eligible, base_chm_chip, -np.inf)
                         sy, sx = np.unravel_index(np.argmax(candidates), candidates.shape)
                         prompt.update(point=[int(sx), int(sy)], image=window_name,
                                       resolution=float(abs(transform.a)))

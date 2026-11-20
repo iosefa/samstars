@@ -196,9 +196,11 @@ def test_stardist_budget_uses_optimizer_steps(tmp_path, monkeypatch, records, mi
     monkeypatch.setattr(training, 'StarDist2D', lambda config, **kwargs:
         SimpleNamespace(train=lambda *args, **options:calls.append(options)))
     training.train_stardist_model(train_records=Path('train'), val_records=Path('val'),
-        out_dir=tmp_path, patch_size=16, epochs=1, min_iters=minimum, steps_per_epoch=100)
+        out_dir=tmp_path, patch_size=16, epochs=1, min_iters=minimum, steps_per_epoch=100,
+        intensity_augmentation=False)
     assert calls[0]['epochs'] == expected
     assert calls[0]['steps_per_epoch'] == 100
+    assert calls[0]['augmenter'] is training.random_fliprot
 
 
 def test_disjoint_groups_are_split_before_decoder_training(tmp_path, monkeypatch):
@@ -223,9 +225,12 @@ def test_disjoint_groups_are_split_before_decoder_training(tmp_path, monkeypatch
     checkpoint.touch()
     captured = {}
     def decoder(**kwargs):
+        assert kwargs['min_canopy_height'] == 2
         captured['images'] = sorted(p.name for p in (kwargs['chip_dir']/'images').glob('*.npy'))
         kwargs['out_path'].write_bytes(b'trained')
     def refinement(**kwargs):
+        assert kwargs['normalize_inputs'] is False
+        assert kwargs['intensity_augmentation'] is False
         captured['train'] = json.loads(kwargs['train_records'].read_text())
         captured['val'] = json.loads(kwargs['val_records'].read_text())
         stats = json.loads(kwargs['scale_stats_path'].read_text())
@@ -250,3 +255,13 @@ def test_disjoint_groups_are_split_before_decoder_training(tmp_path, monkeypatch
     assert train_name != val_name
     assert all(name.startswith(train_name) for name in captured['images'])
     assert json.loads((model.root/'training_split.json').read_text())['validation'] == 'held_out'
+    assert model.defaults['canopy_rule_version'] == 1
+    assert model.defaults['seed_settings']['seed_min_canopy_height'] == 2
+    assert model.defaults['seed_settings']['seed_rule_version'] == 2
+    prediction_calls=[]
+    monkeypatch.setattr(engine,'run_segmentation',lambda **kwargs:prediction_calls.append(kwargs) or {})
+    model.segment(tiles_dir=inputs,out=tmp_path/'prediction',storage='persistent')
+    assert prediction_calls[-1]['min_canopy_height'] == 2
+    del model.defaults['canopy_rule_version']
+    model.segment(tiles_dir=inputs,out=tmp_path/'old_prediction',storage='persistent')
+    assert prediction_calls[-1]['min_canopy_height'] is None

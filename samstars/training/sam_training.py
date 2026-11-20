@@ -197,12 +197,14 @@ class Chips(Dataset):
         pipeline_mode: str = 'legacy',
         random_seed: int = 0,
         return_key: bool = False,
+        min_canopy_height: float | None = None,
     ):
         """Initialize the instance."""
         self.fg_extra = validate_fg_extra(fg_extra)
         self.chip_dir = chip_dir
         self.ids = sorted((self.chip_dir / 'prompts').glob('*.json'))
         self.pipeline_mode, self.random_seed, self.return_key = pipeline_mode, random_seed, return_key
+        self.min_canopy_height = min_canopy_height
         if not self.ids:
             raise FileNotFoundError(f"No chips in {self.chip_dir}")
 
@@ -326,7 +328,8 @@ class Chips(Dataset):
         if self.pipeline_mode == 'simple':
             resolution = j.get('resolution') or self.preprocessing['resolution_m']
             pts, lbl, box_xyxy = sample_seed_prompts(chm, (sx, sy), resolution,
-                                                   fg_extra=self.fg_extra, random_seed=self.random_seed)
+                                                   fg_extra=self.fg_extra, random_seed=self.random_seed,
+                                                   min_canopy_height=self.min_canopy_height)
         else:
             pts, lbl = _sample_points_from_chm(
                 seed_xy=(sx, sy), box_xyxy=box_xyxy, chm=chm, fg_extra=self.fg_extra,
@@ -390,6 +393,7 @@ def train_decoder(
     pipeline_mode: str = 'legacy',
     random_seed: int = 0,
     embedding_cache_size: int = 64,
+    min_canopy_height: float | None = None,
 ):
     """Train a decoder with up to fg_extra additional foreground points per seed.
 
@@ -417,6 +421,7 @@ def train_decoder(
         pipeline_mode=pipeline_mode,
         random_seed=random_seed,
         return_key=True,
+        min_canopy_height=min_canopy_height,
     )
     loader = DataLoader(ds, batch_size=1, shuffle=True)
 
@@ -493,7 +498,8 @@ def train_decoder(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(sam.state_dict(), out_path)
     summary = {'epochs': epochs, 'steps_per_epoch': len(loader), 'seed': random_seed,
-               'encoder_calls': encoder_calls, 'samples': len(ds), 'pipeline_mode': pipeline_mode}
+               'encoder_calls': encoder_calls, 'samples': len(ds), 'pipeline_mode': pipeline_mode,
+               'min_canopy_height': min_canopy_height}
     out_path.with_suffix('.training.json').write_text(json.dumps(summary, indent=2))
     print(f"✓ weights → {out_path}")
 

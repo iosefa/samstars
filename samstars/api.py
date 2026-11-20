@@ -82,6 +82,7 @@ def _resolve_training_tiles(
     seed_min_samples: int,
     seed_merge_radius: float,
     seed_min_canopy_height: float,
+    seed_rule_version: int = 1,
 ) -> Path:
     """Resolve training tiles from one raw labeled area, prepared tiles, or raw labeled tiles."""
     raw_inputs = (img, chm, den, crowns)
@@ -110,6 +111,7 @@ def _resolve_training_tiles(
                 seed_min_samples=seed_min_samples,
                 seed_merge_radius=seed_merge_radius,
                 seed_min_canopy_height=seed_min_canopy_height,
+                seed_rule_version=seed_rule_version,
                 skip_existing=False,
             )
         )
@@ -175,6 +177,7 @@ def _resolve_training_tiles(
                 seed_min_samples=seed_min_samples,
                 seed_merge_radius=seed_merge_radius,
                 seed_min_canopy_height=seed_min_canopy_height,
+                seed_rule_version=seed_rule_version,
                 skip_existing=False,
             )
         return prepared_tiles_dir
@@ -416,7 +419,7 @@ class SamStars:
         seed_min_canopy_height: float = 2.0,
         stardist_input_key: str = "index",
         stardist_use_aux: bool = True,
-        stardist_normalize_inputs: bool = True,
+        stardist_normalize_inputs: bool | None = None,
         stardist_augment: bool = True,
         stardist_window_size_m: float | None = None,
         stardist_window_overlap_m: float = 0.0,
@@ -443,6 +446,12 @@ class SamStars:
             raise ValueError('val_fraction must be in [0, 1).')
         if pipeline_mode == 'simple':
             stardist_input_key = 'file_name'
+        from samstars._prompts import validate_canopy_height
+        seed_min_canopy_height = validate_canopy_height(seed_min_canopy_height)
+        seed_rule_version = 2 if pipeline_mode == 'simple' else 1
+        prompt_height = seed_min_canopy_height if pipeline_mode == 'simple' else None
+        if stardist_normalize_inputs is None:
+            stardist_normalize_inputs = pipeline_mode != 'simple'
         preprocessing = training_contract(
             image_paths(tiles_dir, img), chip_size=chip_size, chip_stride=chip_stride,
             sam_window_size_m=sam_window_size_m, stardist_patch_size=stardist_patch_size,
@@ -497,6 +506,7 @@ class SamStars:
                 seed_min_samples=seed_min_samples,
                 seed_merge_radius=seed_merge_radius,
                 seed_min_canopy_height=seed_min_canopy_height,
+                seed_rule_version=seed_rule_version,
             )
 
             from samstars.training.splits import split_training_tiles
@@ -508,7 +518,8 @@ class SamStars:
                     prep_root=prep_root/'validation', thin_seeds=thin_seeds, thin_dist=thin_dist,
                     seed_d_min=seed_d_min, seed_min_dist_px=seed_min_dist_px,
                     seed_gauss_sigma=seed_gauss_sigma, seed_min_samples=seed_min_samples,
-                    seed_merge_radius=seed_merge_radius, seed_min_canopy_height=seed_min_canopy_height)
+                    seed_merge_radius=seed_merge_radius, seed_min_canopy_height=seed_min_canopy_height,
+                    seed_rule_version=seed_rule_version)
                 inspect_images(image_paths(validation_tiles_dir),
                     expected_resolution=preprocessing['resolution_m'], minimum_size=stardist_patch_size)
             split_root = training_root/'split'
@@ -527,6 +538,7 @@ class SamStars:
                 chip_size=chip_size,
                 stride=chip_stride,
                 shared_windows=pipeline_mode == 'simple',
+                min_canopy_height=prompt_height,
             )
 
             train_decoder(
@@ -543,6 +555,7 @@ class SamStars:
                 pipeline_mode=pipeline_mode,
                 random_seed=random_seed,
                 embedding_cache_size=embedding_cache_size,
+                min_canopy_height=prompt_height,
             )
 
             proposal_result = run_segmentation(
@@ -557,6 +570,7 @@ class SamStars:
                 fast=fast,
                 pipeline_mode=pipeline_mode,
                 random_seed=random_seed,
+                min_canopy_height=prompt_height,
                 fg_extra=fg_extra,
                 crop_smooth_sigma=crop_smooth_sigma,
                 smooth_sigma=smooth_sigma,
@@ -575,6 +589,7 @@ class SamStars:
                     sam_ckpt=decoder_path, device=device, run_sam=True, run_stardist=False,
                     skip_existing_sam=False, preprocessing=preprocessing, fast=fast,
                     pipeline_mode=pipeline_mode, random_seed=random_seed, fg_extra=fg_extra,
+                    min_canopy_height=prompt_height,
                     crop_smooth_sigma=crop_smooth_sigma, smooth_sigma=smooth_sigma,
                     post_smooth_sigma=post_smooth_sigma)
                 val_records, _ = build_stardist_training_records(
@@ -616,6 +631,8 @@ class SamStars:
                     cmd.extend(["--use-aux", "--scale-stats", str(scale_stats)])
                 if not stardist_normalize_inputs:
                     cmd.append("--no-normalize")
+                if pipeline_mode == 'simple':
+                    cmd.append('--geometric-only')
                 if not stardist_augment:
                     cmd.append("--no-augment")
                 env = dict(os.environ)
@@ -633,6 +650,7 @@ class SamStars:
                     min_iters=stardist_min_iters,
                     steps_per_epoch=stardist_steps_per_epoch,
                     random_seed=random_seed,
+                    intensity_augmentation=pipeline_mode != 'simple',
                     input_key=stardist_input_key,
                     use_aux=stardist_use_aux,
                     scale_stats_path=scale_stats if stardist_use_aux else None,
@@ -678,11 +696,13 @@ class SamStars:
                 "fast": fast,
                 "fg_extra": fg_extra,
                 "pipeline_mode": pipeline_mode,
+                "canopy_rule_version": 1 if pipeline_mode == "simple" else None,
                 "random_seed": random_seed,
                 "seed_settings": dict(thin_seeds=thin_seeds, thin_dist=thin_dist,
                     seed_d_min=seed_d_min, seed_min_dist_px=seed_min_dist_px,
                     seed_gauss_sigma=seed_gauss_sigma, seed_min_samples=seed_min_samples,
-                    seed_merge_radius=seed_merge_radius, seed_min_canopy_height=seed_min_canopy_height),
+                    seed_merge_radius=seed_merge_radius, seed_min_canopy_height=seed_min_canopy_height,
+                    seed_rule_version=seed_rule_version),
             },
         )
         return cls(out)
@@ -821,6 +841,8 @@ class SamStars:
                     pipeline_mode=self.defaults.get('pipeline_mode', 'legacy'),
                     random_seed=self.defaults.get('random_seed', 0),
                     seed_settings=self.defaults.get('seed_settings'),
+                    min_canopy_height=(self.defaults['seed_settings']['seed_min_canopy_height']
+                        if self.defaults.get('canopy_rule_version') == 1 else None),
                     crop_smooth_sigma=resolved_crop_sigma,
                     smooth_sigma=resolved_smooth_sigma,
                     post_smooth_sigma=resolved_post_sigma,
@@ -886,7 +908,7 @@ def train(
     seed_min_canopy_height: float = 2.0,
     stardist_input_key: str = "index",
     stardist_use_aux: bool = True,
-    stardist_normalize_inputs: bool = True,
+    stardist_normalize_inputs: bool | None = None,
     stardist_augment: bool = True,
     stardist_window_size_m: float | None = None,
     stardist_window_overlap_m: float = 0.0,
@@ -943,12 +965,13 @@ def train(
         post_smooth_sigma: Optional smoothing after canopy-index fusion, in pixels.
         thin_seeds: Thin nearby seed points after detection.
         thin_dist: Seed thinning distance in projected CRS units.
-        seed_d_min: Minimum peak value, applied to both CHM and density.
+        seed_d_min: Minimum density peak value; legacy mode also uses it for CHM.
         seed_min_dist_px: Seed peak-search radius in pixels.
         seed_gauss_sigma: Seed detection smoothing scale in pixels.
         seed_min_samples: Minimum samples in a seed cluster.
         seed_merge_radius: Candidate grouping distance in projected CRS units.
-        seed_min_canopy_height: Minimum canopy height at a seed, in meters.
+        seed_min_canopy_height: Canopy cutoff in metres; simple mode shares it
+            between CHM peak selection, seed filtering, and positive/negative prompts.
         stardist_input_key: Refinement input record key, usually index.
         stardist_use_aux: Include normalized CHM as an auxiliary refinement channel.
         stardist_normalize_inputs: Normalize refinement inputs per channel.

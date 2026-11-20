@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from scipy.ndimage import gaussian_filter
 
 from samstars._preprocessing import rgb_to_u8
-from samstars._prompts import sample_seed_prompts
+from samstars._prompts import sample_seed_prompts, validate_canopy_height
 
 
 def smooth_probabilities(probabilities, sigma, valid):
@@ -27,8 +27,11 @@ def smooth_probabilities(probabilities, sigma, valid):
 
 
 def process_simple_window(rec, predictor, device, *, fg_extra=80, random_seed=0,
-                          smooth_sigma=0, fast=True, fast_batch=32, seeds=None):
+                          smooth_sigma=0, fast=True, fast_batch=32, seeds=None,
+                          min_canopy_height=None):
     image_path = Path(rec['img_path'])
+    if min_canopy_height is not None:
+        min_canopy_height = validate_canopy_height(min_canopy_height)
     x0, y0, x1, y1 = rec['window']
     window = Window(x0, y0, x1-x0, y1-y0)
     with rasterio.open(image_path) as src:
@@ -49,9 +52,11 @@ def process_simple_window(rec, predictor, device, *, fg_extra=80, random_seed=0,
     prompts = []
     for geometry in seeds.geometry:
         r, c = rowcol(transform, geometry.x, geometry.y)
-        if 0 <= r < height and 0 <= c < width and valid[r, c]:
+        if (0 <= r < height and 0 <= c < width and valid[r, c]
+                and (min_canopy_height is None or chm[r, c] >= min_canopy_height)):
             prompts.append(sample_seed_prompts(chm, (c, r), abs(transform.a),
-                                              fg_extra=fg_extra, random_seed=random_seed))
+                                              fg_extra=fg_extra, random_seed=random_seed,
+                                              min_canopy_height=min_canopy_height))
     probabilities = np.zeros((height, width), dtype=np.float32)
     if prompts:
         predictor.set_image(image)
