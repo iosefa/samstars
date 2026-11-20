@@ -420,6 +420,8 @@ class SamStars:
         stardist_input_key: str = "index",
         stardist_use_aux: bool = True,
         stardist_normalize_inputs: bool | None = None,
+        chm_scale_m: float | None = None,
+        chm_clip: bool = False,
         stardist_augment: bool = True,
         stardist_window_size_m: float | None = None,
         stardist_window_overlap_m: float = 0.0,
@@ -434,6 +436,8 @@ class SamStars:
     ) -> SamStars:
         """Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""
         fg_extra = validate_fg_extra(fg_extra)
+        from samstars.data.scaling import validate_chm_scaling
+        chm_scale_m, chm_clip = validate_chm_scaling(chm_scale_m, chm_clip)
         from samstars._preprocessing import proposal_settings, positive_int
         crop_smooth_sigma, smooth_sigma, post_smooth_sigma = proposal_settings(
             pipeline_mode, crop_smooth_sigma, smooth_sigma, post_smooth_sigma)
@@ -602,6 +606,8 @@ class SamStars:
                 percentiles=(2.0, 98.0),
                 chm_key="chm",
                 nodata_values=(-9999.0,),
+                chm_scale_m=chm_scale_m,
+                chm_clip=chm_clip,
             )
 
             if stardist_cpu:
@@ -684,6 +690,8 @@ class SamStars:
                 "stardist_input_key": stardist_input_key,
                 "stardist_use_aux": stardist_use_aux,
                 "stardist_normalize_inputs": stardist_normalize_inputs,
+                "chm_scale_m": chm_scale_m,
+                "chm_clip": chm_clip,
                 "stardist_prob_thr": prob_thr,
                 "stardist_nms_thr": nms_thr,
                 "stardist_window_size_m": stardist_window_size_m,
@@ -909,6 +917,8 @@ def train(
     stardist_input_key: str = "index",
     stardist_use_aux: bool = True,
     stardist_normalize_inputs: bool | None = None,
+    chm_scale_m: float | None = None,
+    chm_clip: bool = False,
     stardist_augment: bool = True,
     stardist_window_size_m: float | None = None,
     stardist_window_overlap_m: float = 0.0,
@@ -973,8 +983,16 @@ def train(
         seed_min_canopy_height: Canopy cutoff in metres; simple mode shares it
             between CHM peak selection, seed filtering, and positive/negative prompts.
         stardist_input_key: Refinement input record key, usually index.
-        stardist_use_aux: Include normalized CHM as an auxiliary refinement channel.
-        stardist_normalize_inputs: Normalize refinement inputs per channel.
+        stardist_use_aux: Include scaled CHM as an auxiliary refinement channel.
+        stardist_normalize_inputs: Normalize the primary refinement channel;
+            None enables this in legacy mode and disables it in simple mode.
+            The CHM always uses its saved training scale.
+        chm_scale_m: Metres per CHM input unit; None estimates the scale from
+            the training CHM's 98th percentile. Set 1.0 to retain metre values.
+            Used only with stardist_use_aux=True and saved for prediction.
+        chm_clip: Cap scaled CHM values at 1 (the selected height scale).
+            False retains height differences above that scale. Negative heights
+            and NoData become zero. Used only with stardist_use_aux=True.
         stardist_augment: Apply training augmentation to refinement samples.
         stardist_window_size_m: Default refinement window size for later segmentation,
             in map units, normally meters; None processes each proposal raster whole.
@@ -1028,6 +1046,8 @@ def train(
         stardist_input_key=stardist_input_key,
         stardist_use_aux=stardist_use_aux,
         stardist_normalize_inputs=stardist_normalize_inputs,
+        chm_scale_m=chm_scale_m,
+        chm_clip=chm_clip,
         stardist_augment=stardist_augment,
         stardist_window_size_m=stardist_window_size_m,
         stardist_window_overlap_m=stardist_window_overlap_m,

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Train polygon refinement from proposal rasters and crown instance masks.
 
-The default primary input is the fused canopy index. Optional normalized CHM
-adds a second channel. Training supports per-channel normalization and geometric
-and intensity augmentation.
+The default primary input is the fused canopy index. Optional scaled CHM adds a
+second channel. Training supports primary-channel normalization and geometric
+and intensity augmentation. Older models retain per-channel normalization.
 """
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-from csbdeep.utils import normalize
 from stardist.models import Config2D, StarDist2D
 from stardist import fill_label_holes
 
@@ -22,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from samstars.data.scaling import load_scale_stats, scale_to_01
+from samstars.data.scaling import load_scale_stats, prepare_stardist_input
 from samstars._preprocessing import patch_size as validate_patch_size
 
 
@@ -37,11 +36,6 @@ def _align_to_shape(arr: np.ndarray, target_shape: tuple[int, int]) -> np.ndarra
         pad_w = max(0, tw - aw)
         arr = np.pad(arr, ((0, pad_h), (0, pad_w)), constant_values=0)
     return arr
-
-
-def _scale_aux(arr: np.ndarray, lo: float, hi: float) -> np.ndarray:
-    """Internal helper function."""
-    return scale_to_01(arr, lo, hi)
 
 
 # ───────────── refinement augmentation ──────────────────────────────────
@@ -75,11 +69,13 @@ def augmenter(x: np.ndarray, y: np.ndarray):
 # ───────────────────────────────────────────────────────────────────────────
 
 
-def _read_float_raster(path: str | Path) -> np.ndarray:
+def _read_float_raster(path: str | Path, *, mask_nodata: bool = False) -> np.ndarray:
     """Internal helper function."""
     path = str(path)
     if path.endswith(".tif") or path.endswith(".tiff"):
         with rasterio.open(path) as src:
+            if mask_nodata:
+                return src.read(1, masked=True).astype(np.float32).filled(np.nan)
             return src.read(1).astype(np.float32)
     return np.load(path).astype(np.float32)
 
@@ -107,13 +103,6 @@ def load_pairs(
     X, Y = [], []
     skipped = 0
 
-    chm_lo = chm_hi = None
-    if scale_stats:
-        chm_lo = float(scale_stats.get("chm_01", {}).get("lo", 0.0))
-        chm_hi = float(scale_stats.get("chm_01", {}).get("hi", 1.0))
-
-    axis_norm = (0, 1)  # normalize channels independently
-
     for rec in data:
         fname = rec.get(input_key, "")
         mpath = rec.get("mask", "")
@@ -128,8 +117,7 @@ def load_pairs(
 
         # Align shapes to mask
         x = _align_to_shape(x, y.shape)
-        x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
-
+        chm = None
         if use_aux:
             chm_path = rec.get(chm_key, "")
             if not chm_path:
@@ -139,19 +127,11 @@ def load_pairs(
                 skipped += 1
                 continue
 
-            chm = _read_float_raster(chm_path)
+            chm = _read_float_raster(chm_path, mask_nodata="chm_scaling" in (scale_stats or {}))
             chm = _align_to_shape(chm, y.shape)
 
-            # scale aux to ~[0,1] using global stats (still useful even if we normalize later)
-            if scale_stats is not None:
-                chm = _scale_aux(chm, chm_lo, chm_hi)
-
-            x = np.stack([x, chm.astype(np.float32)], axis=-1).astype(np.float32)
-        else:
-            x = x[..., None].astype(np.float32)
-
-        if do_normalize:
-            x = normalize(x, 1, 99.8, axis=axis_norm).astype(np.float32)
+        x = prepare_stardist_input(x, chm=chm, scale_stats=scale_stats,
+                                   normalize_inputs=do_normalize)
 
         X.append(x)
         Y.append(y)

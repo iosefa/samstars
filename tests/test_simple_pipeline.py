@@ -235,6 +235,8 @@ def test_disjoint_groups_are_split_before_decoder_training(tmp_path, monkeypatch
         captured['val'] = json.loads(kwargs['val_records'].read_text())
         stats = json.loads(kwargs['scale_stats_path'].read_text())
         assert stats['records_total'] == len(captured['train']) == 1
+        assert stats['chm_scaling']['source'] == 'training_percentile'
+        assert stats['chm_scaling']['clip'] is False
         folder = kwargs['out_dir']/kwargs['model_name']
         folder.mkdir(parents=True)
         (folder/'config.json').write_text('{}')

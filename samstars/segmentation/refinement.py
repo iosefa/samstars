@@ -25,7 +25,6 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import rasterio
-from csbdeep.utils import normalize
 from rasterio import features
 from rasterio.windows import Window
 from rasterio.windows import transform as window_transform
@@ -39,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from samstars.data.scaling import load_scale_stats, scale_to_01
+from samstars.data.scaling import load_scale_stats, prepare_stardist_input
 
 
 def _safe_source_name(source: str) -> str:
@@ -218,11 +217,13 @@ def _align_to_shape(arr: np.ndarray, target_shape: tuple[int, int]) -> np.ndarra
     return arr
 
 
-def _read_float_raster(path: str | Path) -> np.ndarray:
+def _read_float_raster(path: str | Path, *, mask_nodata: bool = False) -> np.ndarray:
     """Internal helper function."""
     path = str(path)
     if path.endswith(".tif") or path.endswith(".tiff"):
         with rasterio.open(path) as src:
+            if mask_nodata:
+                return src.read(1, masked=True).astype(np.float32).filled(np.nan)
             return src.read(1).astype(np.float32)
     return np.load(path).astype(np.float32)
 
@@ -469,7 +470,7 @@ def main() -> None:
     pa.add_argument("--no-normalize", action="store_true", help="Disable csbdeep percentile normalization")
 
     # Aux
-    pa.add_argument("--use-aux", action="store_true", help="Use CHM aux channel (stacks [primary, chm01])")
+    pa.add_argument("--use-aux", action="store_true", help="Use CHM aux channel with the saved training scale")
     pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON (required for --use-aux)")
     pa.add_argument("--chm-key", type=str, default="chm", help="Proposal-record key for CHM path")
 
@@ -576,11 +577,6 @@ def main() -> None:
     if args.use_aux and scale_stats is None:
         raise SystemExit("--scale-stats is required when --use-aux is set")
 
-    chm_lo = chm_hi = None
-    if scale_stats:
-        chm_lo = float(scale_stats.get("chm_01", {}).get("lo", 0.0))
-        chm_hi = float(scale_stats.get("chm_01", {}).get("hi", 1.0))
-
     model = StarDist2D(None, name=args.model_name, basedir=str(args.model_dir))
 
     prob_thr = args.prob_thr
@@ -674,22 +670,16 @@ def main() -> None:
                 extent = box(src.bounds.left, src.bounds.bottom, src.bounds.right, src.bounds.top)
                 border = extent.boundary
 
-            x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
-
+            chm = None
             if args.use_aux:
                 chm_path = rec.get(args.chm_key, "")
                 if not chm_path or not Path(chm_path).exists():
                     continue
-                chm = _read_float_raster(chm_path)
+                chm = _read_float_raster(chm_path, mask_nodata="chm_scaling" in (scale_stats or {}))
                 chm = _align_to_shape(chm, x.shape)
-                if scale_stats is not None:
-                    chm = scale_to_01(chm, chm_lo, chm_hi)
-                x_in = np.stack([x, chm.astype(np.float32)], axis=-1).astype(np.float32)
-            else:
-                x_in = x[..., None].astype(np.float32)
 
-            if do_normalize:
-                x_in = normalize(x_in, 1, 99.8, axis=(0, 1)).astype(np.float32)
+            x_in = prepare_stardist_input(x, chm=chm, scale_stats=scale_stats,
+                                          normalize_inputs=do_normalize)
 
             predict_kwargs = {
                 "show_tile_progress": bool(args.log),

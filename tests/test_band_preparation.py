@@ -175,6 +175,7 @@ def test_preparation_writes_selected_rgb_cost_and_real_seeds(scene, tiled):
 def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra, stardist_cpu):
     """Run real preparation and record building, replacing only model execution."""
     expected_fg_extra = 80 if fg_extra is None else fg_extra
+    height_options = {} if fg_extra is None else {"chm_scale_m": 20.0, "chm_clip": fg_extra == 4}
     img = _write_raster(scene["root"] / "bgrn.tif", scene["image"][:4])
     crowns = scene["root"] / "crowns.gpkg"
     gpd.GeoDataFrame(geometry=[box(500010, 2199976, 500024, 2199990)], crs="EPSG:32605").to_file(crowns)
@@ -188,6 +189,10 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
     def fake_refinement(**kwargs):
         assert kwargs["patch_size"] == 32
         assert kwargs["normalize_inputs"] is False
+        stats = json.loads(kwargs["scale_stats_path"].read_text())
+        assert stats["chm_scaling"]["clip"] is height_options.get("chm_clip", False)
+        if height_options:
+            assert stats["chm_scaling"]["scale_m"] == 20.0
         model = kwargs["out_dir"] / kwargs["model_name"]
         model.mkdir(parents=True)
         (model / "config.json").write_text("{}")
@@ -212,7 +217,8 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
         assert "--no-normalize" in cmd
         assert kwargs["env"]["CUDA_VISIBLE_DEVICES"] == ""
         fake_refinement(out_dir=Path(cmd[cmd.index("--out-dir") + 1]), model_name="stardist",
-                        patch_size=int(cmd[cmd.index("--patch-size") + 1]), normalize_inputs=False)
+                        patch_size=int(cmd[cmd.index("--patch-size") + 1]), normalize_inputs=False,
+                        scale_stats_path=Path(cmd[cmd.index("--scale-stats") + 1]))
 
     monkeypatch.setitem(sys.modules, "samstars.training.sam_training", SimpleNamespace(train_decoder=fake_decoder))
     monkeypatch.setitem(sys.modules, "samstars.training.stardist_training", SimpleNamespace(train_stardist_model=fake_refinement))
@@ -226,6 +232,7 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
         storage="persistent", rgb_bands=(3, 2, 1), nir_band=4, texture_band=2,
         chip_size=32, chip_stride=32, stardist_patch_size=32,
         stardist_cpu=stardist_cpu, stardist_normalize_inputs=False,
+        **height_options,
         **({} if fg_extra is None else {"fg_extra": fg_extra}),
     )
     assert model.defaults["rgb_bands"] == [3, 2, 1]
@@ -239,6 +246,8 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
     assert model.preprocessing["resolution_m"] == 1
     assert model.defaults["stardist_normalize_inputs"] is False
     assert model.scale_stats_path.is_file()
+    assert model.defaults["chm_scale_m"] == height_options.get("chm_scale_m")
+    assert model.defaults["chm_clip"] is height_options.get("chm_clip", False)
 
     monkeypatch.setattr(engine, "run_segmentation", original_engine)
     result = segment(
