@@ -11,6 +11,8 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from collections import OrderedDict
+import random
 
 import numpy as np
 import torch
@@ -24,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
+from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra, sample_seed_prompts
 from samstars._preprocessing import SAM_ENCODER_SIZE, positive_int, rgb_to_u8, validate_contract
 from samstars.data.scaling import load_scale_stats, scale_to_u8_per_channel
 
@@ -192,11 +194,15 @@ class Chips(Dataset):
         chm_ground: float = CHM_GROUND_DEFAULT,
         box_expand: float = 1.0,
         preprocessing: dict | None = None,
+        pipeline_mode: str = 'legacy',
+        random_seed: int = 0,
+        return_key: bool = False,
     ):
         """Initialize the instance."""
         self.fg_extra = validate_fg_extra(fg_extra)
         self.chip_dir = chip_dir
-        self.ids = sorted((self.chip_dir / "images").glob("*.npy"))
+        self.ids = sorted((self.chip_dir / 'prompts').glob('*.json'))
+        self.pipeline_mode, self.random_seed, self.return_key = pipeline_mode, random_seed, return_key
         if not self.ids:
             raise FileNotFoundError(f"No chips in {self.chip_dir}")
 
@@ -219,7 +225,7 @@ class Chips(Dataset):
 
         # Fixed maximum number of points so DataLoader can stack tensors.
         # seed + fg + neg_gnd + neg_can
-        self.max_points = 1 + self.fg_extra + self.neg_max_gnd + self.neg_max_can
+        self.max_points = 1 + self.fg_extra + (50 if pipeline_mode == 'simple' else self.neg_max_gnd + self.neg_max_can)
 
     def __len__(self):
         """Return the number of items."""
@@ -228,9 +234,11 @@ class Chips(Dataset):
     def __getitem__(self, i):
         """Return one item by index."""
         name = self.ids[i].stem
+        j = json.loads(self.ids[i].read_text())
+        image_name = j.get('image', name)
 
         # --- load RGB chip (C,H,W) ---
-        img = np.load(self.chip_dir / "images" / f"{name}.npy")
+        img = np.load(self.chip_dir / "images" / f"{image_name}.npy")
         if img.ndim != 3:
             raise ValueError(f"{name}: expected img CHW, got {img.shape}")
         C, H, W = img.shape
@@ -239,7 +247,7 @@ class Chips(Dataset):
         if C != 3:
             raise ValueError(f"{name}: SAM requires three image channels, got {C}.")
 
-        valid_path = self.chip_dir / "valid" / f"{name}.npy"
+        valid_path = self.chip_dir / "valid" / f"{image_name}.npy"
         if self.preprocessing is not None and not valid_path.exists():
             raise FileNotFoundError(f"{name}: missing validity mask; rebuild chips with build_training_chips.")
         valid = np.load(valid_path).astype(bool) if valid_path.exists() else np.ones((H, W), bool)
@@ -265,7 +273,7 @@ class Chips(Dataset):
         msk = (msk > 0).astype(np.float32)
 
         # --- load CHM (H,W) for prompt sampling ---
-        chm_path = self.chip_dir / "chm" / f"{name}.npy"
+        chm_path = self.chip_dir / "chm" / f"{image_name}.npy"
         if not chm_path.exists():
             raise FileNotFoundError(f"{name}: missing CHM chip {chm_path}")
         chm = np.load(chm_path).astype(np.float32)
@@ -315,15 +323,15 @@ class Chips(Dataset):
             box_xyxy = _expand_box_xyxy(box_xyxy, self.box_expand, self.img_size, self.img_size)
 
         # Build inference-style points from CHM
-        pts, lbl = _sample_points_from_chm(
-            seed_xy=(sx, sy),
-            box_xyxy=box_xyxy,
-            chm=chm,
-            fg_extra=self.fg_extra,
-            neg_max_gnd=self.neg_max_gnd,
-            neg_max_can=self.neg_max_can,
-            chm_ground=self.chm_ground,
-        )
+        if self.pipeline_mode == 'simple':
+            resolution = j.get('resolution') or self.preprocessing['resolution_m']
+            pts, lbl, box_xyxy = sample_seed_prompts(chm, (sx, sy), resolution,
+                                                   fg_extra=self.fg_extra, random_seed=self.random_seed)
+        else:
+            pts, lbl = _sample_points_from_chm(
+                seed_xy=(sx, sy), box_xyxy=box_xyxy, chm=chm, fg_extra=self.fg_extra,
+                neg_max_gnd=self.neg_max_gnd, neg_max_can=self.neg_max_can,
+                chm_ground=self.chm_ground)
 
         # Pad to fixed length (max_points)
         pts_pad = np.full((self.max_points, 2), PAD_COORD, dtype=np.float32)
@@ -337,13 +345,14 @@ class Chips(Dataset):
         box_np = np.array([box_xyxy], dtype=np.float32)
         box_rs = self.resize.apply_boxes(box_np, (self.img_size, self.img_size)).astype(np.float32)[0]
 
-        return (
+        result = (
             torch.tensor(img_t).float(),
             torch.tensor(msk[None]).float(),
             torch.tensor(pts_pad).float(),     # (P,2)
             torch.tensor(lbl_pad).long(),      # (P,)
             torch.tensor(box_rs).float(),      # (4,)
         )
+        return (*result, image_name) if self.return_key else result
 
 
 def decoder_loss(pred, truth):
@@ -378,6 +387,9 @@ def train_decoder(
     chm_ground: float = CHM_GROUND_DEFAULT,
     box_expand: float = 1.0,
     preprocessing: dict | None = None,
+    pipeline_mode: str = 'legacy',
+    random_seed: int = 0,
+    embedding_cache_size: int = 64,
 ):
     """Train a decoder with up to fg_extra additional foreground points per seed.
 
@@ -385,6 +397,9 @@ def train_decoder(
     negative-point sampling and box prompts are unchanged. The default is 80.
     """
     validate_fg_extra(fg_extra)
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
     img_size = positive_int(img_size, "img_size")
     if enc_size != SAM_ENCODER_SIZE:
         raise ValueError("The SAM ViT-L encoder requires enc_size=1024; change img_size for the ground window.")
@@ -399,6 +414,9 @@ def train_decoder(
         chm_ground=chm_ground,
         box_expand=box_expand,
         preprocessing=preprocessing,
+        pipeline_mode=pipeline_mode,
+        random_seed=random_seed,
+        return_key=True,
     )
     loader = DataLoader(ds, batch_size=1, shuffle=True)
 
@@ -412,21 +430,36 @@ def train_decoder(
     sam = sam_model_registry["vit_l"](checkpoint=str(ckpt)).to(device)
     sam.image_encoder.requires_grad_(False)
     sam.prompt_encoder.requires_grad_(False)
+    sam.image_encoder.eval()
+    sam.prompt_encoder.eval()
+    sam.mask_decoder.train()
+    embeddings = OrderedDict()
+    encoder_calls = 0
 
     opt = torch.optim.AdamW(sam.mask_decoder.parameters(), lr=lr)
     base_pe = sam.prompt_encoder.get_dense_pe().to(device)
 
     for ep in range(1, epochs + 1):
         tot = 0.0
-        for img, msk, pts, lbl, box in loader:
+        for img, msk, pts, lbl, box, keys in loader:
             img = img.to(device)
             msk = msk.to(device)
             pts = pts.to(device)          # (B,P,2) after batching
             lbl = lbl.to(device)          # (B,P)
             box = box.to(device)          # (B,4)
 
-            with torch.no_grad():
-                emb = sam.image_encoder(sam.preprocess(img))
+            key = keys[0]
+            if key in embeddings:
+                emb = embeddings.pop(key).to(device)
+                embeddings[key] = emb.detach().cpu()
+            else:
+                with torch.no_grad():
+                    emb = sam.image_encoder(sam.preprocess(img))
+                encoder_calls += 1
+                if embedding_cache_size > 0:
+                    embeddings[key] = emb.detach().cpu()
+                    while len(embeddings) > embedding_cache_size:
+                        embeddings.popitem(last=False)
 
             # IMPORTANT: now we train with the same prompt types as inference (points + boxes)
             sparse, dense = sam.prompt_encoder(
@@ -446,6 +479,8 @@ def train_decoder(
             # Supervise at the selected native ground-window resolution.
             logit = F.interpolate(logit_low, size=(img_size, img_size), mode="bilinear", align_corners=False)
             loss = decoder_loss(logit, msk)
+            if not torch.isfinite(loss):
+                raise RuntimeError('SAM training produced a non-finite loss; check the input rasters and labels.')
 
             opt.zero_grad()
             loss.backward()
@@ -457,6 +492,9 @@ def train_decoder(
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(sam.state_dict(), out_path)
+    summary = {'epochs': epochs, 'steps_per_epoch': len(loader), 'seed': random_seed,
+               'encoder_calls': encoder_calls, 'samples': len(ds), 'pipeline_mode': pipeline_mode}
+    out_path.with_suffix('.training.json').write_text(json.dumps(summary, indent=2))
     print(f"✓ weights → {out_path}")
 
 

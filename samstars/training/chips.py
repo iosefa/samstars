@@ -69,6 +69,7 @@ def build_training_chips(
     stride: int | None = None,
     image_bands: tuple[int, ...] = (1, 2, 3),
     skip_tiles: tuple[str, ...] = (),
+    shared_windows: bool = False,
 ) -> int:
     """Build proposal-decoder training chips from labeled tiles."""
     chip_size = positive_int(chip_size, "chip_size")
@@ -143,6 +144,11 @@ def build_training_chips(
 
                 base_image_chip = image_chip.astype(np.float32)
                 base_chm_chip = chm_chip.astype(np.float32)
+                window_name = f'{tile.name}_window_{x0}_{y0}'
+                if shared_windows:
+                    np.save(out_dir/'images'/f'{window_name}.npy', base_image_chip)
+                    np.save(out_dir/'chm'/f'{window_name}.npy', base_chm_chip)
+                    np.save(out_dir/'valid'/f'{window_name}.npy', valid_chip)
                 for geom in clipped.geometry:
                     mask_chip = _rasterize_one_geometry(geom, (y1 - y0, x1 - x0), win_transform)
                     if pad_h or pad_w:
@@ -152,12 +158,18 @@ def build_training_chips(
                     prompt = _prompt_from_mask(mask_chip)
                     if prompt is None:
                         continue
+                    if shared_windows:
+                        candidates = np.where((mask_chip > 0) & valid_chip, base_chm_chip, -np.inf)
+                        sy, sx = np.unravel_index(np.argmax(candidates), candidates.shape)
+                        prompt.update(point=[int(sx), int(sy)], image=window_name,
+                                      resolution=float(abs(transform.a)))
 
                     stem = f"{tile.name}_{chip_id}"
-                    np.save(out_dir / "images" / f"{stem}.npy", base_image_chip)
+                    if not shared_windows:
+                        np.save(out_dir / "images" / f"{stem}.npy", base_image_chip)
+                        np.save(out_dir / "chm" / f"{stem}.npy", base_chm_chip)
+                        np.save(out_dir / "valid" / f"{stem}.npy", valid_chip)
                     np.save(out_dir / "masks" / f"{stem}.npy", mask_chip.astype(np.uint8))
-                    np.save(out_dir / "chm" / f"{stem}.npy", base_chm_chip)
-                    np.save(out_dir / "valid" / f"{stem}.npy", valid_chip)
                     _save_prompt_json(out_dir / "prompts" / f"{stem}.json", prompt)
 
                     chip_id += 1
