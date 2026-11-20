@@ -14,6 +14,7 @@ from samstars._prompts import sample_seed_prompts
 from samstars.segmentation import proposals, engine
 from samstars.training.chips import build_training_chips
 from samstars.training.sam_training import Chips, train_decoder
+from samstars.training.splits import split_training_tiles
 from test_window_preprocessing import make_tile, Predictor
 
 
@@ -21,6 +22,17 @@ def test_short_tree_seed_cannot_also_be_a_negative_prompt():
     points, labels, _ = sample_seed_prompts(np.ones((5,5)), (2,2), .5, fg_extra=0)
     assert labels[0] == 1
     assert not np.any(np.all(points[labels == 0] == (2,2), axis=1))
+
+
+
+def test_single_area_is_not_presented_as_held_out_validation(tmp_path):
+    tile = make_tile(tmp_path)
+    with pytest.warns(UserWarning, match='no held-out validation'):
+        train, val, summary = split_training_tiles(tile.parent, tmp_path/'split')
+    assert val is None and summary['validation'] == 'none'
+    assert len(list(train.iterdir())) == 1
+    with pytest.raises(ValueError, match='overlap'):
+        split_training_tiles(tile.parent, tmp_path/'invalid', validation_tiles_dir=tile.parent)
 
 
 
@@ -66,3 +78,20 @@ def test_shared_windows_cache_frozen_embeddings(tmp_path, monkeypatch):
     assert sam.image_encoder.calls == 1
     summary = json.loads((tmp_path/'trained.training.json').read_text())
     assert summary['epochs'] == 2 and summary['steps_per_epoch'] == 2
+
+
+
+@pytest.mark.parametrize(('records', 'minimum', 'expected'), [(1,100,1), (200,1000,10)])
+def test_stardist_budget_uses_optimizer_steps(tmp_path, monkeypatch, records, minimum, expected):
+    from samstars.training import stardist_training as training
+    image = np.zeros((16,16,1), np.float32)
+    mask = np.ones((16,16), np.uint16)
+    monkeypatch.setattr(training, 'load_pairs', lambda path, **kwargs:
+        ([image]*records, [mask]*records) if path.name == 'train' else ([], []))
+    calls = []
+    monkeypatch.setattr(training, 'StarDist2D', lambda config, **kwargs:
+        SimpleNamespace(train=lambda *args, **options:calls.append(options)))
+    training.train_stardist_model(train_records=Path('train'), val_records=Path('val'),
+        out_dir=tmp_path, patch_size=16, epochs=1, min_iters=minimum, steps_per_epoch=100)
+    assert calls[0]['epochs'] == expected
+    assert calls[0]['steps_per_epoch'] == 100

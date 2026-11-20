@@ -201,9 +201,18 @@ def train_stardist_model(
     normalize_inputs: bool = True,
     augment: bool = True,
     patch_size: int = 256,
+    steps_per_epoch: int = 100,
+    random_seed: int = 0,
 ) -> None:
     """Train a StarDist model from train/val proposal-record files."""
     patch_size = validate_patch_size(patch_size)
+    from samstars._preprocessing import positive_int
+    import tensorflow as tf
+    steps_per_epoch = positive_int(steps_per_epoch, 'steps_per_epoch')
+    epochs = positive_int(epochs, 'epochs')
+    if isinstance(min_iters, bool) or not isinstance(min_iters, int) or min_iters < 0:
+        raise ValueError('min_iters must be a nonnegative integer.')
+    tf.keras.utils.set_random_seed(random_seed)
     scale_stats = load_scale_stats(scale_stats_path) if scale_stats_path else None
     if use_aux and scale_stats is None:
         raise ValueError("Provide scale_stats_path when use_aux=True.")
@@ -240,7 +249,7 @@ def train_stardist_model(
                     "Use a smaller stardist_patch_size or larger training images."
                 )
 
-    iters_per_epoch = max(1, len(Xtr))
+    iters_per_epoch = steps_per_epoch
     if min_iters > 0:
         min_epochs = int((min_iters + iters_per_epoch - 1) // iters_per_epoch)
         epochs = max(epochs, min_epochs)
@@ -248,22 +257,33 @@ def train_stardist_model(
 
     n_channels = Xtr[0].shape[-1]
     conf = Config2D(n_rays=32, grid=(2, 2), use_gpu=False, n_channel_in=n_channels,
-                    train_patch_size=(patch_size, patch_size))
+                    train_patch_size=(patch_size, patch_size), train_epochs=epochs,
+                    train_steps_per_epoch=steps_per_epoch)
     model = StarDist2D(conf, name=model_name, basedir=str(out_dir))
 
     val_data = (Xval, Yval) if (len(Xval) > 0 and len(Yval) > 0) else None
     aug = augmenter if augment else None
     if val_data is None:
-        print("no validation records found; reusing training data as validation_data")
+        print('No held-out validation: validation metrics below are training-only monitoring.')
         val_data = (Xtr, Ytr)
 
-    model.train(
+    history = model.train(
         Xtr,
         Ytr,
         validation_data=val_data,
         epochs=epochs,
+        steps_per_epoch=steps_per_epoch,
+        seed=random_seed,
         augmenter=aug,
     )
+    metrics = {'epochs': epochs, 'steps_per_epoch': steps_per_epoch, 'seed': random_seed,
+               'training_records': len(Xtr), 'validation_records': len(Xval),
+               'validation': 'held_out' if Xval else 'training_monitor_only',
+               'history': {key: [float(v) for v in values] for key, values in
+                           getattr(history, 'history', {}).items()}}
+    metrics_path = Path(out_dir)/model_name/'training_metrics.json'
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    metrics_path.write_text(json.dumps(metrics, indent=2))
 
     if Xval and Yval:
         try:
@@ -284,6 +304,8 @@ def main() -> None:
     pa.add_argument("--model-name", type=str, default="stardist", help="Model subdir name to create under --out-dir")
     pa.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     pa.add_argument("--min-iters", type=int, default=0, help="Minimum training iterations (converted to epochs)")
+    pa.add_argument('--steps-per-epoch', type=int, default=100)
+    pa.add_argument('--seed', type=int, default=0)
     pa.add_argument("--patch-size", type=int, default=256,
                     help="Square training patch size in pixels; positive multiple of 16 (default: 256)")
 
@@ -320,6 +342,8 @@ def main() -> None:
         model_name=args.model_name,
         epochs=args.epochs,
         min_iters=args.min_iters,
+        steps_per_epoch=args.steps_per_epoch,
+        random_seed=args.seed,
         input_key=args.input_key,
         use_aux=args.use_aux,
         scale_stats_path=args.scale_stats,
