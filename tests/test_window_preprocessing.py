@@ -222,13 +222,17 @@ def test_bundle_checks_resolution_but_allows_smaller_prediction_extent(tmp_path)
                   run_sam=False, run_stardist=False)
 
 
-def test_refinement_reuses_training_scaling_and_normalization(tmp_path, monkeypatch):
+@pytest.mark.parametrize('channels', [1, 2])
+def test_refinement_reuses_training_scaling_and_normalization(tmp_path, monkeypatch, channels):
     tile = make_tile(tmp_path)
     settings = training_contract([tile / 'img.tif'], sam_window_size_m=20, stardist_patch_size=32)
     model = bundle(tmp_path, settings)
+    model.config_path.write_text(json.dumps({'n_channel_in': channels}))
     stats = model.root / 'scale_stats.json'
     stats.write_text(json.dumps({'chm_01': {'lo': 0, 'hi': 20}}))
-    SamStars._write_bundle_manifest(out=model.root, defaults={'stardist_normalize_inputs': False},
+    # The actual trained layout is authoritative, even if an older defaults entry disagrees.
+    SamStars._write_bundle_manifest(out=model.root, defaults={'stardist_normalize_inputs': False,
+                                                             'stardist_use_aux': channels == 1},
                                     preprocessing=settings)
     model = SamStars(model.root)
     fake_sam = SimpleNamespace()
@@ -242,11 +246,16 @@ def test_refinement_reuses_training_scaling_and_normalization(tmp_path, monkeypa
     def unexpected_recalculation(**kwargs):
         pytest.fail('Prediction must reuse the saved CHM limits')
 
-    monkeypatch.setattr(engine, 'build_scale_stats_from_proposal_records', unexpected_recalculation)
+    monkeypatch.setattr('samstars.data.build_scale_stats_from_proposal_records', unexpected_recalculation)
     model.segment(tiles_dir=tile.parent, out=tmp_path / 'run', storage='persistent')
     assert len(calls) == 1
     assert '--no-normalize' in calls[0]
-    assert calls[0][calls[0].index('--scale-stats') + 1] == str(stats)
+    assert '--use-aux' not in calls[0]
+    if channels == 2:
+        assert calls[0][calls[0].index('--scale-stats') + 1] == str(stats)
+    else:
+        assert '--scale-stats' not in calls[0]
+    assert not (tmp_path / 'run/proposal_scale_stats.json').exists()
 
 
 def test_small_seedless_scene_produces_empty_native_grid(tmp_path):

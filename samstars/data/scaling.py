@@ -133,7 +133,8 @@ def build_scale_stats_from_proposal_records(
     An explicit chm_clip selects zero-anchored height scaling. If chm_scale_m is
     None, the upper training percentile sets the scale, with 1 m as a fallback
     for nonpositive percentiles. Omitting both options preserves legacy scaling
-    for low-level callers. The public train API uses chm_clip=False by default.
+    for low-level callers. The public train API always uses automatic scaling
+    without upper clipping; manual scale/clipping choices belong to this helper.
     """
     use_height_scale = chm_clip is not None or chm_scale_m is not None
     if use_height_scale:

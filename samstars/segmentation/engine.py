@@ -9,11 +9,10 @@ import sys
 from pathlib import Path
 
 from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
-from samstars._preprocessing import check_proposal_cache, image_paths, inspect_images, validate_contract
+from samstars._preprocessing import check_proposal_cache, image_paths, inspect_images, refinement_inputs, validate_contract
 from samstars.data import (
     build_pending_tile_records,
     build_single_tile,
-    build_scale_stats_from_proposal_records,
     build_tile_records,
 )
 
@@ -128,7 +127,6 @@ def run_segmentation(
     device: str = "cpu",
     stardist_model: Path | None = None,
     stardist_input_key: str = "index",
-    stardist_use_aux: bool = True,
     stardist_normalize_inputs: bool = True,
     stardist_scale_stats: Path | None = None,
     stardist_prob_thr: float | None = None,
@@ -166,6 +164,8 @@ def run_segmentation(
 
     sam_ckpt is the trained proposal checkpoint. stardist_model points directly
     to the refinement directory containing config.json and weights.
+    Its channel layout determines whether CHM is used. When needed,
+    stardist_scale_stats must point to the saved training statistics.
     out_dir retains intermediates and final crowns. The return dictionary contains
     the run-record, proposal, and crown paths.
 
@@ -185,6 +185,11 @@ def run_segmentation(
     out_dir = Path(out_dir)
     resolved_sam_ckpt: Path | None = None
     resolved_stardist_model: Path | None = None
+    scale_stats = None
+    if run_stardist:
+        stardist_model_dir, stardist_model_name = _resolve_stardist_model(stardist_model=stardist_model)
+        resolved_stardist_model = Path(stardist_model_dir) / stardist_model_name
+        _, scale_stats = refinement_inputs(resolved_stardist_model / "config.json", stardist_scale_stats)
 
     raw_inputs = (img, chm, den)
     if tiles_dir is not None and any(v is not None for v in raw_inputs):
@@ -267,7 +272,6 @@ def run_segmentation(
         )
 
     _normalize_record_paths(proposal_records)
-    proposal_records_rebuilt = False
 
     if not run_stardist:
         return {
@@ -284,30 +288,9 @@ def run_segmentation(
             proposal_records.parent.mkdir(parents=True, exist_ok=True)
             json.dump(partial, open(proposal_records, "w"))
             _normalize_record_paths(proposal_records)
-            proposal_records_rebuilt = True
 
     if not proposal_records.exists():
         raise RuntimeError(f"Missing proposal records: {proposal_records}")
-
-    stardist_model_dir, stardist_model_name = _resolve_stardist_model(stardist_model=stardist_model)
-    resolved_stardist_model = Path(stardist_model_dir) / stardist_model_name
-
-    if stardist_scale_stats is not None:
-        scale_stats = Path(stardist_scale_stats)
-        if not scale_stats.is_file():
-            raise FileNotFoundError(f"Missing training scaling statistics: {scale_stats}")
-    else:
-        scale_stats = out_dir / "proposal_scale_stats.json"
-        if proposal_records_rebuilt and scale_stats.exists():
-            scale_stats.unlink()
-        if not scale_stats.exists():
-            build_scale_stats_from_proposal_records(
-                proposal_records=proposal_records,
-                out=scale_stats,
-                percentiles=(2.0, 98.0),
-                chm_key="chm",
-                nodata_values=(-9999.0,),
-            )
 
     refinement_py = Path(__file__).resolve().parent / "refinement.py"
     cmd = [
@@ -329,14 +312,8 @@ def run_segmentation(
     ]
     if not stardist_normalize_inputs:
         cmd.append("--no-normalize")
-    if stardist_use_aux:
-        cmd.extend(
-            [
-                "--use-aux",
-                "--scale-stats",
-                str(scale_stats),
-            ]
-        )
+    if scale_stats is not None:
+        cmd.extend(["--scale-stats", str(scale_stats)])
     if (stardist_prob_thr is None) ^ (stardist_nms_thr is None):
         raise ValueError("Provide both stardist_prob_thr and stardist_nms_thr, or neither.")
     if stardist_window_size_m is not None and stardist_window_size_m <= 0:

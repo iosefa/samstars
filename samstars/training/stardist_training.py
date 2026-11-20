@@ -194,7 +194,7 @@ def train_stardist_model(
     if isinstance(min_iters, bool) or not isinstance(min_iters, int) or min_iters < 0:
         raise ValueError('min_iters must be a nonnegative integer.')
     tf.keras.utils.set_random_seed(random_seed)
-    scale_stats = load_scale_stats(scale_stats_path) if scale_stats_path else None
+    scale_stats = load_scale_stats(scale_stats_path) if use_aux and scale_stats_path else None
     if use_aux and scale_stats is None:
         raise ValueError("Provide scale_stats_path when use_aux=True.")
 

@@ -8,7 +8,6 @@ import pytest
 import rasterio
 from rasterio.transform import from_origin
 
-from samstars import train
 from samstars.data.scaling import (
     build_scale_stats_from_proposal_records,
     prepare_stardist_input,
@@ -87,7 +86,7 @@ def test_legacy_bundle_keeps_exact_preprocessing(normalize):
 
 
 @pytest.mark.parametrize("normalize", [False, True])
-@pytest.mark.parametrize("mode", ["unclipped", "clipped", "legacy"])
+@pytest.mark.parametrize("mode", ["unclipped", "clipped", "legacy", "no_chm"])
 def test_training_and_refinement_receive_identical_saved_height_values(tmp_path, monkeypatch, normalize, mode):
     from samstars.training.stardist_training import load_pairs
     from samstars.segmentation import refinement
@@ -100,7 +99,14 @@ def test_training_and_refinement_receive_identical_saved_height_values(tmp_path,
     records = tmp_path / "records.json"
     records.write_text(json.dumps([{"index": str(primary), "chm": str(chm), "mask": str(mask)}]))
     stats_path = tmp_path / "stats.json"
-    if mode == "legacy":
+    use_aux = mode != "no_chm"
+    model_dir = tmp_path / "stardist"
+    model_dir.mkdir()
+    (model_dir / "config.json").write_text(json.dumps({"n_channel_in": 2 if use_aux else 1}))
+    if not use_aux:
+        stats = None
+        records.write_text(json.dumps([{"index": str(primary), "mask": str(mask)}]))
+    elif mode == "legacy":
         stats = {"chm_01": {"lo": 2, "hi": 10}}
         stats_path.write_text(json.dumps(stats))
     else:
@@ -108,7 +114,7 @@ def test_training_and_refinement_receive_identical_saved_height_values(tmp_path,
             proposal_records=records, out=stats_path, chm_scale_m=10, chm_clip=mode == "clipped")
         assert stats["chm_scaling"]["source"] == "fixed"
 
-    images, _ = load_pairs(records, use_aux=True, scale_stats=stats, do_normalize=normalize)
+    images, _ = load_pairs(records, use_aux=use_aux, scale_stats=stats, do_normalize=normalize)
     captured = []
 
     class Model:
@@ -122,12 +128,13 @@ def test_training_and_refinement_receive_identical_saved_height_values(tmp_path,
     monkeypatch.setattr(refinement, "StarDist2D", lambda *args, **kwargs: Model())
     monkeypatch.setattr(sys, "argv", [
         "refinement", "--proposal-records", str(records), "--model-dir", str(tmp_path),
-        "--out-dir", str(tmp_path / "prediction"), "--use-aux", "--scale-stats", str(stats_path),
+        "--out-dir", str(tmp_path / "prediction"), "--scale-stats", str(stats_path),
         "--normalize" if normalize else "--no-normalize",
-    ])
+    ] + (["--use-aux"] if mode == "legacy" else []))
     refinement.main()
     np.testing.assert_array_equal(captured[0], images[0])
-    if mode != "legacy":
+    assert captured[0].shape[-1] == (2 if use_aux else 1)
+    if mode in ("unclipped", "clipped"):
         expected = np.array([[0, 1, 2, 3], [4, 5, 0, 6], [7, 8, 9, 10], [0, 0, 0, 0]], np.float32)
         if mode == "clipped":
             expected = np.minimum(expected, 1)
@@ -137,17 +144,14 @@ def test_training_and_refinement_receive_identical_saved_height_values(tmp_path,
 @pytest.mark.parametrize("kwargs", [
     {"chm_scale_m": 0}, {"chm_scale_m": -1}, {"chm_scale_m": np.nan},
     {"chm_scale_m": np.inf}, {"chm_scale_m": True}, {"chm_scale_m": "20"},
-    {"chm_clip": "false"}, {"chm_clip": None},
+    {"chm_clip": "false"}, {"chm_clip": 0},
 ])
-def test_invalid_height_settings_leave_existing_bundle_untouched(tmp_path, kwargs):
-    bundle = tmp_path / "model"
-    bundle.mkdir()
-    manifest = bundle / "manifest.json"
-    manifest.write_text("existing model")
+def test_invalid_low_level_height_settings_leave_existing_stats_untouched(tmp_path, kwargs):
+    stats = tmp_path / "stats.json"
+    stats.write_text("existing training scale")
     with pytest.raises(ValueError, match="chm_scale_m|chm_clip"):
-        train(img=tmp_path / "image.tif", sam_base_ckpt=tmp_path / "base.pth",
-              out=bundle, storage="persistent", **kwargs)
-    assert manifest.read_text() == "existing model"
+        build_scale_stats_from_proposal_records(proposal_records=tmp_path / "records.json", out=stats, **kwargs)
+    assert stats.read_text() == "existing training scale"
 
 
 def test_unknown_saved_height_transform_is_rejected():

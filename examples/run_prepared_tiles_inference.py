@@ -177,18 +177,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         help="Decode SAM prompts individually; older bundles use their legacy crop path.",
     )
-    parser.add_argument(
+    aux = parser.add_mutually_exclusive_group()
+    aux.add_argument(
         "--use-aux",
         dest="stardist_use_aux",
         action="store_true",
         default=None,
-        help="Force CHM auxiliary input on.",
+        help="Training only: include CHM as a second refinement channel (default).",
     )
-    parser.add_argument(
+    aux.add_argument(
         "--no-use-aux",
         dest="stardist_use_aux",
         action="store_false",
-        help="Force CHM auxiliary input off.",
+        help="Training only: omit CHM from the refinement model.",
     )
     parser.add_argument(
         "--sam-only",
@@ -218,6 +219,8 @@ def main() -> None:
     args = build_parser().parse_args()
 
     if args.model is not None:
+        if args.stardist_use_aux is not None:
+            raise SystemExit("CHM channel options apply only to training; prediction uses the trained model's channels.")
         if args.sam_only and args.stardist_only:
             raise SystemExit("Use only one of --sam-only or --stardist-only.")
 
@@ -229,7 +232,6 @@ def main() -> None:
             tiles_dir=args.tiles_dir,
             device=args.device,
             stardist_input_key=args.stardist_input_key,
-            stardist_use_aux=args.stardist_use_aux,
             stardist_prob_thr=args.stardist_prob_thr,
             stardist_nms_thr=args.stardist_nms_thr,
             stardist_window_size_m=args.stardist_window_size_m,

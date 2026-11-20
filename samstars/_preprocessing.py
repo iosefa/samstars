@@ -12,6 +12,28 @@ import warnings
 SAM_ENCODER_SIZE = 1024
 
 
+def refinement_inputs(config_path: Path, scale_stats_path: Path | None) -> tuple[bool, Path | None]:
+    """Read the trained channel layout and require its saved CHM transform."""
+    import json
+
+    config = json.loads(Path(config_path).read_text())
+    channels = config.get("n_channel_in")
+    if type(channels) is not int or channels not in (1, 2):
+        raise ValueError(f"{config_path}: expected a refinement model with one or two input channels.")
+    if channels == 1:
+        return False, None
+    if scale_stats_path is None:
+        raise ValueError(
+            "This refinement model requires its training CHM scaling statistics. "
+            "Restore scale_stats.json from training or retrain the model; "
+            "prediction imagery cannot supply the training scale."
+        )
+    scale_stats_path = Path(scale_stats_path)
+    if not scale_stats_path.is_file():
+        raise FileNotFoundError(f"Missing training scaling statistics: {scale_stats_path}")
+    return True, scale_stats_path
+
+
 def proposal_settings(mode, crop=None, mosaic=None, post=None):
     if mode not in ('legacy', 'simple'):
         raise ValueError('pipeline_mode must be legacy or simple.')

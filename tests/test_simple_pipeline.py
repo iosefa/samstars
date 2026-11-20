@@ -239,7 +239,7 @@ def test_disjoint_groups_are_split_before_decoder_training(tmp_path, monkeypatch
         assert stats['chm_scaling']['clip'] is False
         folder = kwargs['out_dir']/kwargs['model_name']
         folder.mkdir(parents=True)
-        (folder/'config.json').write_text('{}')
+        (folder/'config.json').write_text('{"n_channel_in": 2}')
         (folder/'weights_best.h5').write_bytes(b'weights')
     sam = SimpleNamespace()
     sam.to = lambda device:sam

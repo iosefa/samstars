@@ -39,6 +39,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from samstars.data.scaling import load_scale_stats, prepare_stardist_input
+from samstars._preprocessing import refinement_inputs
 
 
 def _safe_source_name(source: str) -> str:
@@ -470,8 +471,10 @@ def main() -> None:
     pa.add_argument("--no-normalize", action="store_true", help="Disable csbdeep percentile normalization")
 
     # Aux
-    pa.add_argument("--use-aux", action="store_true", help="Use CHM aux channel with the saved training scale")
-    pa.add_argument("--scale-stats", type=Path, default=None, help="Global scaling stats JSON (required for --use-aux)")
+    # Accept older callers' flag as an assertion, never as a channel override.
+    pa.add_argument("--use-aux", action="store_true", help=argparse.SUPPRESS)
+    pa.add_argument("--scale-stats", type=Path, default=None,
+                    help="Saved training scale JSON; required for models trained with CHM")
     pa.add_argument("--chm-key", type=str, default="chm", help="Proposal-record key for CHM path")
 
     # Outputs
@@ -573,9 +576,10 @@ def main() -> None:
         skip_sources_file=args.skip_sources_file,
     )
 
-    scale_stats = load_scale_stats(args.scale_stats) if args.scale_stats else None
-    if args.use_aux and scale_stats is None:
-        raise SystemExit("--scale-stats is required when --use-aux is set")
+    use_aux, stats_path = refinement_inputs(args.model_dir / args.model_name / "config.json", args.scale_stats)
+    if args.use_aux and not use_aux:
+        raise SystemExit("This model was trained without CHM; its input channels cannot be changed.")
+    scale_stats = load_scale_stats(stats_path) if stats_path is not None else None
 
     model = StarDist2D(None, name=args.model_name, basedir=str(args.model_dir))
 
@@ -671,7 +675,7 @@ def main() -> None:
                 border = extent.boundary
 
             chm = None
-            if args.use_aux:
+            if use_aux:
                 chm_path = rec.get(args.chm_key, "")
                 if not chm_path or not Path(chm_path).exists():
                     continue

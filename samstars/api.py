@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
-from samstars._preprocessing import image_paths, inspect_images, training_contract, validate_contract
+from samstars._preprocessing import image_paths, inspect_images, refinement_inputs, training_contract, validate_contract
 
 _BUNDLE_MANIFEST = "manifest.json"
 _BUNDLE_FORMAT = "samstars_model_bundle"
@@ -316,8 +316,8 @@ class SamStars:
         }
         if preprocessing is not None:
             manifest["preprocessing"] = validate_contract(preprocessing)
-            if (out / "scale_stats.json").exists():
-                manifest["scale_stats"] = "scale_stats.json"
+        if (out / "scale_stats.json").exists():
+            manifest["scale_stats"] = "scale_stats.json"
         manifest_path = out / _BUNDLE_MANIFEST
         json.dump(manifest, open(manifest_path, "w"), indent=2)
         return manifest_path
@@ -420,8 +420,6 @@ class SamStars:
         stardist_input_key: str = "index",
         stardist_use_aux: bool = True,
         stardist_normalize_inputs: bool | None = None,
-        chm_scale_m: float | None = None,
-        chm_clip: bool = False,
         stardist_augment: bool = True,
         stardist_window_size_m: float | None = None,
         stardist_window_overlap_m: float = 0.0,
@@ -436,8 +434,8 @@ class SamStars:
     ) -> SamStars:
         """Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""
         fg_extra = validate_fg_extra(fg_extra)
-        from samstars.data.scaling import validate_chm_scaling
-        chm_scale_m, chm_clip = validate_chm_scaling(chm_scale_m, chm_clip)
+        if not isinstance(stardist_use_aux, bool):
+            raise ValueError("stardist_use_aux must be True or False.")
         from samstars._preprocessing import proposal_settings, positive_int
         crop_smooth_sigma, smooth_sigma, post_smooth_sigma = proposal_settings(
             pipeline_mode, crop_smooth_sigma, smooth_sigma, post_smooth_sigma)
@@ -600,15 +598,17 @@ class SamStars:
                     proposal_records=validation_result['proposal_records'],
                     tiles_dir=validation_tiles_dir, out_dir=training_root/'validation_records', val_fraction=0)
 
-            build_scale_stats_from_proposal_records(
-                proposal_records=train_records,
-                out=scale_stats,
-                percentiles=(2.0, 98.0),
-                chm_key="chm",
-                nodata_values=(-9999.0,),
-                chm_scale_m=chm_scale_m,
-                chm_clip=chm_clip,
-            )
+            if stardist_use_aux:
+                build_scale_stats_from_proposal_records(
+                    proposal_records=train_records,
+                    out=scale_stats,
+                    percentiles=(2.0, 98.0),
+                    chm_key="chm",
+                    nodata_values=(-9999.0,),
+                    chm_clip=False,
+                )
+            else:
+                scale_stats.unlink(missing_ok=True)
 
             if stardist_cpu:
                 cmd = [
@@ -666,7 +666,8 @@ class SamStars:
                 )
 
             stardist_dir = stardist_train_root / "stardist"
-            shutil.copy2(scale_stats, out / "scale_stats.json")
+            if stardist_use_aux:
+                shutil.copy2(scale_stats, out / "scale_stats.json")
             shutil.copy2(stardist_dir / "config.json", out / "config.json")
             metrics_path = stardist_dir/'training_metrics.json'
             if metrics_path.exists():
@@ -690,8 +691,6 @@ class SamStars:
                 "stardist_input_key": stardist_input_key,
                 "stardist_use_aux": stardist_use_aux,
                 "stardist_normalize_inputs": stardist_normalize_inputs,
-                "chm_scale_m": chm_scale_m,
-                "chm_clip": chm_clip,
                 "stardist_prob_thr": prob_thr,
                 "stardist_nms_thr": nms_thr,
                 "stardist_window_size_m": stardist_window_size_m,
@@ -729,7 +728,6 @@ class SamStars:
         texture_band: int | None = None,
         device: str = "cpu",
         stardist_input_key: str | None = None,
-        stardist_use_aux: bool | None = None,
         stardist_prob_thr: float | None = None,
         stardist_nms_thr: float | None = None,
         stardist_window_size_m: float | None = None,
@@ -756,6 +754,9 @@ class SamStars:
         )
         if self.preprocessing is not None:
             inspect_images(image_paths(tiles_dir, img), expected_resolution=self.preprocessing["resolution_m"])
+        scale_stats = None
+        if run_stardist:
+            _, scale_stats = refinement_inputs(self.config_path, self.scale_stats_path)
         from samstars.segmentation.engine import run_segmentation
 
         storage = _normalize_storage(storage)
@@ -771,11 +772,6 @@ class SamStars:
         resolved_texture_band = self.defaults.get("texture_band") if texture_band is None else texture_band
 
         resolved_stardist_input_key = stardist_input_key or self.defaults.get("stardist_input_key", "index")
-        resolved_stardist_use_aux = (
-            bool(self.defaults.get("stardist_use_aux", True))
-            if stardist_use_aux is None
-            else stardist_use_aux
-        )
         resolved_prob_thr = self.defaults.get("stardist_prob_thr") if stardist_prob_thr is None else stardist_prob_thr
         resolved_nms_thr = self.defaults.get("stardist_nms_thr") if stardist_nms_thr is None else stardist_nms_thr
         resolved_window_size_m = (
@@ -826,7 +822,6 @@ class SamStars:
                     device=device,
                     stardist_model=staged_stardist,
                     stardist_input_key=resolved_stardist_input_key,
-                    stardist_use_aux=resolved_stardist_use_aux,
                     stardist_prob_thr=resolved_prob_thr,
                     stardist_nms_thr=resolved_nms_thr,
                     stardist_window_size_m=resolved_window_size_m,
@@ -844,7 +839,7 @@ class SamStars:
                     fast=resolved_fast,
                     preprocessing=self.preprocessing,
                     stardist_normalize_inputs=bool(self.defaults.get("stardist_normalize_inputs", True)),
-                    stardist_scale_stats=self.scale_stats_path,
+                    stardist_scale_stats=scale_stats,
                     fg_extra=resolved_fg_extra,
                     pipeline_mode=self.defaults.get('pipeline_mode', 'legacy'),
                     random_seed=self.defaults.get('random_seed', 0),
@@ -917,8 +912,6 @@ def train(
     stardist_input_key: str = "index",
     stardist_use_aux: bool = True,
     stardist_normalize_inputs: bool | None = None,
-    chm_scale_m: float | None = None,
-    chm_clip: bool = False,
     stardist_augment: bool = True,
     stardist_window_size_m: float | None = None,
     stardist_window_overlap_m: float = 0.0,
@@ -983,16 +976,12 @@ def train(
         seed_min_canopy_height: Canopy cutoff in metres; simple mode shares it
             between CHM peak selection, seed filtering, and positive/negative prompts.
         stardist_input_key: Refinement input record key, usually index.
-        stardist_use_aux: Include scaled CHM as an auxiliary refinement channel.
+        stardist_use_aux: Train with CHM as a second refinement channel (default).
+            Heights are scaled automatically from training data without upper
+            clipping. The bundle saves the channel layout and scale for prediction.
         stardist_normalize_inputs: Normalize the primary refinement channel;
             None enables this in legacy mode and disables it in simple mode.
             The CHM always uses its saved training scale.
-        chm_scale_m: Metres per CHM input unit; None estimates the scale from
-            the training CHM's 98th percentile. Set 1.0 to retain metre values.
-            Used only with stardist_use_aux=True and saved for prediction.
-        chm_clip: Cap scaled CHM values at 1 (the selected height scale).
-            False retains height differences above that scale. Negative heights
-            and NoData become zero. Used only with stardist_use_aux=True.
         stardist_augment: Apply training augmentation to refinement samples.
         stardist_window_size_m: Default refinement window size for later segmentation,
             in map units, normally meters; None processes each proposal raster whole.
@@ -1046,8 +1035,6 @@ def train(
         stardist_input_key=stardist_input_key,
         stardist_use_aux=stardist_use_aux,
         stardist_normalize_inputs=stardist_normalize_inputs,
-        chm_scale_m=chm_scale_m,
-        chm_clip=chm_clip,
         stardist_augment=stardist_augment,
         stardist_window_size_m=stardist_window_size_m,
         stardist_window_overlap_m=stardist_window_overlap_m,
@@ -1076,7 +1063,6 @@ def segment(
     texture_band: int | None = None,
     device: str = "cpu",
     stardist_input_key: str | None = None,
-    stardist_use_aux: bool | None = None,
     stardist_prob_thr: float | None = None,
     stardist_nms_thr: float | None = None,
     stardist_window_size_m: float | None = None,
@@ -1099,6 +1085,8 @@ def segment(
 ) -> SamStarsResult:
     """Segment source rasters or prepared tiles using a trained model bundle.
 
+    Refinement channels and CHM scaling always follow the trained model.
+
     Args:
         model: Model bundle path or a loaded SamStars instance.
         out: Segmentation output directory, separate from the model bundle.
@@ -1114,7 +1102,6 @@ def segment(
         texture_band: Optional texture source index. None reuses the bundle setting.
         device: PyTorch device for proposals: cpu, cuda, or mps.
         stardist_input_key: Override the refinement input key stored in the bundle.
-        stardist_use_aux: Override use of the normalized CHM refinement channel.
         stardist_prob_thr: Refinement probability threshold; set with stardist_nms_thr.
         stardist_nms_thr: Refinement suppression threshold; set with stardist_prob_thr.
         stardist_window_size_m: Internal refinement window size in projected map units.
@@ -1163,7 +1150,6 @@ def segment(
         texture_band=texture_band,
         device=device,
         stardist_input_key=stardist_input_key,
-        stardist_use_aux=stardist_use_aux,
         stardist_prob_thr=stardist_prob_thr,
         stardist_nms_thr=stardist_nms_thr,
         stardist_window_size_m=stardist_window_size_m,

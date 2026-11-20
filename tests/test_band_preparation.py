@@ -172,10 +172,19 @@ def test_preparation_writes_selected_rgb_cost_and_real_seeds(scene, tiled):
 
 @pytest.mark.parametrize("fg_extra", [None, 0, 4])
 @pytest.mark.parametrize("stardist_cpu", [False, True])
-def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra, stardist_cpu):
+@pytest.mark.parametrize("use_aux", [False, True])
+def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra, stardist_cpu, use_aux):
     """Run real preparation and record building, replacing only model execution."""
     expected_fg_extra = 80 if fg_extra is None else fg_extra
-    height_options = {} if fg_extra is None else {"chm_scale_m": 20.0, "chm_clip": fg_extra == 4}
+    if not use_aux:
+        def unexpected_scaling(**kwargs):
+            pytest.fail("Training without a CHM channel must not calculate scaling statistics")
+        monkeypatch.setattr("samstars.data.build_scale_stats_from_proposal_records", unexpected_scaling)
+    # Retraining without CHM must also remove obsolete statistics from this output.
+    stale_stats = scene["root"] / "model/_training/training_scale_stats.json"
+    stale_stats.parent.mkdir(parents=True)
+    stale_stats.write_text("old statistics")
+    (stale_stats.parents[1] / "scale_stats.json").write_text("old statistics")
     img = _write_raster(scene["root"] / "bgrn.tif", scene["image"][:4])
     crowns = scene["root"] / "crowns.gpkg"
     gpd.GeoDataFrame(geometry=[box(500010, 2199976, 500024, 2199990)], crs="EPSG:32605").to_file(crowns)
@@ -189,13 +198,16 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
     def fake_refinement(**kwargs):
         assert kwargs["patch_size"] == 32
         assert kwargs["normalize_inputs"] is False
-        stats = json.loads(kwargs["scale_stats_path"].read_text())
-        assert stats["chm_scaling"]["clip"] is height_options.get("chm_clip", False)
-        if height_options:
-            assert stats["chm_scaling"]["scale_m"] == 20.0
+        assert kwargs["use_aux"] is use_aux
+        if use_aux:
+            stats = json.loads(kwargs["scale_stats_path"].read_text())
+            assert stats["chm_scaling"]["clip"] is False
+            assert stats["chm_scaling"]["source"] == "training_percentile"
+        else:
+            assert kwargs["scale_stats_path"] is None
         model = kwargs["out_dir"] / kwargs["model_name"]
         model.mkdir(parents=True)
-        (model / "config.json").write_text("{}")
+        (model / "config.json").write_text(json.dumps({"n_channel_in": 2 if use_aux else 1}))
         (model / "weights.h5").write_bytes(b"test weights")
 
     def fake_proposals(**kwargs):
@@ -216,9 +228,12 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
     def fake_cpu_training(cmd, **kwargs):
         assert "--no-normalize" in cmd
         assert kwargs["env"]["CUDA_VISIBLE_DEVICES"] == ""
+        assert ("--use-aux" in cmd) is use_aux
+        assert ("--scale-stats" in cmd) is use_aux
         fake_refinement(out_dir=Path(cmd[cmd.index("--out-dir") + 1]), model_name="stardist",
                         patch_size=int(cmd[cmd.index("--patch-size") + 1]), normalize_inputs=False,
-                        scale_stats_path=Path(cmd[cmd.index("--scale-stats") + 1]))
+                        use_aux=use_aux,
+                        scale_stats_path=Path(cmd[cmd.index("--scale-stats") + 1]) if use_aux else None)
 
     monkeypatch.setitem(sys.modules, "samstars.training.sam_training", SimpleNamespace(train_decoder=fake_decoder))
     monkeypatch.setitem(sys.modules, "samstars.training.stardist_training", SimpleNamespace(train_stardist_model=fake_refinement))
@@ -232,7 +247,7 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
         storage="persistent", rgb_bands=(3, 2, 1), nir_band=4, texture_band=2,
         chip_size=32, chip_stride=32, stardist_patch_size=32,
         stardist_cpu=stardist_cpu, stardist_normalize_inputs=False,
-        **height_options,
+        stardist_use_aux=use_aux,
         **({} if fg_extra is None else {"fg_extra": fg_extra}),
     )
     assert model.defaults["rgb_bands"] == [3, 2, 1]
@@ -245,9 +260,15 @@ def test_bundle_saves_and_reuses_preparation_bands(scene, monkeypatch, fg_extra,
     assert model.preprocessing["stardist_patch_size_px"] == 32
     assert model.preprocessing["resolution_m"] == 1
     assert model.defaults["stardist_normalize_inputs"] is False
-    assert model.scale_stats_path.is_file()
-    assert model.defaults["chm_scale_m"] == height_options.get("chm_scale_m")
-    assert model.defaults["chm_clip"] is height_options.get("chm_clip", False)
+    assert model.defaults["stardist_use_aux"] is use_aux
+    assert "chm_scale_m" not in model.defaults and "chm_clip" not in model.defaults
+    if use_aux:
+        assert model.scale_stats_path.is_file()
+    else:
+        assert model.scale_stats_path is None
+        assert "scale_stats" not in model.manifest
+        assert not (model.root / "scale_stats.json").exists()
+        assert not stale_stats.exists()
 
     monkeypatch.setattr(engine, "run_segmentation", original_engine)
     result = segment(
