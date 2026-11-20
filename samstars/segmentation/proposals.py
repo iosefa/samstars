@@ -30,6 +30,7 @@ if str(ROOT) not in sys.path:
 from samstars._prompts import DEFAULT_FG_EXTRA, validate_fg_extra
 from samstars._preprocessing import check_proposal_cache, inspect_images, rgb_to_u8, validate_contract, window_starts
 from samstars.data.scaling import load_scale_stats, scale_to_u8_per_channel
+from samstars._cache import check_cache, proposal_identity
 
 # ───────────── proposal parameters ────────────────────────────────
 CONTEXT_FCTR = 1.5
@@ -136,9 +137,16 @@ def process_chip(
     fg_extra: int = FG_EXTRA,
     fixed_window: bool = False,
     seeds=None,
+    pipeline_mode: str = 'legacy',
+    random_seed: int = 0,
 ):
     """Process a chip with up to fg_extra additional positive points per seed."""
     fg_extra = validate_fg_extra(fg_extra)
+    if pipeline_mode == 'simple':
+        from samstars.segmentation.simple import process_simple_window
+        return process_simple_window(rec, predictor, device, fg_extra=fg_extra,
+            random_seed=random_seed, smooth_sigma=smooth_sigma, fast=fast,
+            fast_batch=fast_batch, seeds=seeds)
     img_path = Path(rec["img_path"])
     name = f"{rec['tile']}_{rec['chip_id']}"
     chm_path = img_path.parent / "chm.tif"
@@ -528,6 +536,10 @@ def process_chip(
 def process_windowed_tile(rec, predictor, device, preprocessing, **kwargs):
     """Blend fixed SAM ground windows into the original tile grid."""
     settings = validate_contract(preprocessing)
+    simple = kwargs.get('pipeline_mode') == 'simple'
+    mosaic_sigma = kwargs.get('smooth_sigma', 0)
+    if simple:
+        kwargs = dict(kwargs, smooth_sigma=0)
     size, stride = settings["sam_window_size_px"], settings["sam_stride_px"]
     x0, y0, x1, y1 = map(int, rec["window"])
     height, width = y1 - y0, x1 - x0
@@ -556,7 +568,18 @@ def process_windowed_tile(rec, predictor, device, preprocessing, **kwargs):
     aux = []
     for name in ("chm", "cost"):
         with rasterio.open(img_path.parent / f"{name}.tif") as src:
-            aux.append(src.read(1, window=win, boundless=True, masked=True).astype(np.float32).filled(0))
+            fill = np.nan if simple else 0
+            aux.append(src.read(1, window=win, boundless=True, masked=True).astype(np.float32).filled(fill))
+    if simple:
+        from samstars.segmentation.simple import smooth_probabilities
+        with rasterio.open(img_path) as src:
+            rgb = src.read((1,2,3), window=win, masked=True).astype(np.float32)
+            valid = (~np.ma.getmaskarray(rgb).any(axis=0)
+                     & np.isfinite(rgb.filled(np.nan)).all(axis=0) & np.isfinite(aux[0]))
+        sums[:, ~valid] = 0
+        sums[1] = smooth_probabilities(sums[0], mosaic_sigma, valid)
+        sums[2] = sums[1]
+        aux[0][~valid] = np.nan
     return (*sums, *aux, crs, tfm)
 
 
@@ -569,11 +592,14 @@ def run_tile_proposals(
     rgb_lo_hi=None,
     fast: bool = True,
     fast_batch: int = 32,
-    crop_smooth_sigma: float = CROP_SMOOTH_SIGMA,
-    smooth_sigma: float = SMOOTH_SIGMA,
-    post_smooth_sigma: float = POST_SMOOTH_SIGMA,
+    crop_smooth_sigma: float | None = None,
+    smooth_sigma: float | None = None,
+    post_smooth_sigma: float | None = None,
     fg_extra: int = FG_EXTRA,
     preprocessing: dict | None = None,
+    pipeline_mode: str = 'legacy',
+    random_seed: int = 0,
+    _cache_contract: dict | None = None,
 ):
     """Run SAM proposals from one tile-record file.
 
@@ -582,6 +608,9 @@ def run_tile_proposals(
     The count must be a nonnegative integer and applies in both inference modes.
     """
     fg_extra = validate_fg_extra(fg_extra)
+    from samstars._preprocessing import proposal_settings
+    crop_smooth_sigma, smooth_sigma, post_smooth_sigma = proposal_settings(
+        pipeline_mode, crop_smooth_sigma, smooth_sigma, post_smooth_sigma)
     records_path = Path(records_json)
     if not records_path.exists():
         raise FileNotFoundError(f"Missing records file: {records_path}")
@@ -595,7 +624,13 @@ def run_tile_proposals(
     ckpt = Path(ckpt_path)
     if not ckpt.exists():
         raise FileNotFoundError(f"Missing SAM checkpoint: {ckpt}")
+    options = dict(fast=fast, fg_extra=fg_extra, crop_smooth_sigma=crop_smooth_sigma,
+                   smooth_sigma=smooth_sigma, post_smooth_sigma=post_smooth_sigma,
+                   pipeline_mode=pipeline_mode, random_seed=random_seed)
+    identity = _cache_contract or proposal_identity(records_path, ckpt, preprocessing, options)
+    check_cache(out_root, identity)
     check_proposal_cache(out_root, preprocessing)
+    np.random.seed(random_seed)
 
     sam = sam_model_registry["vit_l"](checkpoint=str(ckpt))
     sam.to(device).eval()
@@ -620,6 +655,8 @@ def run_tile_proposals(
             smooth_sigma=smooth_sigma,
             post_smooth_sigma=post_smooth_sigma,
             fg_extra=fg_extra,
+            pipeline_mode=pipeline_mode,
+            random_seed=random_seed,
             **options,
         )
         if res is None:
@@ -643,12 +680,16 @@ def run_tile_proposals(
 
         with rasterio.open(out_dir / f"{name}_logit.tif", "w", **meta) as dst:
             dst.write(mosaic_prob.astype(np.float32), 1)
+            if pipeline_mode == 'simple': dst.write_mask(np.isfinite(chm_out).astype('uint8')*255)
         with rasterio.open(out_dir / f"{name}_sam_prob.tif", "w", **meta) as dst:
             dst.write(prob_s.astype(np.float32), 1)
+            if pipeline_mode == 'simple': dst.write_mask(np.isfinite(chm_out).astype('uint8')*255)
         with rasterio.open(out_dir / f"{name}_sam_index.tif", "w", **meta) as dst:
             dst.write(index.astype(np.float32), 1)
+            if pipeline_mode == 'simple': dst.write_mask(np.isfinite(chm_out).astype('uint8')*255)
         with rasterio.open(out_dir / f"{name}_chm.tif", "w", **meta) as dst:
             dst.write(chm_out.astype(np.float32), 1)
+            if pipeline_mode == 'simple': dst.write_mask(np.isfinite(chm_out).astype('uint8')*255)
         with rasterio.open(out_dir / f"{name}_cost.tif", "w", **meta) as dst:
             dst.write(cost_out.astype(np.float32), 1)
 

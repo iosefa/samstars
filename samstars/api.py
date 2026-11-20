@@ -403,9 +403,9 @@ class SamStars:
         stardist_epochs: int = 50,
         stardist_min_iters: int = 0,
         val_fraction: float = 0.2,
-        crop_smooth_sigma: float = 2.0,
-        smooth_sigma: float = 4.0,
-        post_smooth_sigma: float = 0.0,
+        crop_smooth_sigma: float | None = None,
+        smooth_sigma: float | None = None,
+        post_smooth_sigma: float | None = None,
         thin_seeds: bool = True,
         thin_dist: float = 0.8,
         seed_d_min: float = 4.5,
@@ -423,9 +423,26 @@ class SamStars:
         stardist_dedup_iou_thr: float = 0.0,
         stardist_cpu: bool = False,
         fast: bool = True,
+        pipeline_mode: str = 'legacy',
+        random_seed: int = 0,
+        validation_tiles_dir: Path | None = None,
+        stardist_steps_per_epoch: int = 100,
+        embedding_cache_size: int = 64,
     ) -> SamStars:
         """Train a model bundle; fg_extra controls extra foreground prompts (0 = seed only)."""
         fg_extra = validate_fg_extra(fg_extra)
+        from samstars._preprocessing import proposal_settings, positive_int
+        crop_smooth_sigma, smooth_sigma, post_smooth_sigma = proposal_settings(
+            pipeline_mode, crop_smooth_sigma, smooth_sigma, post_smooth_sigma)
+        stardist_steps_per_epoch = positive_int(stardist_steps_per_epoch, 'stardist_steps_per_epoch')
+        if isinstance(random_seed, bool) or not isinstance(random_seed, int) or not 0 <= random_seed < 2**32:
+            raise ValueError('random_seed must be an integer in [0, 2**32).')
+        if isinstance(embedding_cache_size, bool) or not isinstance(embedding_cache_size, int) or embedding_cache_size < 0:
+            raise ValueError('embedding_cache_size must be a nonnegative integer.')
+        if not 0 <= val_fraction < 1:
+            raise ValueError('val_fraction must be in [0, 1).')
+        if pipeline_mode == 'simple':
+            stardist_input_key = 'file_name'
         preprocessing = training_contract(
             image_paths(tiles_dir, img), chip_size=chip_size, chip_stride=chip_stride,
             sam_window_size_m=sam_window_size_m, stardist_patch_size=stardist_patch_size,
@@ -482,6 +499,25 @@ class SamStars:
                 seed_min_canopy_height=seed_min_canopy_height,
             )
 
+            from samstars.training.splits import split_training_tiles
+            from samstars._preprocessing import inspect_images
+            if validation_tiles_dir is not None:
+                validation_tiles_dir = _resolve_training_tiles(
+                    tiles_dir=validation_tiles_dir, img=None, chm=None, den=None, crowns=None,
+                    rgb_bands=rgb_bands, nir_band=nir_band, texture_band=texture_band,
+                    prep_root=prep_root/'validation', thin_seeds=thin_seeds, thin_dist=thin_dist,
+                    seed_d_min=seed_d_min, seed_min_dist_px=seed_min_dist_px,
+                    seed_gauss_sigma=seed_gauss_sigma, seed_min_samples=seed_min_samples,
+                    seed_merge_radius=seed_merge_radius, seed_min_canopy_height=seed_min_canopy_height)
+                inspect_images(image_paths(validation_tiles_dir),
+                    expected_resolution=preprocessing['resolution_m'], minimum_size=stardist_patch_size)
+            split_root = training_root/'split'
+            if split_root.exists():
+                shutil.rmtree(split_root)
+            training_tiles_dir, validation_tiles_dir, split_summary = split_training_tiles(
+                training_tiles_dir, split_root, val_fraction=val_fraction, seed=random_seed,
+                validation_tiles_dir=validation_tiles_dir)
+
             # Discard stale chips from earlier experiments in this working directory.
             if training_chips_dir.exists():
                 shutil.rmtree(training_chips_dir)
@@ -490,6 +526,7 @@ class SamStars:
                 out_dir=training_chips_dir,
                 chip_size=chip_size,
                 stride=chip_stride,
+                shared_windows=pipeline_mode == 'simple',
             )
 
             train_decoder(
@@ -503,6 +540,9 @@ class SamStars:
                 lr=sam_lr,
                 device=device,
                 fg_extra=fg_extra,
+                pipeline_mode=pipeline_mode,
+                random_seed=random_seed,
+                embedding_cache_size=embedding_cache_size,
             )
 
             proposal_result = run_segmentation(
@@ -515,6 +555,8 @@ class SamStars:
                 skip_existing_sam=False,
                 preprocessing=preprocessing,
                 fast=fast,
+                pipeline_mode=pipeline_mode,
+                random_seed=random_seed,
                 fg_extra=fg_extra,
                 crop_smooth_sigma=crop_smooth_sigma,
                 smooth_sigma=smooth_sigma,
@@ -525,11 +567,22 @@ class SamStars:
                 proposal_records=proposal_result["proposal_records"],
                 tiles_dir=training_tiles_dir,
                 out_dir=records_dir,
-                val_fraction=val_fraction,
+                val_fraction=0,
             )
+            if validation_tiles_dir is not None:
+                validation_result = run_segmentation(
+                    tiles_dir=validation_tiles_dir, out_dir=training_root/'validation_run',
+                    sam_ckpt=decoder_path, device=device, run_sam=True, run_stardist=False,
+                    skip_existing_sam=False, preprocessing=preprocessing, fast=fast,
+                    pipeline_mode=pipeline_mode, random_seed=random_seed, fg_extra=fg_extra,
+                    crop_smooth_sigma=crop_smooth_sigma, smooth_sigma=smooth_sigma,
+                    post_smooth_sigma=post_smooth_sigma)
+                val_records, _ = build_stardist_training_records(
+                    proposal_records=validation_result['proposal_records'],
+                    tiles_dir=validation_tiles_dir, out_dir=training_root/'validation_records', val_fraction=0)
 
             build_scale_stats_from_proposal_records(
-                proposal_records=proposal_result["proposal_records"],
+                proposal_records=train_records,
                 out=scale_stats,
                 percentiles=(2.0, 98.0),
                 chm_key="chm",
@@ -552,6 +605,8 @@ class SamStars:
                     str(stardist_epochs),
                     "--min-iters",
                     str(stardist_min_iters),
+                    "--steps-per-epoch", str(stardist_steps_per_epoch),
+                    "--seed", str(random_seed),
                     "--patch-size",
                     str(stardist_patch_size),
                     "--input-key",
@@ -576,6 +631,8 @@ class SamStars:
                     model_name="stardist",
                     epochs=stardist_epochs,
                     min_iters=stardist_min_iters,
+                    steps_per_epoch=stardist_steps_per_epoch,
+                    random_seed=random_seed,
                     input_key=stardist_input_key,
                     use_aux=stardist_use_aux,
                     scale_stats_path=scale_stats if stardist_use_aux else None,
@@ -587,6 +644,10 @@ class SamStars:
             stardist_dir = stardist_train_root / "stardist"
             shutil.copy2(scale_stats, out / "scale_stats.json")
             shutil.copy2(stardist_dir / "config.json", out / "config.json")
+            metrics_path = stardist_dir/'training_metrics.json'
+            if metrics_path.exists():
+                shutil.copy2(metrics_path, out/'stardist_training.json')
+            (out/'training_split.json').write_text(json.dumps(split_summary, indent=2))
             weight_path = _find_stardist_weight(stardist_dir)
             shutil.copy2(weight_path, out / "weights.h5")
             if (stardist_dir / "thresholds.json").exists():
@@ -616,6 +677,12 @@ class SamStars:
                 "post_smooth_sigma": post_smooth_sigma,
                 "fast": fast,
                 "fg_extra": fg_extra,
+                "pipeline_mode": pipeline_mode,
+                "random_seed": random_seed,
+                "seed_settings": dict(thin_seeds=thin_seeds, thin_dist=thin_dist,
+                    seed_d_min=seed_d_min, seed_min_dist_px=seed_min_dist_px,
+                    seed_gauss_sigma=seed_gauss_sigma, seed_min_samples=seed_min_samples,
+                    seed_merge_radius=seed_merge_radius, seed_min_canopy_height=seed_min_canopy_height),
             },
         )
         return cls(out)
@@ -751,6 +818,9 @@ class SamStars:
                     stardist_normalize_inputs=bool(self.defaults.get("stardist_normalize_inputs", True)),
                     stardist_scale_stats=self.scale_stats_path,
                     fg_extra=resolved_fg_extra,
+                    pipeline_mode=self.defaults.get('pipeline_mode', 'legacy'),
+                    random_seed=self.defaults.get('random_seed', 0),
+                    seed_settings=self.defaults.get('seed_settings'),
                     crop_smooth_sigma=resolved_crop_sigma,
                     smooth_sigma=resolved_smooth_sigma,
                     post_smooth_sigma=resolved_post_sigma,
@@ -803,9 +873,9 @@ def train(
     stardist_epochs: int = 50,
     stardist_min_iters: int = 0,
     val_fraction: float = 0.2,
-    crop_smooth_sigma: float = 2.0,
-    smooth_sigma: float = 4.0,
-    post_smooth_sigma: float = 0.0,
+    crop_smooth_sigma: float | None = None,
+    smooth_sigma: float | None = None,
+    post_smooth_sigma: float | None = None,
     thin_seeds: bool = True,
     thin_dist: float = 0.8,
     seed_d_min: float = 4.5,
@@ -823,6 +893,11 @@ def train(
     stardist_dedup_iou_thr: float = 0.0,
     stardist_cpu: bool = False,
     fast: bool = True,
+    pipeline_mode: str = 'legacy',
+    random_seed: int = 0,
+    validation_tiles_dir: Path | None = None,
+    stardist_steps_per_epoch: int = 100,
+    embedding_cache_size: int = 64,
 ) -> SamStars:
     """Train a model bundle from a labeled scene or labeled tile directories.
 
@@ -936,6 +1011,11 @@ def train(
         stardist_dedup_iou_thr=stardist_dedup_iou_thr,
         stardist_cpu=stardist_cpu,
         fast=fast,
+        pipeline_mode=pipeline_mode,
+        random_seed=random_seed,
+        validation_tiles_dir=validation_tiles_dir,
+        stardist_steps_per_epoch=stardist_steps_per_epoch,
+        embedding_cache_size=embedding_cache_size,
     )
 
 

@@ -12,6 +12,18 @@ import warnings
 SAM_ENCODER_SIZE = 1024
 
 
+def proposal_settings(mode, crop=None, mosaic=None, post=None):
+    if mode not in ('legacy', 'simple'):
+        raise ValueError('pipeline_mode must be legacy or simple.')
+    defaults = (2., 4., 0.) if mode == 'legacy' else (0., 0., 0.)
+    values = tuple(default if value is None else value for value, default in zip((crop,mosaic,post), defaults))
+    if any(isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value) or value < 0 for value in values):
+        raise ValueError('Smoothing sigmas must be finite nonnegative numbers.')
+    if mode == 'simple' and (values[0] != 0 or values[2] != 0):
+        raise ValueError('Simple processing supports only mosaic smoothing; set crop/post sigma to 0.')
+    return tuple(float(value) for value in values)
+
+
 def positive_int(value, name):
     if isinstance(value, bool) or not isinstance(value, Integral) or value <= 0:
         raise ValueError(f"{name} must be a positive integer.")

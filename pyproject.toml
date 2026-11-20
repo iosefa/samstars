@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "samstars"
-version = "0.3.0a1"
+version = "0.3.0a2.dev0"
 description = "Multimodal instance segmentation of individual trees"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"

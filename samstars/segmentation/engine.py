@@ -148,10 +148,13 @@ def run_segmentation(
     fast: bool = True,
     fast_batch_size: int = 32,
     fg_extra: int = DEFAULT_FG_EXTRA,
-    crop_smooth_sigma: float = 2.0,
-    smooth_sigma: float = 4.0,
-    post_smooth_sigma: float = 0.0,
+    crop_smooth_sigma: float | None = None,
+    smooth_sigma: float | None = None,
+    post_smooth_sigma: float | None = None,
     preprocessing: dict | None = None,
+    pipeline_mode: str = 'legacy',
+    random_seed: int = 0,
+    seed_settings: dict | None = None,
 ) -> dict:
     """Run segmentation with separate proposal and refinement model paths.
 
@@ -171,6 +174,10 @@ def run_segmentation(
     seed as foreground. It must be a nonnegative integer and defaults to 80.
     """
     fg_extra = validate_fg_extra(fg_extra)
+    from samstars._cache import check_cache, proposal_identity, file_identity
+    from samstars._preprocessing import proposal_settings
+    crop_smooth_sigma, smooth_sigma, post_smooth_sigma = proposal_settings(
+        pipeline_mode, crop_smooth_sigma, smooth_sigma, post_smooth_sigma)
     if preprocessing is not None:
         preprocessing = validate_contract(preprocessing)
         inspect_images(image_paths(tiles_dir, img), expected_resolution=preprocessing["resolution_m"])
@@ -185,6 +192,10 @@ def run_segmentation(
         if any(v is None for v in raw_inputs):
             raise ValueError("Provide either tiles_dir or all of img/chm/den.")
         prepared_root = out_dir / "prep" / "scene"
+        check_cache(prepared_root, {'inputs': [file_identity(p) for p in raw_inputs],
+                    'rgb_bands': list(rgb_bands) if rgb_bands else None, 'nir_band': nir_band,
+                    'texture_band': texture_band, 'seed_settings': seed_settings},
+                    overwrite=run_sam and not skip_existing_sam)
         tiles_dir = build_single_tile(
             img=Path(img),
             chm=Path(chm),
@@ -194,6 +205,7 @@ def run_segmentation(
             texture_band=texture_band,
             out=prepared_root,
             skip_existing=True,
+            **(seed_settings or {}),
         )
     tiles_dir = Path(tiles_dir)
     if preprocessing is not None:
@@ -203,7 +215,6 @@ def run_segmentation(
     records_root = out_dir / "run_records"
     proposals_root = out_dir / "proposals"
     resolved_sam_ckpt = _resolve_sam_ckpt(sam_ckpt=sam_ckpt)
-    check_proposal_cache(proposals_root, preprocessing, overwrite=run_sam and not skip_existing_sam)
     crowns_dir = out_dir / "crowns"
     proposal_records = proposals_root / "proposal_records.json"
     proposal_rasters_dir = proposals_root / "rasters"
@@ -213,6 +224,12 @@ def run_segmentation(
         tiles_dir=tiles_dir,
         out_root=records_root,
     )
+    options = dict(fast=fast, fg_extra=fg_extra, crop_smooth_sigma=crop_smooth_sigma,
+                   smooth_sigma=smooth_sigma, post_smooth_sigma=post_smooth_sigma,
+                   pipeline_mode=pipeline_mode, random_seed=random_seed)
+    identity = proposal_identity(tile_records, resolved_sam_ckpt, preprocessing, options)
+    check_cache(proposals_root, identity, overwrite=run_sam and not skip_existing_sam)
+    check_proposal_cache(proposals_root, preprocessing, overwrite=run_sam and not skip_existing_sam)
 
     pending_count = len(recs)
     active_tile_records = tile_records
@@ -242,6 +259,9 @@ def run_segmentation(
             smooth_sigma=smooth_sigma,
             post_smooth_sigma=post_smooth_sigma,
             preprocessing=preprocessing,
+            pipeline_mode=pipeline_mode,
+            random_seed=random_seed,
+            _cache_contract=identity,
         )
 
     _normalize_record_paths(proposal_records)
